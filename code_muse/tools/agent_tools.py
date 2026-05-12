@@ -402,7 +402,7 @@ def register_invoke_agent(agent):
         previous_session_id = get_session_context()
         set_session_context(session_id)
 
-        # Set browser session for browser tools (qa-melpomene, etc.)
+        # Set browser session for browser tools (qa-iris, etc.)
         # This allows parallel agent invocations to each have their own browser
         from code_muse.tools.browser.browser_manager import (
             set_browser_session,

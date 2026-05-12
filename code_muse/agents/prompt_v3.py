@@ -348,7 +348,7 @@ Calliope — epic vision and eloquent structure
 Clio — memory and historical context
 Erato — lyric beauty and emotional resonance
 Euterpe — rhythm and harmonious flow
-Melpomene — resilience in the face of error
+Iris — resilience in the face of error
 Polyhymnia — sacred geometry and deep architecture
 Terpsichore — graceful movement, interaction, and delightful UX choreography
 Thalia — joyful insight and accessible wisdom

@@ -101,25 +101,25 @@ def set_diff_deletion_color(color: str):
 
 
 DEFAULT_BANNER_COLORS = {
-    "thinking": "deep_sky_blue4",  # Sapphire - contemplation
-    "agent_response": "medium_purple4",  # Amethyst - main AI output
-    "shell_command": "dark_orange3",  # Amber - system commands
-    "read_file": "steel_blue",  # Steel - reading files
-    "edit_file": "dark_goldenrod",  # Gold - modifications (legacy)
-    "create_file": "dark_goldenrod",  # Gold - file creation
-    "replace_in_file": "dark_goldenrod",  # Gold - file modifications
-    "delete_snippet": "dark_goldenrod",  # Gold - snippet removal
-    "grep": "grey37",  # Silver - search results
-    "directory_listing": "dodger_blue2",  # Sky - navigation
+    "thinking": "dark_violet",  # Violet - contemplation
+    "agent_response": "purple4",  # Deep Purple - main AI output
+    "shell_command": "deeppink3",  # Deep Pink - system commands
+    "read_file": "dark_magenta",  # Magenta - reading files
+    "edit_file": "purple4",  # Purple - modifications
+    "create_file": "purple4",  # Purple - file creation
+    "replace_in_file": "purple4",  # Purple - file modifications
+    "delete_snippet": "dark_violet",  # Violet - snippet removal
+    "grep": "medium_purple3",  # Light Purple - search results
+    "directory_listing": "deeppink4",  # Deep Pink - navigation
     "agent_reasoning": "dark_violet",  # Violet - deep thought
-    "invoke_agent": "deep_pink4",  # Ruby - agent invocation
-    "subagent_response": "sea_green3",  # Emerald - sub-agent success
-    "list_agents": "dark_slate_gray3",  # Slate - neutral listing
-    "universal_constructor": "dark_cyan",  # Teal - constructing tools
-    # Browser/Terminal tools - same color as edit_file (gold)
-    "terminal_tool": "dark_goldenrod",  # Gold - browser terminal operations
-    # User-initiated shell pass-through (! prefix) - distinct from agent's shell_command
-    "shell_passthrough": "medium_sea_green",  # Green - user's own shell commands
+    "invoke_agent": "deeppink3",  # Deep Pink - agent invocation
+    "subagent_response": "purple3",  # Purple - sub-agent success
+    "list_agents": "dark_magenta",  # Magenta - neutral listing
+    "universal_constructor": "dark_violet",  # Violet - constructing tools
+    # Browser/Terminal tools
+    "terminal_tool": "purple4",  # Purple - browser terminal operations
+    # User-initiated shell pass-through
+    "shell_passthrough": "deeppink4",  # Deep Pink - user's own shell commands
 }
 
 

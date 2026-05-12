@@ -541,6 +541,20 @@ async def on_stream_event(
     )
 
 
+def on_stream_event_sync(
+    event_type: str, event_data: Any, agent_session_id: str | None = None
+) -> list[Any]:
+    """Synchronous version of on_stream_event — no task creation.
+
+    Used for high-frequency events (part_delta) where async overhead
+    would be wasteful. Callbacks are fired synchronously in the caller's
+    thread.
+    """
+    return _trigger_callbacks_sync(
+        "stream_event", event_type, event_data, agent_session_id
+    )
+
+
 def on_register_tools() -> list[dict[str, Any]]:
     """Collect custom tool registrations from plugins.
 

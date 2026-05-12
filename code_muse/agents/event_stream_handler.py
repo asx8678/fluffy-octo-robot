@@ -35,14 +35,17 @@ def _handle_stream_task_exception(task: asyncio.Task) -> None:
 
 
 def _fire_stream_event(event_type: str, event_data: Any) -> None:
-    """Fire a stream event callback asynchronously (non-blocking).
+    """Fire a stream event callback to registered plugins.
 
-    PERF-08: Only fires for structural events (part_start, part_end).
-    High-frequency part_delta events are skipped since no current plugin
-    consumes them, and creating 100+ micro-tasks per response is wasteful.
+    For high-frequency part_delta events, fires synchronously without
+    creating a task to avoid overhead. For structural events (part_start,
+    part_end), fires asynchronously via task.
     """
     if event_type == "part_delta":
+        # Fire synchronously for perf — tps_meter plugin consumes these
+        _fire_stream_event_sync(event_type, event_data)
         return
+
     try:
         from code_muse import callbacks
         from code_muse.messaging import get_session_context
@@ -52,6 +55,24 @@ def _fire_stream_event(event_type: str, event_data: Any) -> None:
             callbacks.on_stream_event(event_type, event_data, agent_session_id)
         )
         task.add_done_callback(_handle_stream_task_exception)
+    except ImportError:
+        logger.debug("callbacks or messaging module not available for stream event")
+    except Exception as e:
+        logger.debug("Error firing stream event callback: %s", e)
+
+
+def _fire_stream_event_sync(event_type: str, event_data: Any) -> None:
+    """Fire stream event callbacks synchronously (no task creation).
+
+    Used for high-frequency events like part_delta where creating 100+
+    asyncio tasks per response would be wasteful.
+    """
+    try:
+        from code_muse import callbacks
+        from code_muse.messaging import get_session_context
+
+        agent_session_id = get_session_context()
+        callbacks.on_stream_event_sync(event_type, event_data, agent_session_id)
     except ImportError:
         logger.debug("callbacks or messaging module not available for stream event")
     except Exception as e:
@@ -302,11 +323,20 @@ async def event_stream_handler(
 
         # PartEndEvent - finish the streaming with a newline
         elif isinstance(event, PartEndEvent):
+            # Determine part type from tracking sets
+            _part_end_type = "unknown"
+            if event.index in text_parts:
+                _part_end_type = "TextPart"
+            elif event.index in thinking_parts:
+                _part_end_type = "ThinkingPart"
+            elif event.index in tool_parts:
+                _part_end_type = "ToolCallPart"
             # Fire stream event callback for part_end
             _fire_stream_event(
                 "part_end",
                 {
                     "index": event.index,
+                    "part_type": _part_end_type,
                     "next_part_kind": getattr(event, "next_part_kind", None),
                 },
             )

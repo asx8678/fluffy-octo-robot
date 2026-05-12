@@ -14,7 +14,7 @@ import pytest
 
 
 _REVIEWER_AGENTS = [
-    ("code_muse.agents.agent_qa_kitten", "QualityAssuranceMelpomeneAgent"),
+    ("code_muse.agents.agent_qa_iris", "QualityAssuranceIrisAgent"),
 ]
 
 

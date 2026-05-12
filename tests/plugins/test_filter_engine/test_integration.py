@@ -231,12 +231,12 @@ class TestInitCommand:
             result = _on_custom_command("/init", "init")
             assert result is True
             mock_emit.assert_called_once()
-            assert "Fast-Puppy initialized" in mock_emit.call_args[0][0]
+            assert "Muse initialized" in mock_emit.call_args[0][0]
 
-        md_path = tmp_path / "FAST_PUPPY.md"
+        md_path = tmp_path / "MUSE.md"
         assert md_path.exists()
         content = md_path.read_text()
-        assert "Fast-Puppy Token Saving" in content
+        assert "Muse Token Saving" in content
         assert "Enabled Strategies" in content
 
     def test_init_command_skips_existing(self, tmp_path: Path) -> None:
@@ -244,8 +244,8 @@ class TestInitCommand:
             _on_custom_command,
         )
 
-        # Pre-create FAST_PUPPY.md
-        (tmp_path / "FAST_PUPPY.md").write_text("existing")
+        # Pre-create MUSE.md
+        (tmp_path / "MUSE.md").write_text("existing")
 
         with (
             patch(

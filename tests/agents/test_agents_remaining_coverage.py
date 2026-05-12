@@ -26,9 +26,9 @@ def _test_reviewer_agent(module_path, class_name):
 
 
 def test_qa_kitten():
-    from code_muse.agents.agent_qa_melpomene import QualityAssuranceMelpomeneAgent
+    from code_muse.agents.agent_qa_iris import QualityAssuranceIrisAgent
 
-    agent = QualityAssuranceMelpomeneAgent()
+    agent = QualityAssuranceIrisAgent()
     tools = agent.get_available_tools()
     assert isinstance(tools, list)
     prompt = agent.get_system_prompt()

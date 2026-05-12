@@ -1,25 +1,25 @@
-"""QA Melpomene — Playwright-powered browser automation agent."""
+"""QA Iris — Playwright-powered browser automation agent."""
 
 from .base_agent import BaseAgent
 
 
-class QualityAssuranceMelpomeneAgent(BaseAgent):
-    """QA Melpomene — Advanced browser automation with Playwright."""
+class QualityAssuranceIrisAgent(BaseAgent):
+    """QA Iris — Advanced browser automation with Playwright."""
 
     @property
     def name(self) -> str:
-        return "qa-melpomene"
+        return "qa-iris"
 
     @property
     def display_name(self) -> str:
-        return "QA Melpomene"
+        return "QA Iris"
 
     @property
     def description(self) -> str:
         return "Advanced web browser automation and quality assurance testing using Playwright with visual analysis capabilities"
 
     def get_available_tools(self) -> list[str]:
-        """Get the list of tools available to QA Melpomene."""
+        """Get the list of tools available to QA Iris."""
         return [
             # Core agent tools
             # Browser control and initialization
@@ -72,9 +72,9 @@ class QualityAssuranceMelpomeneAgent(BaseAgent):
         ]
 
     def get_system_prompt(self) -> str:
-        """Get QA Melpomene's specialized system prompt."""
+        """Get QA Iris's specialized system prompt."""
         return """
-You are QA Melpomene, an advanced autonomous browser automation and QA testing agent powered by Playwright!
+You are QA Iris, an advanced autonomous browser automation and QA testing agent powered by Playwright!
 
 You specialize in:
 🎯 **Quality Assurance Testing** - automated testing of web applications and user workflows

@@ -7,6 +7,7 @@
 # YELLOW = '\033[1;33m'
 # BOLD = '\033[1m'
 import asyncio
+import contextlib
 import os
 import sys
 from pathlib import Path
@@ -46,6 +47,15 @@ from code_muse.config import (
     get_config_keys,
     get_value,
 )
+
+# Optional TPS meter integration for bottom toolbar
+_tps_state = None
+try:
+    from code_muse.plugins.tps_meter.register_callbacks import get_tps_state
+
+    _tps_state = get_tps_state()
+except ImportError:
+    pass
 
 
 def _sanitize_for_encoding(text: str) -> str:
@@ -133,8 +143,9 @@ class SetCompleter(Completer):
         if not stripped_text_for_trigger_check.startswith(self.trigger + " "):
             return
 
-        # Determine the part of the text that is relevant for this completer
-        # This handles cases like "  /set foo" where the trigger isn't at the start of the string
+        # Determine the part of the text that is relevant for this completer.
+        # This handles cases like "  /set foo" where the trigger
+        # isn't at the start of the string.
         actual_trigger_pos = text_before_cursor.find(self.trigger)
 
         # Extract the input after /set and space (up to cursor)
@@ -152,7 +163,8 @@ class SetCompleter(Completer):
 
         for key in config_keys:
             if key == "model" or key == "muse_token":
-                continue  # exclude 'model' and 'muse_token' from regular /set completions
+                # Exclude 'model' and 'muse_token' from regular /set completions
+                continue
             if key.startswith(text_after_trigger):
                 prev_value = get_value(key)
                 value_part = f" = {prev_value}" if prev_value is not None else " = "
@@ -292,7 +304,8 @@ class CDCompleter(Completer):
         text_before_cursor = document.text_before_cursor
         stripped_text = text_before_cursor.lstrip()
 
-        # Require a space after /cd before showing completions (consistency with other completers)
+        # Require a space after /cd before showing completions
+        # (consistency with other completers)
         if not stripped_text.startswith(self.trigger + " "):
             return
 
@@ -321,7 +334,8 @@ class CDCompleter(Completer):
                 original_prefix = None
 
             for d in dirnames:
-                # Build the completion text so we keep the already-typed directory parts.
+                # Build the completion text so we keep the
+                # already-typed directory parts.
                 if user_prefix and original_prefix:
                     # Restore ~ prefix
                     suggestion = user_prefix + d + os.sep
@@ -451,7 +465,8 @@ class SlashCompleter(Completer):
                             "text": alias,
                             "display": f"/{alias} (alias for /{cmd.name})",
                             "meta": cmd.description,
-                            "sort_key": alias.lower(),  # Sort by alias name, not primary command
+                            "sort_key": alias.lower(),
+                            # Sort by alias name, not primary command
                         }
                     )
 
@@ -616,26 +631,26 @@ async def get_input_with_combined_completion(
     # Ctrl+X keybinding - exit with KeyboardInterrupt for shell command cancellation
     @bindings.add(Keys.ControlX)
     def _(event):
-        try:
+        with contextlib.suppress(Exception):
+            # Ignore "Return value already set" errors when exit was
+            # already called. This happens when user presses multiple
+            # exit keys in quick succession.
             event.app.exit(exception=KeyboardInterrupt)
-        except Exception:
-            # Ignore "Return value already set" errors when exit was already called
-            # This happens when user presses multiple exit keys in quick succession
-            pass
 
     # Escape keybinding - exit with KeyboardInterrupt
     @bindings.add(Keys.Escape)
     def _(event):
-        try:
+        with contextlib.suppress(Exception):
+            # Ignore "Return value already set" errors when exit
+            # was already called.
             event.app.exit(exception=KeyboardInterrupt)
-        except Exception:
-            # Ignore "Return value already set" errors when exit was already called
-            pass
 
     # NOTE: We intentionally do NOT override Ctrl+C here.
-    # prompt_toolkit's default Ctrl+C handler properly resets the terminal state on Windows.
-    # Overriding it with event.app.exit(exception=KeyboardInterrupt) can leave the terminal
-    # in a bad state where characters cannot be typed. Let prompt_toolkit handle Ctrl+C natively.
+    # prompt_toolkit's default Ctrl+C handler properly resets the
+    # terminal state on Windows. Overriding it with
+    # event.app.exit(exception=KeyboardInterrupt) can leave the
+    # terminal in a bad state where characters cannot be typed.
+    # Let prompt_toolkit handle Ctrl+C natively.
 
     # Toggle multiline with Alt+M
     @bindings.add(Keys.Escape, "m")
@@ -704,9 +719,12 @@ async def get_input_with_combined_completion(
             buffer.start_completion(select_first=False)
 
     # Handle bracketed paste - smart detection for text vs images.
-    # Most terminals (Windows included!) send Ctrl+V through bracketed paste.
-    # - If there's meaningful text content → paste as text (drag-and-drop file paths, copied text)
-    # - If text is empty/whitespace → check for clipboard image (image paste on Windows)
+    # Most terminals (Windows included!) send Ctrl+V through
+    # bracketed paste.
+    # - If there's meaningful text content → paste as text
+    #   (drag-and-drop file paths, copied text)
+    # - If text is empty/whitespace → check for clipboard image
+    #   (image paste on Windows)
     @bindings.add(Keys.BracketedPaste)
     def handle_bracketed_paste(event):
         """Handle bracketed paste - smart text vs image detection."""
@@ -748,8 +766,9 @@ async def get_input_with_combined_completion(
                 placeholder = capture_clipboard_image_to_pending()
                 if placeholder:
                     event.app.current_buffer.insert_text(placeholder + " ")
-                    # The placeholder itself is visible feedback - no need for extra output
-                    # Use bell for audible feedback (works in most terminals)
+                    # The placeholder itself is visible feedback -
+                    # no need for extra output. Use bell for audible
+                    # feedback (works in most terminals).
                     event.app.output.bell()
                     return  # Don't also paste text
         except Exception:
@@ -841,11 +860,27 @@ async def get_input_with_combined_completion(
         key_bindings=bindings,
         input_processors=[AttachmentPlaceholderProcessor()],
     )
-    # If they pass a string, backward-compat: convert it to formatted_text
-    if isinstance(prompt_str, str):
-        from prompt_toolkit.formatted_text import FormattedText
 
-        prompt_str = FormattedText([(None, prompt_str)])
+    # Build dynamic prompt that includes TPS stats inline (if plugin loaded)
+    def _build_prompt():
+        if isinstance(prompt_str, str):
+            from prompt_toolkit.formatted_text import FormattedText
+
+            parts = FormattedText([(None, prompt_str)])
+        else:
+            if hasattr(prompt_str, "__iter__"):
+                parts = list(prompt_str)
+            else:
+                parts = [prompt_str]
+
+        # Append TPS stats before the arrow if available
+        if _tps_state is not None:
+            tps_text = _tps_state.get_toolbar_text()
+            if tps_text:
+                parts.insert(-1, ("class:tps-meter", f" {tps_text} "))
+
+        return parts
+
     style = Style.from_dict(
         {
             # Keys must AVOID the 'class:' prefix – that prefix is used only when
@@ -857,9 +892,10 @@ async def get_input_with_combined_completion(
             "cwd": "bold ansibrightgreen",
             "arrow": "bold ansibrightblue",
             "attachment-placeholder": "italic ansicyan",
+            "tps-meter": "italic ansigreen",
         }
     )
-    text = await session.prompt_async(prompt_str, style=style)
+    text = await session.prompt_async(_build_prompt, style=style)
     # NOTE: We used to call update_model_in_input(text) here to handle /model and /m
     # commands at the prompt level, but that prevented the command handler from running
     # and emitting success messages. Now we let all /model commands fall through to

@@ -103,9 +103,9 @@ async def filter_engine_callback(
 # ---------------------------------------------------------------------------
 
 
-_INIT_MARKDOWN = """# Fast-Puppy Token Saving
+_INIT_MARKDOWN = """# Muse Token Saving
 
-This project uses Fast-Puppy to compress shell command output, reducing token usage by 60-90%.
+This project uses Muse to compress shell command output, reducing token usage by 60-90%.
 
 ## Enabled Strategies
 - Git output compression (status, log, diff)
@@ -138,28 +138,26 @@ def _detect_project_type(cwd: Path) -> str | None:
 
 
 def _on_custom_command(command: str, name: str) -> bool | None:  # noqa: ARG001
-    """Handle ``/init`` — one-command Fast-Puppy setup."""
+    """Handle ``/init`` — one-command Muse setup."""
     if name != "init":
         return None
 
     cwd = Path.cwd()
     manifest = _detect_project_type(cwd)
 
-    md_path = cwd / "FAST_PUPPY.md"
+    md_path = cwd / "MUSE.md"
     if md_path.exists():
-        emit_info("FAST_PUPPY.md already exists — nothing to do.")
+        emit_info("MUSE.md already exists — nothing to do.")
         return True
 
     md_path.write_text(_INIT_MARKDOWN, encoding="utf-8")
     if manifest:
         emit_success(
-            f"✅ Fast-Puppy initialized. Detected {manifest}. "
-            f"Created FAST_PUPPY.md. Filter engine is active."
+            f"✅ Muse initialized. Detected {manifest}. "
+            f"Created MUSE.md. Filter engine is active."
         )
     else:
-        emit_success(
-            "✅ Fast-Puppy initialized. Created FAST_PUPPY.md. Filter engine is active."
-        )
+        emit_success("✅ Muse initialized. Created MUSE.md. Filter engine is active.")
     return True
 
 
@@ -170,7 +168,7 @@ def _on_custom_command(command: str, name: str) -> bool | None:  # noqa: ARG001
 
 def _on_custom_command_help() -> list[tuple[str, str]]:
     return [
-        ("/init", "Initialize Fast-Puppy in the current project"),
+        ("/init", "Initialize Muse in the current project"),
     ]
 
 

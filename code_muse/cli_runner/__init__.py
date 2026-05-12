@@ -101,11 +101,11 @@ async def main():
             import pyfiglet
 
             intro_lines = pyfiglet.figlet_format(
-                "FAST PUPPY", font="ansi_shadow"
+                "Muse", font="ansi_shadow"
             ).split("\n")
 
-            # Simple blue to green gradient (top to bottom)
-            gradient_colors = ["bright_blue", "bright_cyan", "bright_green"]
+            # Warm gold to deep red gradient (top to bottom)
+            gradient_colors = ["gold1", "dark_orange", "red1"]
             display_console.print("\n")
 
             lines = []
@@ -113,7 +113,7 @@ async def main():
             for line_num, line in enumerate(intro_lines):
                 if line.strip():
                     # Use line position to determine color
-                    # (top blue, middle cyan, bottom green)
+                    # (top gold, middle orange, bottom red)
                     color_idx = min(line_num // 2, len(gradient_colors) - 1)
                     color = gradient_colors[color_idx]
                     lines.append(f"[{color}]{line}[/{color}]")

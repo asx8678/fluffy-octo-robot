@@ -172,7 +172,7 @@ class SubAgentConsoleManager:
 
         Args:
             session_id: Unique identifier for this agent session.
-            agent_name: Name of the agent (e.g., 'muse', 'qa-melpomene').
+            agent_name: Name of the agent (e.g., 'muse', 'qa-iris').
             model_name: Name of the model being used (e.g., 'gpt-4o').
         """
         with self._agents_lock:
