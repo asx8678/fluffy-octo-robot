@@ -1,0 +1,393 @@
+# Shell Minimizer — built-in pipeline definitions
+#
+# Each [filters.<name>] table defines a pipeline applied to shell
+# command output before it reaches the LLM.  Pipelines are matched
+# against the first two tokens of the command (program + subcommand).
+#
+# Schema version must be 1.
+#
+# Regex patterns use TOML *literal* strings ('...') so that backslashes
+# like \d, \s, \. are passed through literally to the regex engine.
+schema_version = 1
+
+
+# ============================================================================
+# Git family
+# ============================================================================
+
+[filters.git_diff]
+match_command = '^git$'
+match_subcommand = '^diff$'
+strip_ansi = true
+truncate_lines_at = 160
+head_lines = 40
+tail_lines = 20
+
+[[filters.git_diff.match_output]]
+pattern = '^$'
+message = "(empty diff)"
+
+[[filters.git_diff.replace]]
+pattern = '^diff --git.*$'
+replacement = "📁 …"
+
+[[filters.git_diff.replace]]
+pattern = '^index [0-9a-f]+\.\.[0-9a-f]+.*$'
+replacement = "🔢 …"
+
+[[filters.git_diff.replace]]
+pattern = '^@@ -\d+(,\d+)? \+\d+(,\d+)? @@.*$'
+replacement = "📍 …"
+
+
+[filters.git_log]
+match_command = '^git$'
+match_subcommand = '^log$'
+strip_ansi = true
+truncate_lines_at = 120
+head_lines = 30
+tail_lines = 5
+
+[[filters.git_log.match_output]]
+pattern = '^$'
+message = "(no commits)"
+
+
+[filters.git_branch]
+match_command = '^git$'
+match_subcommand = '^branch$'
+strip_ansi = true
+head_lines = 30
+
+[[filters.git_branch.match_output]]
+pattern = '^$'
+message = "(no branches)"
+
+
+[filters.git_fetch_push_pull]
+match_command = '^git$'
+match_subcommand = '^(fetch|push|pull)$'
+strip_ansi = true
+truncate_lines_at = 140
+head_lines = 15
+tail_lines = 10
+
+# Drop progress/status lines like "remote: ..." and "Unpacking objects: ..."
+strip_lines_matching = [
+    '^remote: Counting objects',
+    '^remote: Compressing objects',
+    '^remote: Total',
+    '^remote: Resolving deltas',
+    '^Unpacking objects:',
+    '^\s*$',
+]
+
+
+[filters.git_merge]
+match_command = '^git$'
+match_subcommand = '^merge$'
+strip_ansi = true
+truncate_lines_at = 120
+head_lines = 25
+tail_lines = 10
+
+[[filters.git_merge.match_output]]
+pattern = '^Already up to date\.?$'
+message = "Already up to date."
+
+
+# ============================================================================
+# Cargo
+# ============================================================================
+
+[filters.cargo_build_test_clippy]
+match_command = '^cargo$'
+match_subcommand = '^(build|test|clippy)$'
+strip_ansi = true
+truncate_lines_at = 120
+head_lines = 30
+max_lines = 80
+
+# Keep compilations, errors, warnings, and result summary; drop "Checking ..."
+keep_lines_matching = [
+    '^\s+Compiling',
+    '^\s+Finished',
+    '^\s+Running',
+    '^\s*error',
+    '^\s*warning',
+    '^\s*note',
+    '^\s*--> ',
+    '^error:',
+    '^warning:',
+    '^test result:',
+]
+
+[[filters.cargo_build_test_clippy.match_output]]
+pattern = '^\s*$'
+message = "(empty output)"
+
+
+# ============================================================================
+# NPM / PNPM / Yarn
+# ============================================================================
+
+[filters.npm_install_build_test]
+match_command = '^(npm|pnpm|yarn)$'
+match_subcommand = '^(install|build|test|run)$'
+strip_ansi = true
+truncate_lines_at = 120
+head_lines = 20
+tail_lines = 15
+
+# Drop spinner lines, progress bars, and tree output
+strip_lines_matching = [
+    '^\s*(⠋|⠙|⠹|⠸|⠼|⠴|⠦|⠧|⠇|⠏)\s*',
+    '^\s*$',
+    '^(\||├|└|─|│|\+)',
+    '^added \d+ package',
+    '^removed \d+ package',
+    '^changed \d+ package',
+    '^\(node:\d+\)$',
+]
+
+[[filters.npm_install_build_test.match_output]]
+pattern = '^\s*$'
+message = "(done)"
+
+
+# ============================================================================
+# Docker
+# ============================================================================
+
+[filters.docker_build]
+match_command = '^docker$'
+match_subcommand = '^(build|buildx)$'
+strip_ansi = true
+truncate_lines_at = 140
+head_lines = 15
+tail_lines = 10
+
+# Drop layer-export progress lines like "Step 1/5 : FROM ..."
+# and hash-push lines like "sha256:..."
+strip_lines_matching = [
+    '^Step \d+/\d+',
+    '^--->',
+    '^Successfully built',
+    '^Successfully tagged',
+    '^sha256:',
+]
+
+[[filters.docker_build.match_output]]
+pattern = '^\s*$'
+message = "(build complete — no output)"
+
+
+[filters.docker_push_pull]
+match_command = '^docker$'
+match_subcommand = '^(push|pull)$'
+strip_ansi = true
+truncate_lines_at = 140
+head_lines = 15
+tail_lines = 5
+
+strip_lines_matching = [
+    '^[0-9a-f]+: ',
+    '^Digest:',
+    '^Status:',
+]
+
+
+# ============================================================================
+# ls — directory listings
+# ============================================================================
+
+[filters.ls_listing]
+match_command = '^ls$'
+match_subcommand = '^(|.*)$'   # catches "ls", "ls -la", "ls -R", etc.
+strip_ansi = true
+head_lines = 40
+
+# When listing is long, compact it using compact_listing instead of raw ls output
+# The pipeline will use head_lines first; if output is still noisy, the
+# built-in compact_listing primitive in head_lines_only handles long listings.
+# For ls, we use max_lines as safety cap.
+max_lines = 60
+
+[[filters.ls_listing.match_output]]
+pattern = '^\s*$'
+message = "(empty directory)"
+
+
+# ============================================================================
+# grep / ripgrep
+# ============================================================================
+
+[filters.grep_rg]
+match_command = '^(grep|rg)$'
+match_subcommand = '^(|.*)$'
+strip_ansi = true
+truncate_lines_at = 150
+
+# Group diagnostics by file (for grep -Rn style output) up to 3 per file
+# group_by_file is applied as a post-processing step when the output matches
+# file:line:content patterns. Since this is not a built-in stage, we
+# handle it via head_lines and truncation for grep.
+head_lines = 50
+max_lines = 80
+
+[[filters.grep_rg.match_output]]
+pattern = '^\s*$'
+message = "(no matches)"
+
+
+# ============================================================================
+# find
+# ============================================================================
+
+[filters.find]
+match_command = '^find$'
+match_subcommand = '^(|.*)$'
+strip_ansi = true
+head_lines = 50
+max_lines = 70
+
+# Drop common noise directories (node_modules, .git, __pycache__, etc.)
+strip_lines_matching = [
+    '/node_modules/',
+    '/\.git/',
+    '/__pycache__/',
+    '/\.mypy_cache/',
+    '/\.pytest_cache/',
+    '/\.tox/',
+    '/\.venv/',
+    '/venv/',
+    '/\.eggs/',
+    '/\.cache/',
+    '/\.Trash/',
+]
+
+[[filters.find.match_output]]
+pattern = '^\s*$'
+message = "(nothing found)"
+
+
+# ============================================================================
+# pytest
+# ============================================================================
+
+[filters.pytest]
+match_command = '^pytest$'
+match_subcommand = '^(|.*)$'
+strip_ansi = true
+truncate_lines_at = 130
+head_lines = 15
+tail_lines = 30
+
+# Keep only failure/error summary lines; drop passing test dots/lines
+keep_lines_matching = [
+    '^FAILED',
+    '^ERROR',
+    '^=+ (FAILURES|ERRORS|short test summary)',
+    '^_+ ',
+    '^test_.*FAILED',
+    '^\.\.\.+ ',
+    '^!!! ',
+    '^^^ ',
+    '^\s*$',
+]
+
+[[filters.pytest.match_output]]
+pattern = '^(=+)\s*(\d+)\s+passed.*$'
+message = "(all tests passed)"
+
+
+# ============================================================================
+# Go
+# ============================================================================
+
+[filters.go_build_test]
+match_command = '^go$'
+match_subcommand = '^(build|test|vet|lint)$'
+strip_ansi = true
+truncate_lines_at = 130
+head_lines = 20
+tail_lines = 15
+
+# Keep only errors, failures, and the final result line
+keep_lines_matching = [
+    '^#',
+    '^ok',
+    '^FAIL',
+    '^--- FAIL',
+    '^=== RUN',
+    '^\s+--- PASS',
+    '^\?\s',
+    '^go: ',
+]
+
+[[filters.go_build_test.match_output]]
+pattern = '^ok\s'
+message = "(go: ok)"
+
+
+# ============================================================================
+# Python / pip / uv
+# ============================================================================
+
+[filters.python_pip_uv]
+match_command = '^(python|python3|pip|pip3|uv)$'
+match_subcommand = '^(install|uninstall|freeze|list|show|check|compile|build|pip|sync|lock|add|remove|run)$'
+strip_ansi = true
+truncate_lines_at = 130
+head_lines = 15
+tail_lines = 10
+
+# Drop pip progress bars, download indicators, and spinner lines
+strip_lines_matching = [
+    '^\s*(━━|━|─|│|├|└|╌|▌|█|▏|▎|▍|▋)',
+    '^Collecting ',
+    '^  Downloading ',
+    '^  Using cached ',
+    '^  Obtaining ',
+    '^  Preparing ',
+    '^Installing ',
+    '^Successfully installed',
+    '^Requirement already satisfied',
+    '^  Created wheel',
+    '^  Building wheel',
+    '^  Stored in',
+]
+
+[[filters.python_pip_uv.match_output]]
+pattern = '^\s*$'
+message = "(done — all packages satisfied)"
+
+
+# ============================================================================
+# Jest / Vitest
+# ============================================================================
+
+[filters.jest_vitest]
+match_command = '^(npx\s+)?(jest|vitest)$'
+match_subcommand = '^(|.*)$'
+strip_ansi = true
+truncate_lines_at = 130
+head_lines = 10
+tail_lines = 25
+
+# Keep only failures and the final summary table
+keep_lines_matching = [
+    '^\s+(FAIL|✕|✗|●)',
+    '^\s+(✓|PASS)',
+    '^Tests:',
+    '^Test Suites:',
+    '^Snapshots:',
+    '^Time:',
+    '^Ran all test suites',
+    '^\(FAIL',
+    '^\s+● ',
+]
+
+[[filters.jest_vitest.match_output]]
+pattern = '^\s*$'
+message = "(no tests)"

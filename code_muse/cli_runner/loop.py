@@ -1,0 +1,510 @@
+"""Interactive mode loop for Muse."""
+
+import asyncio
+import os
+import sys
+from pathlib import Path
+
+from code_muse.agents import get_current_agent
+from code_muse.cli_runner.runner import _render_response, run_prompt_with_attachments
+from code_muse.command_line.attachments import parse_prompt_attachments
+from code_muse.command_line.clipboard import get_clipboard_manager
+from code_muse.command_line.command_handler import handle_command
+from code_muse.command_line.shell_passthrough import (
+    execute_shell_passthrough,
+    is_shell_passthrough,
+)
+from code_muse.command_line.wiggum_state import (
+    get_wiggum_prompt,
+    increment_wiggum_count,
+    is_wiggum_active,
+    stop_wiggum,
+)
+from code_muse.config import (
+    AUTOSAVE_DIR,
+    COMMAND_HISTORY_FILE,
+    auto_save_session_if_enabled,
+    finalize_autosave_session,
+    save_command_to_history,
+)
+from code_muse.keymap import get_cancel_agent_display_name
+from code_muse.messaging import (
+    emit_error,
+    emit_info,
+    emit_success,
+    emit_system_message,
+    emit_warning,
+)
+from code_muse.terminal_utils import (
+    print_truecolor_warning,
+    reset_windows_terminal_ansi,
+    reset_windows_terminal_full,
+)
+
+
+def _show_startup_info(display_console) -> None:
+    """Display startup messages and terminal capability warnings."""
+    emit_system_message(
+        "Type '/exit', '/quit', or press Ctrl+D to exit the interactive mode."
+    )
+    emit_system_message("Type 'clear' to reset the conversation history.")
+    emit_system_message("Type /help to view all commands")
+    emit_system_message(
+        "Type @ for path completion, or /model to pick a model. "
+        "Toggle multiline with Alt+M or F2; newline: Ctrl+J."
+    )
+    emit_system_message("Paste images: Ctrl+V (even on Mac!), F3, or /paste command.")
+    import platform
+
+    if platform.system() == "Darwin":
+        emit_system_message(
+            "💡 macOS tip: Use Ctrl+V (not Cmd+V) to paste images in terminal."
+        )
+    cancel_key = get_cancel_agent_display_name()
+    emit_system_message(
+        f"Press {cancel_key} during processing to cancel the current task "
+        f"or inference. Use Ctrl+X to interrupt running shell commands."
+    )
+    emit_system_message(
+        "Use /autosave_load to manually load a previous autosave session."
+    )
+    emit_system_message(
+        "Use /diff to configure diff highlighting colors for file changes."
+    )
+    emit_system_message("To re-run the tutorial, use /tutorial.")
+    emit_system_message(
+        "!<command> to run shell commands directly (e.g., !git status)",
+    )
+    # Print truecolor warning LAST so it's the most visible thing on startup
+    # Big ugly red box should be impossible to miss! 🔴
+    print_truecolor_warning(display_console)
+
+
+async def _handle_initial_command(initial_command: str, agent, display_console) -> bool:
+    """Process an initial command passed on the CLI before entering the main loop.
+
+    Returns True if the initial command was fully handled, False otherwise.
+    """
+    if is_shell_passthrough(initial_command):
+        execute_shell_passthrough(initial_command)
+        return True
+
+    emit_info(f"Processing initial command: {initial_command}")
+
+    try:
+        # Check if any tool is waiting for user input before showing spinner
+        try:
+            from code_muse.tools.command_runner import is_awaiting_user_input
+
+            awaiting_input = is_awaiting_user_input()
+        except ImportError:
+            awaiting_input = False
+
+        # Run with or without spinner based on whether we're awaiting input
+        response, agent_task = await run_prompt_with_attachments(
+            agent,
+            initial_command,
+            spinner_console=display_console,
+            use_spinner=not awaiting_input,
+        )
+        if response is not None:
+            agent_response = response.output
+
+            # Update the agent's message history with the complete conversation
+            # including the final assistant response
+            if hasattr(response, "all_messages"):
+                agent.set_message_history(list(response.all_messages()))
+
+            # Emit structured message for proper markdown rendering
+            from code_muse.messaging import get_message_bus
+            from code_muse.messaging.messages import AgentResponseMessage
+
+            response_msg = AgentResponseMessage(
+                content=agent_response,
+                is_markdown=True,
+            )
+            get_message_bus().emit(response_msg)
+
+            emit_success("Continuing in Interactive Mode")
+            emit_system_message(
+                "Your command and response are preserved in the conversation history."
+            )
+
+    except Exception as e:
+        emit_error(f"Error processing initial command: {str(e)}")
+        return False
+
+    return True
+
+
+def _ensure_prompt_toolkit() -> None:
+    """Ensure prompt_toolkit is installed, installing it if missing."""
+    try:
+        from code_muse.command_line.prompt_toolkit_completion import (
+            get_input_with_combined_completion,  # noqa: F401
+            get_prompt_with_active_model,  # noqa: F401
+        )
+    except ImportError:
+        emit_warning("Warning: prompt_toolkit not installed. Installing now...")
+        try:
+            import subprocess
+
+            subprocess.check_call(
+                [sys.executable, "-m", "pip", "install", "--quiet", "prompt_toolkit"]
+            )
+
+            emit_success("Successfully installed prompt_toolkit")
+        except Exception as e:
+            emit_error(f"Error installing prompt_toolkit: {e}")
+            emit_warning("Falling back to basic input without tab completion")
+
+
+def _maybe_run_onboarding() -> None:
+    """Run the onboarding tutorial on first startup if needed."""
+    try:
+        from code_muse.command_line.onboarding_wizard import should_show_onboarding
+
+        if should_show_onboarding():
+            import concurrent.futures
+
+            from code_muse.command_line.onboarding_wizard import run_onboarding_wizard
+            from code_muse.config import set_model_name
+
+            # FREE-THREADED: ThreadPoolExecutor works with free-threaded Python 3.14.
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(lambda: asyncio.run(run_onboarding_wizard()))
+                result = future.result(timeout=300)
+
+            if result == "chatgpt":
+                emit_info("🔐 Starting ChatGPT OAuth flow...")
+                from code_muse.plugins.chatgpt_oauth.oauth_flow import run_oauth_flow
+
+                run_oauth_flow()
+                set_model_name("chatgpt-gpt-5.4")
+            elif result == "claude":
+                emit_info("🔐 Starting Claude Code OAuth flow...")
+                from code_muse.plugins.claude_code_oauth.register_callbacks import (
+                    _perform_authentication,
+                )
+
+                _perform_authentication()
+                set_model_name("claude-code-claude-opus-4-7")
+            elif result == "completed":
+                emit_info("🎉 Tutorial complete! Happy coding!")
+            elif result == "skipped":
+                emit_info("⏭️ Tutorial skipped. Run /tutorial anytime!")
+    except Exception as e:
+        emit_warning(f"Tutorial auto-start failed: {e}")
+
+
+async def _read_user_input(message_renderer, display_console) -> str:
+    """Read user input via prompt_toolkit or fallback to basic input."""
+    try:
+        from code_muse.command_line.prompt_toolkit_completion import (
+            get_input_with_combined_completion,
+            get_prompt_with_active_model,
+        )
+
+        reset_windows_terminal_ansi()
+        task = await get_input_with_combined_completion(
+            get_prompt_with_active_model(), history_file=COMMAND_HISTORY_FILE
+        )
+        try:
+            from code_muse.terminal_utils import ensure_ctrl_c_disabled
+
+            ensure_ctrl_c_disabled()
+        except ImportError:
+            pass
+        return task
+    except ImportError:
+        return input(">>> ")
+
+
+def _handle_keyboard_interrupt(display_console) -> None:
+    """Handle Ctrl+C during input by resetting terminal and stopping wiggum."""
+    reset_windows_terminal_full()
+
+    if is_wiggum_active():
+        stop_wiggum()
+        emit_warning("\n🍩 Wiggum loop stopped!")
+    else:
+        emit_warning("\nInput cancelled")
+
+
+async def _cancel_agent_task_if_running(current_agent_task) -> None:
+    """Cancel a running agent task and await its completion."""
+    if current_agent_task and not current_agent_task.done():
+        emit_info("Cancelling running agent task...")
+        current_agent_task.cancel()
+        try:  # noqa: SIM105
+            await current_agent_task
+        except asyncio.CancelledError:
+            pass
+
+
+async def _handle_eof() -> None:
+    """Handle Ctrl+D by printing goodbye."""
+    emit_success("\nGoodbye! (Ctrl+D)")
+
+
+def _is_shell_passthrough_and_execute(task: str) -> bool:
+    """If the task is a shell passthrough, execute it and return True."""
+
+    if is_shell_passthrough(task):
+        execute_shell_passthrough(task)
+        return True
+    return False
+
+
+async def _is_exit_command(task: str) -> bool:
+    """Check for exit commands and return True if exiting."""
+    if task.strip().lower() in ["exit", "quit"] or task.strip().lower() in [
+        "/exit",
+        "/quit",
+    ]:
+        emit_success("Goodbye!")
+        return True
+    return False
+
+
+def _is_clear_command(task: str) -> bool:
+    """Check for clear commands, rotate session and clear history if matched."""
+    if task.strip().lower() in ("clear", "/clear"):
+        agent = get_current_agent()
+        new_session_id = finalize_autosave_session()
+        agent.clear_message_history()
+        emit_warning("Conversation history cleared!")
+        emit_system_message("The agent will not remember previous interactions.")
+        emit_info(f"Auto-save session rotated to: {new_session_id}")
+        clipboard_manager = get_clipboard_manager()
+        clipboard_count = clipboard_manager.get_pending_count()
+        clipboard_manager.clear_pending()
+        if clipboard_count > 0:
+            emit_info(f"Cleared {clipboard_count} pending clipboard image(s)")
+        return True
+    return False
+
+
+async def _handle_slash_command(cleaned: str):
+    """Route a slash command and return a sentinel or the prompt to execute."""
+
+    try:
+        command_result = handle_command(cleaned)
+    except Exception as e:
+        emit_error(f"Command error: {e}")
+        return "__CONTINUE__"
+    if command_result is True:
+        return "__CONTINUE__"
+    elif isinstance(command_result, str):
+        if command_result == "__AUTOSAVE_LOAD__":
+            try:
+                use_interactive_picker = sys.stdin.isatty() and sys.stdout.isatty()
+                if os.getenv("MUSE_NO_TUI") == "1":
+                    use_interactive_picker = False
+                if use_interactive_picker:
+                    from code_muse.command_line.autosave_menu import (
+                        interactive_autosave_picker,
+                    )
+                    from code_muse.config import set_current_autosave_from_session_name
+                    from code_muse.session_storage import (
+                        load_session,
+                        restore_autosave_interactively,
+                    )
+
+                    chosen_session = await interactive_autosave_picker()
+                    if not chosen_session:
+                        emit_warning("Autosave load cancelled")
+                        return "__CONTINUE__"
+                    base_dir = Path(AUTOSAVE_DIR)
+                    history = load_session(chosen_session, base_dir)
+                    agent = get_current_agent()
+                    agent.set_message_history(history)
+                    set_current_autosave_from_session_name(chosen_session)
+                    total_tokens = sum(
+                        agent.estimate_tokens_for_message(msg) for msg in history
+                    )
+                    session_path = base_dir / f"{chosen_session}.json"
+                    emit_success(
+                        f"✅ Autosave loaded: {len(history)} messages "
+                        f"({total_tokens} tokens)\n📁 From: {session_path}"
+                    )
+                    from code_muse.command_line.autosave_menu import (
+                        display_resumed_history,
+                    )
+
+                    display_resumed_history(history)
+                else:
+                    await restore_autosave_interactively(Path(AUTOSAVE_DIR))
+            except Exception as e:
+                emit_error(f"Failed to load autosave: {e}")
+            return "__CONTINUE__"
+        else:
+            return command_result
+    elif command_result is False:
+        return None
+    return None
+
+
+async def _run_main_input_loop(message_renderer, display_console):
+    """Gather and process user input until a non-command task is ready."""
+    while True:
+        current_agent = get_current_agent()
+        user_prompt = current_agent.get_user_prompt() or "Enter your coding task:"
+        emit_info(f"{user_prompt}\n")
+
+        try:
+            task = await _read_user_input(message_renderer, display_console)
+        except KeyboardInterrupt, asyncio.CancelledError:
+            _handle_keyboard_interrupt(display_console)
+            continue
+        except EOFError:
+            await _handle_eof()
+            return None
+
+        if _is_shell_passthrough_and_execute(task):
+            continue
+        if await _is_exit_command(task):
+            return None
+        if _is_clear_command(task):
+            continue
+
+        processed = parse_prompt_attachments(task)
+        cleaned = (processed.prompt or "").strip()
+        if cleaned.startswith("/"):
+            action = await _handle_slash_command(cleaned)
+            if action == "__CONTINUE__":
+                continue
+            if isinstance(action, str):
+                task = action
+
+        if task.strip():
+            save_command_to_history(task)
+            return task
+
+
+def _handle_agent_cancellation(display_console) -> None:
+    """Reset terminal state after an agent task is cancelled."""
+    reset_windows_terminal_ansi()
+    try:
+        from code_muse.terminal_utils import ensure_ctrl_c_disabled
+
+        ensure_ctrl_c_disabled()
+    except ImportError:
+        pass
+
+    if is_wiggum_active():
+        stop_wiggum()
+        emit_warning("🍩 Wiggum loop stopped due to cancellation")
+
+
+async def _render_and_autosave(result, current_agent, display_console) -> None:
+    """Render agent response and autosave session."""
+    _render_response(result, current_agent, display_console)
+    # Brief pause to ensure all messages are rendered
+    await asyncio.sleep(0.1)
+    auto_save_session_if_enabled()
+
+
+async def _wiggum_loop(current_agent, message_renderer, display_console):
+    """Run the wiggum re-loop until it completes or is cancelled.
+
+    Returns the current agent after the wiggum loop completes.
+    """
+    while is_wiggum_active():
+        wiggum_prompt = get_wiggum_prompt()
+        if not wiggum_prompt:
+            stop_wiggum()
+            break
+
+        loop_num = increment_wiggum_count()
+        emit_warning(f"\n🍩 WIGGUM RELOOPING! (Loop #{loop_num})")
+        emit_system_message(f"Re-running prompt: {wiggum_prompt}")
+
+        new_session_id = finalize_autosave_session()
+        current_agent.clear_message_history()
+        emit_system_message(f"Context cleared. Session rotated to: {new_session_id}")
+
+        await asyncio.sleep(0.5)
+
+        try:
+            result, _ = await run_prompt_with_attachments(
+                current_agent,
+                wiggum_prompt,
+                spinner_console=message_renderer.console,
+            )
+
+            if result is None:
+                emit_warning("Wiggum loop cancelled by user")
+                stop_wiggum()
+                break
+
+            await _render_and_autosave(result, current_agent, display_console)
+
+        except KeyboardInterrupt:
+            emit_warning("\n🍩 Wiggum loop interrupted by Ctrl+C")
+            stop_wiggum()
+            break
+        except Exception as e:
+            emit_error(f"Wiggum loop error: {e}")
+            stop_wiggum()
+            break
+
+    return current_agent
+
+
+async def interactive_mode(message_renderer, initial_command: str = None) -> None:
+    """Run the agent in interactive mode."""
+
+    display_console = message_renderer.console
+    current_agent = get_current_agent()
+
+    _show_startup_info(display_console)
+
+    if initial_command:
+        await _handle_initial_command(initial_command, current_agent, display_console)
+
+    _ensure_prompt_toolkit()
+
+    # Autosave loading is now manual - use /autosave_load command
+
+    _maybe_run_onboarding()
+
+    # Track the current agent task for cancellation on quit
+    current_agent_task = None
+
+    while True:
+        task = await _run_main_input_loop(message_renderer, display_console)
+        if task is None:
+            await _cancel_agent_task_if_running(current_agent_task)
+            break
+
+        current_agent = get_current_agent()
+
+        try:
+            result, current_agent_task = await run_prompt_with_attachments(
+                current_agent,
+                task,
+                spinner_console=message_renderer.console,
+            )
+            if result is None:
+                _handle_agent_cancellation(display_console)
+                continue
+            await _render_and_autosave(result, current_agent, display_console)
+        except Exception:
+            from code_muse.messaging.queue_console import get_queue_console
+
+            get_queue_console().print_exception()
+            auto_save_session_if_enabled()
+
+        current_agent = await _wiggum_loop(
+            current_agent, message_renderer, display_console
+        )
+
+        # Re-disable Ctrl+C if needed (uvx mode) - must be done after
+        # each iteration as various operations may restore console mode
+        try:
+            from code_muse.terminal_utils import ensure_ctrl_c_disabled
+
+            ensure_ctrl_c_disabled()
+        except ImportError:
+            pass

@@ -1,0 +1,226 @@
+#!/usr/bin/env python3
+"""Test script to verify file permission prompts work correctly."""
+
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+# Add the project root to Python path
+sys.path.insert(0, str(Path(__file__).parent))
+
+from code_muse.callbacks import on_file_permission
+from code_muse.tools.file_modifications import (
+    _delete_file,
+    delete_snippet_from_file,
+    replace_in_file,
+    write_to_file,
+)
+
+
+class TestFilePermissions(unittest.TestCase):
+    """Test cases for file permission prompts."""
+
+    def setUp(self):
+        """Set up test environment."""
+        self.temp_dir = Path(tempfile.mkdtemp())
+        self.test_file = self.temp_dir / "test.txt"
+        with open(self.test_file, "w") as f:
+            f.write("Hello, world!\nThis is a test file.\n")
+
+    def tearDown(self):
+        """Clean up test environment."""
+        if self.test_file.exists():
+            self.test_file.unlink()
+        self.temp_dir.rmdir()
+
+    def test_prompt_for_file_permission_granted(self):
+        """Test that permission is granted when user enters 'y'."""
+        from code_muse.callbacks import _callbacks
+
+        # Create a mock callback that returns True
+        def mock_callback(
+            context,
+            file_path,
+            operation,
+            preview=None,
+            message_group=None,
+            operation_data=None,
+        ):
+            return True
+
+        # Register the mock callback
+        original_callbacks = _callbacks["file_permission"].copy()
+        _callbacks["file_permission"] = [(0, mock_callback)]
+
+        try:
+            result = on_file_permission(None, self.test_file, "edit")
+            # Should return [True] from the mocked callback
+            self.assertEqual(result, [True])
+        finally:
+            # Restore original callbacks
+            _callbacks["file_permission"] = original_callbacks
+
+    def test_prompt_for_file_permission_denied(self):
+        """Test that permission is denied when user enters 'n'."""
+        from code_muse.callbacks import _callbacks
+
+        # Create a mock callback that returns False
+        def mock_callback(
+            context,
+            file_path,
+            operation,
+            preview=None,
+            message_group=None,
+            operation_data=None,
+        ):
+            return False
+
+        # Register the mock callback
+        original_callbacks = _callbacks["file_permission"].copy()
+        _callbacks["file_permission"] = [(0, mock_callback)]
+
+        try:
+            result = on_file_permission(None, self.test_file, "edit")
+            # Should return [False] from the mocked callback
+            self.assertEqual(result, [False])
+        finally:
+            # Restore original callbacks
+            _callbacks["file_permission"] = original_callbacks
+
+    def test_prompt_for_file_permission_no_plugins(self):
+        """Test that permission is automatically granted when no plugins registered."""
+        # Temporarily unregister plugins
+        from code_muse.callbacks import _callbacks
+
+        original_callbacks = _callbacks["file_permission"].copy()
+        _callbacks["file_permission"] = []
+
+        try:
+            result = on_file_permission(None, self.test_file, "edit")
+            self.assertEqual(result, [])  # Should return empty list when no plugins
+        finally:
+            # Restore callbacks
+            _callbacks["file_permission"] = original_callbacks
+
+    @patch("code_muse.callbacks.on_file_permission")
+    def test_write_to_file_with_permission_denied(self, mock_permission):
+        """Test write_to_file when permission is denied."""
+        mock_permission.return_value = [False]
+
+        context = MagicMock()
+        result = write_to_file(context, self.test_file, "New content", True)
+
+        self.assertFalse(result["success"])
+        self.assertIn("USER REJECTED", result["message"])
+        self.assertFalse(result["changed"])
+        self.assertTrue(result["user_rejection"])
+        self.assertEqual(result["rejection_type"], "explicit_user_denial")
+
+    @patch("code_muse.callbacks.on_file_permission")
+    def test_write_to_file_with_permission_granted(self, mock_permission):
+        """Test write_to_file when permission is granted."""
+        mock_permission.return_value = [True]
+
+        context = MagicMock()
+        result = write_to_file(context, self.test_file, "New content", True)
+
+        self.assertTrue(result["success"])
+        self.assertTrue(result["changed"])
+
+        # Verify file was actually written
+        with open(self.test_file) as f:
+            content = f.read()
+        self.assertEqual(content, "New content")
+
+    @patch("code_muse.callbacks.on_file_permission")
+    @patch("code_muse.config.get_yolo_mode")
+    def test_write_to_file_in_yolo_mode(self, mock_yolo, mock_permission):
+        """Test write_to_file in yolo mode (no permission prompt)."""
+        mock_yolo.return_value = True
+        mock_permission.return_value = [True]  # Yolo auto-approves via callbacks
+
+        context = MagicMock()
+        result = write_to_file(context, self.test_file, "Yolo content", True)
+
+        self.assertTrue(result["success"])
+        self.assertTrue(result["changed"])
+
+        # Verify file was actually written
+        with open(self.test_file) as f:
+            content = f.read()
+        self.assertEqual(content, "Yolo content")
+
+    @patch("code_muse.callbacks.on_file_permission")
+    def test_delete_snippet_with_permission_denied(self, mock_permission):
+        """Test delete_snippet_from_file when permission is denied."""
+        mock_permission.return_value = [False]
+
+        context = MagicMock()
+        result = delete_snippet_from_file(context, self.test_file, "Hello, world!")
+
+        self.assertFalse(result["success"])
+        self.assertIn("USER REJECTED", result["message"])
+        self.assertFalse(result["changed"])
+        self.assertTrue(result["user_rejection"])
+        self.assertEqual(result["rejection_type"], "explicit_user_denial")
+
+    @patch("code_muse.callbacks.on_file_permission")
+    def test_replace_in_file_with_permission_denied(self, mock_permission):
+        """Test replace_in_file when permission is denied."""
+        mock_permission.return_value = [False]
+
+        context = MagicMock()
+        replacements = [{"old_str": "world", "new_str": "universe"}]
+        result = replace_in_file(context, self.test_file, replacements)
+
+        self.assertFalse(result["success"])
+        self.assertIn("USER REJECTED", result["message"])
+        self.assertFalse(result["changed"])
+        self.assertTrue(result["user_rejection"])
+        self.assertEqual(result["rejection_type"], "explicit_user_denial")
+
+    @patch("code_muse.callbacks.on_file_permission")
+    def test_delete_file_with_permission_denied(self, mock_permission):
+        """Test _delete_file when permission is denied."""
+        mock_permission.return_value = [False]
+
+        context = MagicMock()
+        result = _delete_file(context, self.test_file)
+
+        self.assertFalse(result["success"])
+        self.assertIn("USER REJECTED", result["message"])
+        self.assertFalse(result["changed"])
+        self.assertTrue(result["user_rejection"])
+        self.assertEqual(result["rejection_type"], "explicit_user_denial")
+
+        # Verify file still exists
+        self.assertTrue(self.test_file.exists())
+
+    @patch("code_muse.tools.file_modifications.emit_success")
+    @patch("code_muse.tools.file_modifications._emit_diff_message")
+    @patch("code_muse.callbacks.on_file_permission")
+    def test_delete_file_does_not_emit_diff(
+        self, mock_permission, mock_emit_diff, mock_emit_success
+    ):
+        """Test _delete_file reports deletion without diff output."""
+        mock_permission.return_value = [True]
+
+        context = MagicMock()
+        result = _delete_file(context, self.test_file)
+
+        self.assertTrue(result["success"])
+        self.assertTrue(result["changed"])
+        self.assertIn("deleted successfully", result["message"])
+        self.assertNotIn("diff", result)
+        mock_emit_diff.assert_not_called()
+        mock_emit_success.assert_called_once()
+        call_args = str(mock_emit_success.call_args)
+        assert "Deleted file:" in call_args
+        assert str(self.test_file.name) in call_args
+        self.assertFalse(self.test_file.exists())
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,0 +1,208 @@
+"""
+Register callbacks for Claude Code hooks plugin.
+
+Integrates the hook engine with code_muse's callback system.
+"""
+
+import logging
+from typing import Any
+
+from code_muse.callbacks import register_callback
+from code_muse.hook_engine import EventData, HookEngine
+
+from .config import load_hooks_config_with_sources
+
+_SUBAGENT_NAMES = frozenset(
+    {
+        "pack_leader",
+        "bloodhound",
+        "muse",
+        "code_muse",
+        "retriever",
+        "shepherd",
+        "terrier",
+        "watchdog",
+        "subagent",
+        "sub_agent",
+    }
+)
+
+logger = logging.getLogger(__name__)
+
+_hook_engine: HookEngine | None = None
+
+
+def _initialize_engine() -> HookEngine | None:
+    from code_muse.hook_engine.models import HookRegistry
+    from code_muse.hook_engine.registry import build_registry_from_config
+
+    merged_config, sources = load_hooks_config_with_sources()
+
+    if not merged_config:
+        logger.info("No hooks configuration found - Claude Code hooks disabled")
+        return None
+
+    try:
+        # Build registry per-source so project hooks can be marked untrusted
+        registry = HookRegistry()
+        for source_info in sources:
+            source = source_info.get("source", "global")
+            trusted = source_info.get("trusted", source == "global")
+            cfg = source_info.get("config", {})
+            if not cfg:
+                continue
+            sub_registry = build_registry_from_config(
+                cfg,
+                source=source,  # type: ignore[arg-type]
+                trusted=trusted,
+            )
+            # Merge sub_registry into main registry
+            for attr_name in [
+                "pre_tool_use",
+                "post_tool_use",
+                "session_start",
+                "session_end",
+                "pre_compact",
+                "user_prompt_submit",
+                "notification",
+                "stop",
+                "subagent_stop",
+            ]:
+                for hook in getattr(sub_registry, attr_name, []):
+                    registry.add_hook(attr_name, hook)
+
+        engine = HookEngine(strict_validation=False)
+        engine._registry = registry
+        stats = engine.get_stats()
+        logger.info(
+            f"Hook engine ready - Total: {stats['total_hooks']}, "
+            f"Enabled: {stats['enabled_hooks']}"
+        )
+        return engine
+    except Exception as e:
+        logger.error(f"Failed to initialize hook engine: {e}", exc_info=True)
+        return None
+
+
+_hook_engine = _initialize_engine()
+
+
+async def on_pre_tool_call_hook(
+    tool_name: str,
+    tool_args: dict[str, Any],
+    context: Any = None,
+) -> dict[str, Any | None]:
+    """Pre-tool callback — executes hooks before tool runs. Can block."""
+    if not _hook_engine:
+        return None
+
+    event_data = EventData(
+        event_type="PreToolUse",
+        tool_name=tool_name,
+        tool_args=tool_args,
+        context={"context": context} if context else {},
+    )
+
+    try:
+        result = await _hook_engine.process_event("PreToolUse", event_data)
+
+        if result.blocked:
+            logger.debug(
+                f"Tool '{tool_name}' blocked by hook: {result.blocking_reason}"
+            )
+            return {
+                "blocked": True,
+                "reason": result.blocking_reason,
+                "error_message": result.blocking_reason,
+            }
+        return None
+    except Exception as e:
+        logger.error(f"Error in pre-tool hook: {e}", exc_info=True)
+        return None
+
+
+async def on_post_tool_call_hook(
+    tool_name: str,
+    tool_args: dict[str, Any],
+    result: Any,
+    duration_ms: float,
+    context: Any = None,
+) -> None:
+    """Post-tool callback — executes hooks after tool completes (observation only)."""
+    if not _hook_engine:
+        return
+
+    event_data = EventData(
+        event_type="PostToolUse",
+        tool_name=tool_name,
+        tool_args=tool_args,
+        context={"result": result, "duration_ms": duration_ms, "context": context},
+    )
+
+    try:
+        await _hook_engine.process_event("PostToolUse", event_data)
+    except Exception as e:
+        logger.error(f"Error in post-tool hook: {e}", exc_info=True)
+
+
+register_callback("pre_tool_call", on_pre_tool_call_hook)
+register_callback("post_tool_call", on_post_tool_call_hook)
+
+
+async def on_startup_hook() -> None:
+    """Startup callback — fires SessionStart hooks when code_muse boots."""
+    if not _hook_engine:
+        return
+
+    event_data = EventData(
+        event_type="SessionStart",
+        tool_name="session",
+        tool_args={},
+    )
+
+    try:
+        await _hook_engine.process_event("SessionStart", event_data)
+    except Exception as e:
+        logger.error(f"Error in SessionStart hook: {e}", exc_info=True)
+
+
+async def on_agent_run_end_hook(
+    agent_name: str,
+    model_name: str,
+    session_id: str | None = None,
+    success: bool = True,
+    error: Exception | None = None,
+    response_text: str | None = None,
+    metadata: dict | None = None,
+) -> None:
+    """agent_run_end callback — fires Stop or SubagentStop hooks."""
+    if not _hook_engine:
+        return
+
+    agent_lower = (agent_name or "").lower()
+    is_subagent = any(name in agent_lower for name in _SUBAGENT_NAMES)
+    event_type = "SubagentStop" if is_subagent else "Stop"
+
+    event_data = EventData(
+        event_type=event_type,
+        tool_name=agent_name or "agent",
+        tool_args={},
+        context={
+            "agent_name": agent_name,
+            "model_name": model_name,
+            "session_id": session_id,
+            "success": success,
+            "error": str(error) if error else None,
+        },
+    )
+
+    try:
+        await _hook_engine.process_event(event_type, event_data)
+    except Exception as e:
+        logger.error(f"Error in {event_type} hook: {e}", exc_info=True)
+
+
+register_callback("startup", on_startup_hook)
+register_callback("agent_run_end", on_agent_run_end_hook)
+
+logger.info("Claude Code hooks plugin registered")

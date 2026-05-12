@@ -1,0 +1,13 @@
+"""Universal Constructor - Dynamic tool creation and management plugin.
+
+This plugin enables users to create, manage, and deploy custom tools
+that extend Muse's capabilities. Tools are stored in the user's
+config directory and can be organized into namespaces via subdirectories.
+"""
+
+from pathlib import Path
+
+# User tools directory - where user-created UC tools live
+USER_UC_DIR = Path.home() / ".muse" / "plugins" / "universal_constructor"
+
+__all__ = ["USER_UC_DIR"]

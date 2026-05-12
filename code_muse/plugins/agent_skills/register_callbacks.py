@@ -1,0 +1,298 @@
+"""Agent Skills plugin - registers callbacks for skill integration.
+
+This plugin:
+1. Injects available skills into system prompts
+2. Registers skill-related tools
+3. Provides /skills slash command (and alias /skill)
+"""
+
+import logging
+from pathlib import Path
+from typing import Any
+
+from code_muse.callbacks import register_callback
+
+logger = logging.getLogger(__name__)
+
+# Session-level deactivated skills (not persisted to config)
+_deactivated_skills: set[str] = set()
+
+
+def _get_skills_prompt_section() -> str | None:
+    """Build the skills section to inject into system prompts.
+
+    Returns None if skills are disabled or no skills found.
+    """
+    from .config import get_disabled_skills, get_skill_directories, get_skills_enabled
+    from .discovery import discover_skills
+    from .metadata import SkillMetadata, parse_skill_metadata
+    from .prompt_builder import build_available_skills_xml, build_skills_guidance
+
+    # 1. Check if enabled
+    if not get_skills_enabled():
+        logger.debug("Skills integration is disabled, skipping prompt injection")
+        return None
+
+    # 2. Discover skills
+    skill_dirs = [Path(d) for d in get_skill_directories()]
+    discovered = discover_skills(skill_dirs)
+
+    if not discovered:
+        logger.debug("No skills discovered, skipping prompt injection")
+        return None
+
+    # 3. Parse metadata for each and filter out disabled/deactivated skills
+    disabled_skills = get_disabled_skills()
+    skills_metadata: list[SkillMetadata] = []
+
+    for skill_info in discovered:
+        # Skip disabled skills
+        if skill_info.name in disabled_skills:
+            logger.debug(f"Skipping disabled skill: {skill_info.name}")
+            continue
+
+        # Skip session-level deactivated skills
+        if skill_info.name in _deactivated_skills:
+            logger.debug(f"Skipping deactivated skill: {skill_info.name}")
+            continue
+
+        # Only include skills with valid SKILL.md
+        if not skill_info.has_skill_md:
+            logger.debug(f"Skipping skill without SKILL.md: {skill_info.name}")
+            continue
+
+        # Parse metadata
+        metadata = parse_skill_metadata(skill_info.path)
+        if metadata:
+            skills_metadata.append(metadata)
+        else:
+            logger.debug(f"Skipping skill with invalid metadata: {skill_info.name}")
+
+    # 4. Build XML + guidance
+    if not skills_metadata:
+        logger.debug("No valid skills with metadata found, skipping prompt injection")
+        return None
+
+    xml_section = build_available_skills_xml(skills_metadata)
+    guidance = build_skills_guidance()
+
+    # 5. Return combined string
+    combined = f"{xml_section}\n\n{guidance}"
+    logger.debug(f"Injecting skills section with {len(skills_metadata)} skills")
+    return combined
+
+
+def _inject_skills_into_prompt(
+    model_name: str, default_system_prompt: str, user_prompt: str
+) -> dict[str, Any | None]:
+    """Callback to inject skills into system prompt.
+
+    This is registered with the 'get_model_system_prompt' callback phase.
+    """
+    skills_section = _get_skills_prompt_section()
+
+    if not skills_section:
+        return None  # No skills, don't modify prompt
+
+    # Append skills section to system prompt
+    enhanced_prompt = f"{default_system_prompt}\n\n{skills_section}"
+
+    return {
+        "instructions": enhanced_prompt,
+        "user_prompt": user_prompt,
+        "handled": False,  # Let other handlers also process
+    }
+
+
+def _register_skills_tools() -> list[dict[str, Any]]:
+    """Callback to register skills tools.
+
+    This is registered with the 'register_tools' callback phase.
+    Returns tool definitions for the tool registry.
+    """
+    from code_muse.tools.skills_tools import (
+        register_activate_skill,
+        register_check_skill_background,
+        register_deactivate_skill,
+        register_list_or_search_skills,
+        register_run_skill_background,
+    )
+
+    return [
+        {"name": "activate_skill", "register_func": register_activate_skill},
+        {
+            "name": "list_or_search_skills",
+            "register_func": register_list_or_search_skills,
+        },
+        {"name": "deactivate_skill", "register_func": register_deactivate_skill},
+        {
+            "name": "run_skill_background",
+            "register_func": register_run_skill_background,
+        },
+        {
+            "name": "check_skill_background",
+            "register_func": register_check_skill_background,
+        },
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Slash command: /skills (and alias /skill)
+# ---------------------------------------------------------------------------
+
+_COMMAND_NAME = "skills"
+_ALIASES = ("skill",)
+
+
+def _skills_command_help() -> list[tuple[str, str]]:
+    """Advertise /skills in the /help menu."""
+    return [
+        ("skills", "Manage agent skills – browse, enable, disable, install"),
+        ("skill", "Alias for /skills"),
+    ]
+
+
+def _handle_skills_command(command: str, name: str) -> Any | None:
+    """Handle /skills and /skill slash commands.
+
+    Sub-commands:
+        /skills          – Launch interactive TUI menu
+        /skills list     – Quick text list of all skills
+        /skills install  – Browse & install from remote catalog
+        /skills enable   – Enable skills integration globally
+        /skills disable  – Disable skills integration globally
+        /skills toggle   – Toggle skills integration globally
+        /skills refresh  – Force skill re-discovery and refresh local cache
+        /skills help     – Show skills command help
+    """
+    if name not in (_COMMAND_NAME, *_ALIASES):
+        return None
+
+    from code_muse.messaging import emit_error, emit_info, emit_success, emit_warning
+    from code_muse.plugins.agent_skills.config import (
+        get_disabled_skills,
+        get_skills_enabled,
+        set_skills_enabled,
+    )
+    from code_muse.plugins.agent_skills.discovery import (
+        discover_skills,
+        refresh_skill_cache,
+    )
+    from code_muse.plugins.agent_skills.metadata import parse_skill_metadata
+    from code_muse.plugins.agent_skills.skills_menu import show_skills_menu
+
+    tokens = command.split()
+
+    if len(tokens) > 1:
+        subcommand = tokens[1].lower()
+
+        if subcommand == "list":
+            disabled_skills = get_disabled_skills()
+            skills = discover_skills()
+            enabled = get_skills_enabled()
+
+            if not skills:
+                emit_info("No skills found.")
+                emit_info("Create skills in:")
+                emit_info("  - ~/.muse/skills/")
+                emit_info("  - ./skills/")
+                return True
+
+            emit_info(
+                f"\U0001f6e0\ufe0f Skills (integration: {'enabled' if enabled else 'disabled'})"
+            )
+            emit_info(f"Found {len(skills)} skill(s):\n")
+
+            for skill in skills:
+                metadata = parse_skill_metadata(skill.path)
+                if metadata:
+                    status = (
+                        "\U0001f534 disabled"
+                        if metadata.name in disabled_skills
+                        else "\U0001f7e2 enabled"
+                    )
+                    version_str = f" v{metadata.version}" if metadata.version else ""
+                    author_str = f" by {metadata.author}" if metadata.author else ""
+                    emit_info(f"  {status} {metadata.name}{version_str}{author_str}")
+                    emit_info(f"      {metadata.description}")
+                    if metadata.tags:
+                        emit_info(f"      tags: {', '.join(metadata.tags)}")
+                else:
+                    status = (
+                        "\U0001f534 disabled"
+                        if skill.name in disabled_skills
+                        else "\U0001f7e2 enabled"
+                    )
+                    emit_info(f"  {status} {skill.name}")
+                    emit_info("      (no SKILL.md metadata found)")
+                emit_info("")
+            return True
+
+        elif subcommand == "install":
+            from code_muse.plugins.agent_skills.skills_install_menu import (
+                run_skills_install_menu,
+            )
+
+            run_skills_install_menu()
+            return True
+
+        elif subcommand == "enable":
+            set_skills_enabled(True)
+            emit_success("\u2705 Skills integration enabled globally")
+            return True
+
+        elif subcommand == "disable":
+            set_skills_enabled(False)
+            emit_warning("\U0001f534 Skills integration disabled globally")
+            return True
+
+        elif subcommand == "toggle":
+            new_state = not get_skills_enabled()
+            set_skills_enabled(new_state)
+            if new_state:
+                emit_success("✅ Skills integration enabled globally")
+            else:
+                emit_warning("🔴 Skills integration disabled globally")
+            return True
+
+        elif subcommand == "refresh":
+            refreshed = refresh_skill_cache()
+            valid_skills = [skill for skill in refreshed if skill.has_skill_md]
+            emit_success(
+                f"🔄 Refreshed skills cache: {len(refreshed)} discovered "
+                f"({len(valid_skills)} with SKILL.md)"
+            )
+            return True
+
+        elif subcommand == "help":
+            emit_info("Available /skills subcommands:")
+            emit_info("  /skills list     - List all installed skills")
+            emit_info("  /skills install  - Browse & install from catalog")
+            emit_info("  /skills enable   - Enable skills integration globally")
+            emit_info("  /skills disable  - Disable skills integration globally")
+            emit_info("  /skills toggle   - Toggle skills integration globally")
+            emit_info("  /skills refresh  - Refresh skill cache")
+            emit_info("  /skills          - Open interactive skills menu")
+            return True
+
+        else:
+            emit_error(f"Unknown subcommand: {subcommand}")
+            emit_info(
+                "Usage: /skills [list|install|enable|disable|toggle|refresh|help]"
+            )
+            return True
+
+    # No subcommand – launch TUI menu
+    show_skills_menu()
+    return True
+
+
+# ---------------------------------------------------------------------------
+# Register all callbacks
+# ---------------------------------------------------------------------------
+register_callback("get_model_system_prompt", _inject_skills_into_prompt)
+register_callback("register_tools", _register_skills_tools)
+register_callback("custom_command_help", _skills_command_help)
+register_callback("custom_command", _handle_skills_command)
+
+logger.info("Agent Skills plugin loaded")

@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_NO_MANAGED_PYTHON: "1"
+  CI: "1"
+  MUSE_TEST_FAST: "1"
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.14"
+      - name: Install dependencies
+        run: uv sync --only-dev
+      - name: ruff check
+        run: uv run ruff check --output-format github .
+      - name: ruff format
+        run: uv run ruff format --check .
+
+  typecheck:
+    name: Type check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.14"
+      - name: Install dependencies
+        run: uv sync
+      - name: mypy
+        run: uv run mypy
+
+  test:
+    name: Tests (py${{ matrix.python-version }} / ${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.14", "3.15"]
+        include:
+          - os: macos-latest
+            python-version: "3.14"
+          - os: windows-latest
+            python-version: "3.14"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: uv sync
+      - name: Run unit + security tests (excl. slow, integration)
+        run: >
+          uv run pytest tests/
+          --ignore tests/integration
+          -m "not slow"
+          -q --no-cov -n auto --dist loadfile
+        timeout-minutes: 20
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.14"
+      - name: Install dependencies
+        run: uv sync
+      - name: Run tests with coverage
+        run: >
+          uv run pytest tests/
+          --ignore tests/integration
+          -m "not slow"
+          -q --cov=code_muse --cov-report=term-missing
+        timeout-minutes: 20

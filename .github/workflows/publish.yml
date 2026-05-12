@@ -1,0 +1,62 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+
+env:
+  UV_NO_MANAGED_PYTHON: "1"
+
+jobs:
+  validate-version:
+    name: Validate tag matches pyproject.toml
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check version match
+        id: check
+        shell: python
+        run: |
+          import os
+          import tomllib
+          from pathlib import Path
+
+          version = tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"]
+          tag = os.environ["RELEASE_TAG"]
+          normalized_tag = tag[1:] if tag.startswith("v") else tag
+
+          if normalized_tag != version:
+              raise SystemExit(
+                  f"Release tag {tag!r} does not match pyproject.toml version {version!r}. "
+                  f"Use tag v{version} or update pyproject.toml before publishing."
+              )
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              print(f"version={version}", file=output)
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+
+  test:
+    name: Pre-publish tests
+    needs: validate-version
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
+  publish:
+    name: Build & publish to PyPI
+    needs: [validate-version, test]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.14"
+      - name: Build
+        run: uv build
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
