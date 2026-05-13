@@ -1,7 +1,7 @@
 """Tree-sitter based AST parser for code compression.
 
 Provides language detection and AST parsing for Python, JavaScript,
-TypeScript, and Go source code.
+TypeScript, Go, Rust, Java, C, C++, Ruby, Bash, and SQL source code.
 """
 
 import logging
@@ -19,7 +19,31 @@ class CodeLanguage(Enum):
     JAVASCRIPT = auto()
     TYPESCRIPT = auto()
     GO = auto()
+    RUST = auto()
+    JAVA = auto()
+    C = auto()
+    CPP = auto()
+    RUBY = auto()
+    BASH = auto()
+    SQL = auto()
     UNKNOWN = auto()
+
+    def to_filter_key(self) -> str:
+        """Return the MinimalFilter language key for this language."""
+        _map: dict[CodeLanguage, str] = {
+            CodeLanguage.PYTHON: "python",
+            CodeLanguage.JAVASCRIPT: "javascript",
+            CodeLanguage.TYPESCRIPT: "typescript",
+            CodeLanguage.GO: "go",
+            CodeLanguage.RUST: "rust",
+            CodeLanguage.JAVA: "java",
+            CodeLanguage.C: "cpp",
+            CodeLanguage.CPP: "cpp",
+            CodeLanguage.RUBY: "ruby",
+            CodeLanguage.BASH: "bash",
+            CodeLanguage.SQL: "sql",
+        }
+        return _map.get(self, "python")
 
 
 @dataclass
@@ -52,6 +76,18 @@ class LanguageParser:
         ".ts": CodeLanguage.TYPESCRIPT,
         ".tsx": CodeLanguage.TYPESCRIPT,
         ".go": CodeLanguage.GO,
+        ".rs": CodeLanguage.RUST,
+        ".java": CodeLanguage.JAVA,
+        ".c": CodeLanguage.C,
+        ".h": CodeLanguage.C,
+        ".cpp": CodeLanguage.CPP,
+        ".cc": CodeLanguage.CPP,
+        ".cxx": CodeLanguage.CPP,
+        ".hpp": CodeLanguage.CPP,
+        ".rb": CodeLanguage.RUBY,
+        ".sh": CodeLanguage.BASH,
+        ".bash": CodeLanguage.BASH,
+        ".sql": CodeLanguage.SQL,
     }
 
     # Shebang → language mapping
@@ -59,6 +95,9 @@ class LanguageParser:
         "python": CodeLanguage.PYTHON,
         "python3": CodeLanguage.PYTHON,
         "node": CodeLanguage.JAVASCRIPT,
+        "ruby": CodeLanguage.RUBY,
+        "bash": CodeLanguage.BASH,
+        "sh": CodeLanguage.BASH,
     }
 
     @classmethod
@@ -81,6 +120,22 @@ class LanguageParser:
                     return lang
 
         # 3. Content heuristics
+        if "fn " in source and (
+            "let " in source or "mut " in source or "impl " in source
+        ):
+            return CodeLanguage.RUST
+        if (
+            "public class " in source
+            or "private class " in source
+            or "protected class " in source
+        ):
+            return CodeLanguage.JAVA
+        if "#include" in source and ("int main" in source or "void " in source):
+            return CodeLanguage.C if "class " not in source else CodeLanguage.CPP
+        if "def " in source and ("end\n" in source or "end " in source):
+            return CodeLanguage.RUBY
+        if source.strip().startswith("SELECT ") or source.strip().startswith("CREATE "):
+            return CodeLanguage.SQL
         if "func " in source and ("package " in source or "import (" in source):
             return CodeLanguage.GO
         if "function " in source or "const " in source or "=>" in source:
@@ -115,6 +170,13 @@ class LanguageParser:
             CodeLanguage.JAVASCRIPT: "javascript",
             CodeLanguage.TYPESCRIPT: "javascript",  # TS uses JS grammar
             CodeLanguage.GO: "go",
+            CodeLanguage.RUST: "rust",
+            CodeLanguage.JAVA: "java",
+            CodeLanguage.C: "c",
+            CodeLanguage.CPP: "cpp",
+            CodeLanguage.RUBY: "ruby",
+            CodeLanguage.BASH: "bash",
+            CodeLanguage.SQL: "sql",
         }
         lang_name = lang_map.get(language)
         if not lang_name:
@@ -124,6 +186,13 @@ class LanguageParser:
             "python": "tree_sitter_python",
             "javascript": "tree_sitter_javascript",
             "go": "tree_sitter_go",
+            "rust": "tree_sitter_rust",
+            "java": "tree_sitter_java",
+            "c": "tree_sitter_c",
+            "cpp": "tree_sitter_cpp",
+            "ruby": "tree_sitter_ruby",
+            "bash": "tree_sitter_bash",
+            "sql": "tree_sitter_sql",
         }.get(lang_name, f"tree_sitter_{lang_name}")
 
         try:

@@ -16,6 +16,9 @@ from code_muse.plugins.filter_engine.registry import get_registry
 from code_muse.plugins.filter_engine.strategies.ast_compressor import (
     compress_ast_code,
 )
+from code_muse.plugins.filter_engine.strategies.ast_parser import (
+    LanguageParser,
+)
 from code_muse.plugins.filter_engine.verbosity import VerbosityLevel
 from code_muse.tools.command_runner import ShellCommandOutput
 
@@ -342,7 +345,7 @@ def compress_tree(
 
 def _extract_code_filename(command: str) -> str | None:
     """Extract the last filename with an AST-supported extension from *command*."""
-    pattern = r"[\w./-]+\.(?:py|pyi|js|mjs|cjs|jsx|ts|tsx|go)\b"
+    pattern = r"[\w./-]+\.(?:py|pyi|js|mjs|cjs|jsx|ts|tsx|go|rs|java|c|h|cpp|cc|cxx|hpp|rb|sh|bash|sql)\b"
     matches = re.findall(pattern, command)
     return matches[-1] if matches else None
 
@@ -408,30 +411,10 @@ def compress_read(
     # Fallback: traditional comment stripping + smart truncation
     cdef str text = stdout
     cdef str language_str = "python"
-    cdef object ext_match = re.search(
-        r"\.(py|pyi|js|mjs|cjs|jsx|ts|tsx|rs|go|java|cpp|c|h|rb|sh|sql)\b", command
-    )
-    if ext_match:
-        ext_map = {
-            "py": "python",
-            "pyi": "python",
-            "js": "javascript",
-            "mjs": "javascript",
-            "cjs": "javascript",
-            "jsx": "javascript",
-            "ts": "typescript",
-            "tsx": "typescript",
-            "rs": "rust",
-            "go": "go",
-            "java": "java",
-            "cpp": "cpp",
-            "c": "cpp",
-            "h": "cpp",
-            "rb": "ruby",
-            "sh": "bash",
-            "sql": "sql",
-        }
-        language_str = ext_map.get(ext_match.group(1), "python")
+    # Use LanguageParser for single-pass detection, then map to
+    # MinimalFilter key — avoids duplicated extension maps.
+    cdef object detected = LanguageParser.detect_language(stdout, filename or None)
+    language_str = detected.to_filter_key()
 
     if verbosity <= VerbosityLevel.COMPACT:
         text = MinimalFilter.strip_comments(text, language_str)
@@ -508,7 +491,6 @@ def compress_code(
     cdef bint ast_used = False
     cdef str language_str
     cdef int max_lines
-    cdef object ext_match
     cdef str truncated
 
     # Read commands
@@ -532,31 +514,10 @@ def compress_code(
             logger.debug("AST compression failed for %s, falling back", command)
 
     if not ast_used and verbosity <= VerbosityLevel.COMPACT:
-        language_str = "python"
-        ext_match = re.search(
-            r"\.(py|pyi|js|mjs|cjs|jsx|ts|tsx|rs|go|java|cpp|c|h|rb|sh|sql)\b", command
-        )
-        if ext_match:
-            ext_map = {
-                "py": "python",
-                "pyi": "python",
-                "js": "javascript",
-                "mjs": "javascript",
-                "cjs": "javascript",
-                "jsx": "javascript",
-                "ts": "typescript",
-                "tsx": "typescript",
-                "rs": "rust",
-                "go": "go",
-                "java": "java",
-                "cpp": "cpp",
-                "c": "cpp",
-                "h": "cpp",
-                "rb": "ruby",
-                "sh": "bash",
-                "sql": "sql",
-            }
-            language_str = ext_map.get(ext_match.group(1), "python")
+        # Use LanguageParser for single-pass detection, then map to
+        # MinimalFilter key — avoids duplicated extension maps.
+        detected = LanguageParser.detect_language(text, filename or None)
+        language_str = detected.to_filter_key()
         text = MinimalFilter.strip_comments(text, language_str)
 
     max_lines = 60

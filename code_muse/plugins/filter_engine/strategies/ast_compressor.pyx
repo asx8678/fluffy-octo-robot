@@ -1,4 +1,5 @@
-"""AST-aware code compressors for Python, JavaScript, and Go.
+"""AST-aware code compressors for Python, JavaScript, TypeScript, Go,
+Rust, Java, C, C++, Ruby, Bash, and SQL.
 
 Keeps semantic essentials (signatures, imports, error paths), drops
 bodies, docstrings, and whitespace.
@@ -65,6 +66,55 @@ GO_KEEP_TYPES: set[str] = {
     "if_statement",
     "for_statement",
     "call_expression",
+}
+
+# Rust node types to KEEP
+RUST_KEEP_TYPES: set[str] = {
+    "function_item",
+    "impl_item",
+    "struct_item",
+    "enum_item",
+    "trait_item",
+    "use_declaration",
+    "let_declaration",
+    "return_expression",
+}
+
+# Java node types to KEEP
+JAVA_KEEP_TYPES: set[str] = {
+    "method_declaration",
+    "class_declaration",
+    "interface_declaration",
+    "import_declaration",
+    "package_declaration",
+    "constructor_declaration",
+    "return_statement",
+    "throw_statement",
+    "try_statement",
+    "catch_clause",
+}
+
+# C/C++ node types to KEEP (shared for C and C++)
+CPP_KEEP_TYPES: set[str] = {
+    "function_definition",
+    "class_specifier",
+    "struct_specifier",
+    "declaration",
+    "preproc_include",
+    "preproc_define",
+    "return_statement",
+    "namespace_definition",
+    "template_declaration",
+}
+
+# Ruby node types to KEEP
+RUBY_KEEP_TYPES: set[str] = {
+    "method",
+    "singleton_method",
+    "class_definition",
+    "module_definition",
+    "require_call",
+    "return",
 }
 
 
@@ -228,13 +278,16 @@ def compress_python(
 
 
 def compress_javascript(
-    source: str, verbosity: VerbosityLevel | int = VerbosityLevel.COMPACT
+    source: str,
+    language: CodeLanguage | None = None,
+    verbosity: VerbosityLevel | int = VerbosityLevel.COMPACT,
 ) -> str:
     """Compress JavaScript/TypeScript — keep signatures, drop bodies."""
     level = verbosity.value if isinstance(verbosity, VerbosityLevel) else verbosity
 
-    lang = LanguageParser.detect_language(source)
-    ast = LanguageParser.parse(source, lang)
+    if language is None:
+        language = CodeLanguage.JAVASCRIPT
+    ast = LanguageParser.parse(source, language)
     if ast is None:
         return _fallback_compress(source)
 
@@ -296,6 +349,64 @@ def compress_go(
     return _build_output(source, kept_lines, comment_prefix="//")
 
 
+def compress_rust(
+    source: str, verbosity: VerbosityLevel | int = VerbosityLevel.COMPACT
+) -> str:
+    """Compress Rust source — keep fn/struct/enum/impl/trait signatures, drop bodies."""
+    level = verbosity.value if isinstance(verbosity, VerbosityLevel) else verbosity
+
+    ast = LanguageParser.parse(source, CodeLanguage.RUST)
+    if ast is None:
+        return _fallback_compress(source)
+
+    kept_lines = _collect_lines(source, ast, RUST_KEEP_TYPES, level)
+    return _build_output(source, kept_lines, comment_prefix="//")
+
+
+def compress_java(
+    source: str, verbosity: VerbosityLevel | int = VerbosityLevel.COMPACT
+) -> str:
+    """Compress Java source — keep method/class/interface signatures, drop bodies."""
+    level = verbosity.value if isinstance(verbosity, VerbosityLevel) else verbosity
+
+    ast = LanguageParser.parse(source, CodeLanguage.JAVA)
+    if ast is None:
+        return _fallback_compress(source)
+
+    kept_lines = _collect_lines(source, ast, JAVA_KEEP_TYPES, level)
+    return _build_output(source, kept_lines, comment_prefix="//")
+
+
+def compress_c_cpp(
+    source: str, language: CodeLanguage | None = None, verbosity: VerbosityLevel | int = VerbosityLevel.COMPACT
+) -> str:
+    """Compress C/C++ source — keep function/struct/class signatures, drop bodies."""
+    level = verbosity.value if isinstance(verbosity, VerbosityLevel) else verbosity
+    if language is None:
+        language = CodeLanguage.CPP
+
+    ast = LanguageParser.parse(source, language)
+    if ast is None:
+        return _fallback_compress(source)
+
+    kept_lines = _collect_lines(source, ast, CPP_KEEP_TYPES, level)
+    return _build_output(source, kept_lines, comment_prefix="//")
+
+
+def compress_ruby(
+    source: str, verbosity: VerbosityLevel | int = VerbosityLevel.COMPACT
+) -> str:
+    """Compress Ruby source — keep method/class/module signatures, drop bodies."""
+    level = verbosity.value if isinstance(verbosity, VerbosityLevel) else verbosity
+
+    ast = LanguageParser.parse(source, CodeLanguage.RUBY)
+    if ast is None:
+        return _fallback_compress(source)
+
+    kept_lines = _collect_lines(source, ast, RUBY_KEEP_TYPES, level)
+    return _build_output(source, kept_lines, comment_prefix="#")
+
+
 def _fallback_compress(source: str) -> str:
     """Fallback: strip comments when AST parsing fails."""
     lines = source.split("\n")
@@ -339,10 +450,21 @@ def compress_ast_code(
         CodeLanguage.JAVASCRIPT: compress_javascript,
         CodeLanguage.TYPESCRIPT: compress_javascript,
         CodeLanguage.GO: compress_go,
+        CodeLanguage.RUST: compress_rust,
+        CodeLanguage.JAVA: compress_java,
+        CodeLanguage.C: compress_c_cpp,
+        CodeLanguage.CPP: compress_c_cpp,
+        CodeLanguage.RUBY: compress_ruby,
     }
 
     compressor = compressors.get(language)
     if compressor:
+        # Pass the detected language to compressors that accept it;
+        # this avoids redundant re-detection inside the compressor.
+        if language in (CodeLanguage.JAVASCRIPT, CodeLanguage.TYPESCRIPT):
+            return compress_javascript(source, language=language, verbosity=verbosity)
+        if language in (CodeLanguage.C, CodeLanguage.CPP):
+            return compress_c_cpp(source, language=language, verbosity=verbosity)
         return compressor(source, verbosity)
 
     return _fallback_compress(source)
