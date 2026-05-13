@@ -994,10 +994,25 @@ def set_current_autosave_from_session_name(session_name: str) -> str:
     return _CURRENT_AUTOSAVE_ID
 
 
+# Autosave throttle: only persist to disk every N calls
+# Combined with the dirty-flag hash check in save_session(), this
+# eliminates redundant full-history JSON serialization on consecutive
+# agent turns where the user has not added new messages.
+_AUTOSAVE_THROTTLE = 4
+_autosave_counter: int = 0
+
+
 def auto_save_session_if_enabled() -> bool:
     """Automatically save the current session if auto_save_session is enabled."""
     if not get_auto_save_session():
         return False
+
+    # Throttle: only write to disk every N autosaves to avoid
+    # rewriting the entire session history as JSON on every turn.
+    global _autosave_counter
+    _autosave_counter += 1
+    if _autosave_counter % _AUTOSAVE_THROTTLE != 0:
+        return True
 
     try:
         import pathlib
