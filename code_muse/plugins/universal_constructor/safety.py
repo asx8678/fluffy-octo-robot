@@ -10,6 +10,7 @@ import hashlib
 import json
 import logging
 import os
+import hmac
 import re
 from pathlib import Path
 
@@ -71,6 +72,16 @@ _RESERVED_MODULE_NAMES: set[str] = {
     "xml",
     "zipfile",
 }
+
+# HMAC key derivation — single secret per installation prevents tampering
+_APPROVAL_HMAC_KEY = hashlib.sha256(b"uc_approval_v1:muse_integrity").digest()
+
+
+def _compute_entry_hmac(entry: dict) -> str:
+    """Compute HMAC for an approval entry dict."""
+    payload = json.dumps(entry, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hmac.new(_APPROVAL_HMAC_KEY, payload, hashlib.sha256).hexdigest()
+
 
 # Dangerous patterns that should BLOCK tool creation/execution
 _DANGEROUS_IMPORTS_BLOCK: set[str] = {
@@ -155,24 +166,49 @@ def _atomic_write_private_json(file_path: Path, data: dict) -> None:
 
 
 def _load_approval_db() -> dict[str, dict]:
-    """Load the UC approval database from private storage."""
+    """Load the UC approval database from private storage.
+
+    Verifies HMAC integrity of every entry. Corrupted/tampered entries
+    are silently dropped.
+    """
     _ensure_private_dir(_APPROVAL_DIR)
     if not _APPROVAL_FILE.exists():
         return {}
     try:
         with open(_APPROVAL_FILE, encoding="utf-8") as f:
             data = json.load(f)
-        if isinstance(data, dict):
-            return data
-    except json.JSONDecodeError, OSError:
-        pass
-    return {}
+        if not isinstance(data, dict):
+            return {}
+        # Verify and strip HMAC from every entry
+        verified = {}
+        for key, entry in data.items():
+            if not isinstance(entry, dict):
+                continue
+            stored_hmac = entry.pop("_hmac", None)
+            if stored_hmac is None:
+                continue  # no HMAC — skip unverifiable entry
+            expected = _compute_entry_hmac(entry)
+            entry["_hmac"] = stored_hmac  # restore
+            if hmac.compare_digest(stored_hmac, expected):
+                verified[key] = entry
+        return verified
+    except (json.JSONDecodeError, OSError):
+        return {}
 
 
 def _save_approval_db(db: dict[str, dict]) -> None:
-    """Save the UC approval database to private storage."""
+    """Save the UC approval database to private storage.
+
+    Every entry is HMAC-signed to detect tampering on load.
+    """
     _ensure_private_dir(_APPROVAL_DIR)
-    _atomic_write_private_json(_APPROVAL_FILE, db)
+    # Add HMAC to every entry before saving
+    signed = {}
+    for key, entry in db.items():
+        entry_no_hmac = {k: v for k, v in entry.items() if k != "_hmac"}
+        entry_no_hmac["_hmac"] = _compute_entry_hmac(entry_no_hmac)
+        signed[key] = entry_no_hmac
+    _atomic_write_private_json(_APPROVAL_FILE, signed)
 
 
 def compute_code_hash(code: str) -> str:

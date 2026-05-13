@@ -269,7 +269,9 @@ def run_tool_subprocess(
                 stderr_text = ""
             return {
                 "success": result_data.get("success", False),
-                "result": result_data.get("result") if result_data.get("success") else None,
+                "result": result_data.get("result")
+                if result_data.get("success")
+                else None,
                 "error": result_data.get("error")
                 if not result_data.get("success")
                 else None,
@@ -408,68 +410,14 @@ def run_tool_callable(
     except Exception:
         pass
 
-    # Fallback: write a temporary wrapper module
-    try:
-        import cloudpickle
-
-        with tempfile.NamedTemporaryFile(mode="wb", suffix=".pkl", delete=False) as f:
-            cloudpickle.dump(func, f)
-            pickle_path = f.name
-    except ImportError:
-        return {
-            "success": False,
-            "error": "Cannot serialize callable for subprocess execution (cloudpickle not available)",
-            "stdout": "",
-            "stderr": "",
-            "execution_time": 0.0,
-        }
-
-    wrapper_code = f"""
-import cloudpickle, json, sys, traceback
-
-with open({repr(pickle_path)}, "rb") as f:
-    func = cloudpickle.load(f)
-
-args_json = sys.argv[1] if len(sys.argv) > 1 else "{{}}"
-args = json.loads(args_json)
-
-try:
-    result = func(**args)
-    print(json.dumps({{"success": True, "result": result}}))
-except Exception as e:
-    print(json.dumps({{"success": False, "error": str(e), "traceback": traceback.format_exc()}}))
-"""
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-        f.write(wrapper_code)
-        wrapper_path = f.name
-
-    try:
-        args_json = json.dumps(args or {})
-        import subprocess
-
-        result = subprocess.run(
-            [sys.executable, wrapper_path, args_json],
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-        )
-        try:
-            data = json.loads(result.stdout.splitlines()[-1] if result.stdout else "{}")
-        except json.JSONDecodeError:
-            data = {
-                "success": False,
-                "error": result.stdout or result.stderr or "Unknown error",
-            }
-
-        return {
-            "success": data.get("success", False),
-            "result": data.get("result") if data.get("success") else None,
-            "error": data.get("error") if not data.get("success") else None,
-            "stdout": _cap_output(result.stdout, _MAX_STDOUT_CHARS, _MAX_STDOUT_LINES),
-            "stderr": _cap_output(result.stderr, _MAX_STDERR_CHARS, _MAX_STDERR_LINES),
-            "execution_time": timeout,  # approximate
-        }
-    finally:
-        for p in (pickle_path, wrapper_path):
-            with contextlib.suppress(OSError):
-                os.unlink(p)
+    # Fallback: can't determine module path — must use JSON-only serialization
+    return {
+        "success": False,
+        "error": (
+            f"Cannot serialize callable '{func.__name__}' for subprocess execution. "
+            "Only module-level functions with a known __file__ are supported."
+        ),
+        "stdout": "",
+        "stderr": "",
+        "execution_time": 0.0,
+    }
