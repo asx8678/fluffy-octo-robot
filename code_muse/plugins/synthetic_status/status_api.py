@@ -125,7 +125,7 @@ def fetch_synthetic_quota(
     try:
         limit = float(subscription.get("limit"))
         requests_used = float(subscription.get("requests"))
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         return SyntheticQuotaResult(
             error="Synthetic API response has invalid numeric quota values."
         )

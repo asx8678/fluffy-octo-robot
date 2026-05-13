@@ -132,7 +132,7 @@ def get_temperature() -> float | None:
         temp = float(val)
         # Clamp to valid range (most APIs accept 0-2)
         return max(0.0, min(2.0, temp))
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return None
 
 
@@ -185,7 +185,7 @@ def get_model_setting(
 
     try:
         return float(val)
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return default
 
 
@@ -244,7 +244,7 @@ def get_all_model_settings(model_name: str) -> dict:
                             settings[setting_name] = int(val_stripped)
                         else:
                             settings[setting_name] = float(val_stripped)
-                    except ValueError, TypeError:
+                    except (ValueError, TypeError):
                         # Keep as string if not a number
                         settings[setting_name] = val_stripped
 

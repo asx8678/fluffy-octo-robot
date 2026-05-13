@@ -177,7 +177,7 @@ def _handle_foundry_setup() -> None:
             _print()
             succeeded = None
 
-    except KeyboardInterrupt, EOFError:
+    except (KeyboardInterrupt, EOFError):
         _print()
         _print("Setup cancelled.")
         return

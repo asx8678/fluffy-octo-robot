@@ -497,7 +497,7 @@ async def _prompt_text(label: str, default: str = "") -> str | None:
     try:
         result = await session.prompt_async(f"{label}: ", default=default)
         return result.strip() if result else None
-    except KeyboardInterrupt, EOFError:
+    except (KeyboardInterrupt, EOFError):
         return None
 
 
@@ -603,7 +603,7 @@ async def _interactive_agent_chat(
     for _ in range(_MAX_CHAT_TURNS - 1):
         try:
             user_input = await session.prompt_async("agent-creator > ")
-        except KeyboardInterrupt, EOFError:
+        except (KeyboardInterrupt, EOFError):
             emit_info("Chat ended.")
             return ""
 

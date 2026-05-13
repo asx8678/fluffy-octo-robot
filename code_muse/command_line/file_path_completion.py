@@ -69,5 +69,5 @@ class FilePathCompleter(Completer):
                     display=display,
                     display_meta=display_meta,
                 )
-        except OSError, RuntimeError:
+        except (OSError, RuntimeError):
             pass

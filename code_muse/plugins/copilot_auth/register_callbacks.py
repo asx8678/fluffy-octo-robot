@@ -215,7 +215,7 @@ def _handle_copilot_login(command: str) -> None:
             host = raw if raw else "github.com"
         except ImportError:
             host = "github.com"
-        except EOFError, KeyboardInterrupt:
+        except (EOFError, KeyboardInterrupt):
             emit_warning("Copilot login cancelled.")
             return
 

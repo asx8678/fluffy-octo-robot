@@ -149,7 +149,7 @@ def _calculate_expires_at(expires_in: float | None) -> float | None:
         return None
     try:
         return time.time() + float(expires_in)
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         return None
 
 
@@ -159,7 +159,7 @@ def _calculate_refresh_buffer(expires_in: float | None) -> float:
         return default_buffer
     try:
         expires_value = float(expires_in)
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         return default_buffer
     return min(default_buffer, max(MIN_REFRESH_BUFFER_SECONDS, expires_value * 0.1))
 
@@ -170,7 +170,7 @@ def _get_expires_at_value(tokens: dict[str, Any]) -> float | None:
         return None
     try:
         return float(expires_at)
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         return None
 
 

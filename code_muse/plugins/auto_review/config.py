@@ -30,6 +30,6 @@ def get_auto_review_min_diff_length() -> int:
     if val is not None:
         try:
             return max(0, int(val))
-        except ValueError, TypeError:
+        except (ValueError, TypeError):
             pass
     return 10

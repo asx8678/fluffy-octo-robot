@@ -47,7 +47,7 @@ def _stat_entry(p: Path) -> tuple[str, float, int]:
         if p.is_dir():
             return "dir", st.st_mtime, 0
         return "file", st.st_mtime, st.st_size
-    except OSError, ValueError:
+    except (OSError, ValueError):
         return "file", 0.0, 0
 
 
@@ -132,7 +132,7 @@ def _grep_scanner(
             if size > 5 * 1024 * 1024:
                 continue
             text = p.read_text(encoding="utf-8", errors="replace")
-        except OSError, UnicodeDecodeError:
+        except (OSError, UnicodeDecodeError):
             continue
         if compiled.search(text):
             file_type, mtime, fsize = _stat_entry(p)

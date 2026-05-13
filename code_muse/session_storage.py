@@ -55,7 +55,7 @@ def _hash_session_data(data: dict[str, Any]) -> str | None:
         return hashlib.sha256(
             json.dumps(data, sort_keys=True).encode("utf-8")
         ).hexdigest()
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         return None
 
 
@@ -225,7 +225,7 @@ def _is_binary_pickle(data: bytes) -> bool:
     try:
         text = data.decode("utf-8")
         return not text.lstrip().startswith(("{", "["))
-    except UnicodeDecodeError, ValueError:
+    except (UnicodeDecodeError, ValueError):
         return True
 
 
@@ -617,7 +617,7 @@ async def restore_autosave_interactively(base_dir: Path) -> None:
                     ]
                 )
             )
-        except KeyboardInterrupt, EOFError:
+        except (KeyboardInterrupt, EOFError):
             emit_warning("Autosave selection cancelled")
             return
 

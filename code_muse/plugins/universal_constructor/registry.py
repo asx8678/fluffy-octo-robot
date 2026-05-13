@@ -207,7 +207,7 @@ class UCRegistry:
         try:
             sig = inspect.signature(func)
             signature_str = f"{func_name}{sig}"
-        except ValueError, TypeError:
+        except (ValueError, TypeError):
             signature_str = f"{func_name}(...)"
 
         # Extract docstring
@@ -235,7 +235,7 @@ class UCRegistry:
                             try:
                                 meta_str = ast.unparse(node.value)
                                 return ast.literal_eval(meta_str)
-                            except ValueError, SyntaxError:
+                            except (ValueError, SyntaxError):
                                 return None
         return None
 

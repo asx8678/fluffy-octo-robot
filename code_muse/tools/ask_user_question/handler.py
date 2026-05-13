@@ -50,7 +50,7 @@ def is_interactive() -> bool:
     try:
         if not sys.stdin.isatty():
             return False
-    except AttributeError, OSError:
+    except (AttributeError, OSError):
         return False
 
     return not any(os.environ.get(var) for var in CI_ENV_VARS)
@@ -150,7 +150,7 @@ def ask_user_question(
         logger.info("Successfully collected %d answers", len(answers))
         return AskUserQuestionOutput(answers=answers)
 
-    except CancelledException, KeyboardInterrupt:
+    except (CancelledException, KeyboardInterrupt):
         logger.info("User cancelled the interaction")
         return _cancelled_response()
 

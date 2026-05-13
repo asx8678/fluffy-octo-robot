@@ -45,7 +45,7 @@ def _get_session_entries(base_dir: Path) -> list[tuple[str, dict]]:
     """Get all sessions with their metadata, sorted by timestamp."""
     try:
         sessions = list_sessions(base_dir)
-    except FileNotFoundError, PermissionError:
+    except (FileNotFoundError, PermissionError):
         return []
 
     entries = []
@@ -53,7 +53,7 @@ def _get_session_entries(base_dir: Path) -> list[tuple[str, dict]]:
     for name in sessions:
         try:
             metadata = _get_session_metadata(base_dir, name)
-        except FileNotFoundError, PermissionError:
+        except (FileNotFoundError, PermissionError):
             metadata = {}
         entries.append((name, metadata))
 

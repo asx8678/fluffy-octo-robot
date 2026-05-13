@@ -59,7 +59,7 @@ def _get_config_int(key: str, default: int) -> int:
         return default
     try:
         return int(val)
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return default
 
 

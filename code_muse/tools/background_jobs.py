@@ -95,5 +95,5 @@ def tail_background_job_log(pid: int, max_lines: int = _MAX_TAIL_LINES) -> str:
         text = raw.decode("utf-8", errors="replace")
         lines = deque(text.splitlines(), maxlen=max_lines)
         return "\n".join(lines)
-    except OSError, ValueError:
+    except (OSError, ValueError):
         return ""

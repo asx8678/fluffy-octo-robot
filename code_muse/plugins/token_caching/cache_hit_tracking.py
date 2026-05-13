@@ -120,7 +120,7 @@ def _int_or_zero(value: object) -> int:
     """Coerce a value to int, defaulting to 0 on failure."""
     try:
         return int(value)  # type: ignore[arg-type]
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         return 0
 
 

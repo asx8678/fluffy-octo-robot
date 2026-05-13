@@ -52,7 +52,7 @@ def get_terminal_session_id() -> str:
     try:
         ppid = os.getppid()
         return f"session_{ppid}"
-    except OSError, AttributeError:
+    except (OSError, AttributeError):
         # Fallback to current process ID if PPID unavailable
         return f"fallback_{os.getpid()}"
 
@@ -126,7 +126,7 @@ def _cleanup_dead_sessions(sessions: dict[str, str]) -> dict[str, str]:
                 if _is_process_alive(pid):
                     cleaned[session_id] = agent_name
                 # else: skip dead session
-            except ValueError, TypeError:
+            except (ValueError, TypeError):
                 # Invalid session ID format, keep it anyway
                 cleaned[session_id] = agent_name
         else:
