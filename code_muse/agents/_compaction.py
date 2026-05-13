@@ -429,7 +429,8 @@ def make_history_processor(agent: Any) -> Callable[..., list[ModelMessage]]:
       1. Fires ``on_message_history_processor_start``.
       2. Merges any incoming messages not already in ``agent._message_history``
          (preserving the last-message regardless of compacted-hash collisions).
-      3. Runs ``compact_with_tool_truncation(...)`` if we're over threshold — truncates older tool-result content first, then falls through to compact().
+      3. Runs ``compact_with_tool_truncation(...)`` if we're over threshold —
+         truncates older tool-result content first, then falls through to compact().
       4. Records dropped-message hashes in ``agent._compacted_message_hashes``.
       5. Strips empty ThinkingParts.
       6. Trims trailing ModelResponse messages so history ends with a ModelRequest.
@@ -582,13 +583,15 @@ def compact_with_tool_truncation(
     """Enhanced compact() that first truncates old tool results,
     then runs normal compaction.
 
-    This is the Phase 3 replacement for compact(). It:
-    1. Truncates old tool result content first (always reduces tokens)
-    2. Then runs the existing compact() logic on the cleaner history
-    3. Falls through to summarization/truncation if still over threshold
+    Only truncates when history is large enough to need it; small histories
+    skip straight to compact() to avoid unnecessary work.
 
     Returns: (new_messages, dropped_messages_for_hash_tracking)
     """
+    # Guard: skip truncation for small histories where it's unlikely to help
+    if len(messages) <= 20:
+        return compact(agent, messages, model_max, context_overhead)
+
     # Step 1: Truncate old tool results (always safe, always reduces tokens)
     truncated = _truncate_tool_result_content(messages)
 
