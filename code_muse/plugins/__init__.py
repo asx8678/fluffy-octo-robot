@@ -307,6 +307,7 @@ def _load_single_user_plugin(
     plugin_name: str,
     user_plugins_dir: Path,
     failed_names: list[str] | None = None,
+    trust_plugin_set: set[str] | None = None,
 ) -> str | None:
     """Attempt to load a single user plugin directory.
 
@@ -351,14 +352,24 @@ def _load_single_user_plugin(
     # Compute content hash for trust check
     content_hash = compute_plugin_hash(plugin_dir)
 
+    # Auto-trust if named in MUSE_TRUST_PLUGIN env var
+    if (
+        trust_plugin_set
+        and plugin_name in trust_plugin_set
+        and not is_plugin_trusted(plugin_name, content_hash)
+    ):
+        record_plugin_trust(plugin_name, content_hash, str(plugin_dir))
+
     # Fail closed: untrusted plugins are NOT imported
     if not is_plugin_trusted(plugin_name, content_hash):
         logger.warning(
             "User plugin '%s' is not trusted (hash: %s…). "
             "To trust it, run: /plugin trust %s  "
+            "or set MUSE_TRUST_PLUGIN=%s  "
             "or set MUSE_TRUST_ALL_USER_PLUGINS=1 (dangerous).",
             plugin_name,
             content_hash[:12],
+            plugin_name,
             plugin_name,
         )
         return None
@@ -420,6 +431,15 @@ def _load_user_plugins(
     # Allow trusting all user plugins via env var (for development / CI)
     trust_all = os.environ.get("MUSE_TRUST_ALL_USER_PLUGINS", "") == "1"
 
+    # Allow trusting specific plugins by name via env var
+    trust_plugin_names = os.environ.get("MUSE_TRUST_PLUGIN", "")
+    if trust_plugin_names:
+        trust_plugin_set = {
+            name.strip() for name in trust_plugin_names.split(",") if name.strip()
+        }
+    else:
+        trust_plugin_set = set()
+
     for item in user_plugins_dir.iterdir():
         if not item.is_dir():
             continue
@@ -445,7 +465,7 @@ def _load_user_plugins(
                 record_plugin_trust(plugin_name, content_hash, str(item))
 
         result = _load_single_user_plugin(
-            item, plugin_name, user_plugins_dir, failed_names
+            item, plugin_name, user_plugins_dir, failed_names, trust_plugin_set
         )
         if result is not None:
             loaded.append(result)
