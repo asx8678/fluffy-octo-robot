@@ -125,60 +125,18 @@ def patch_process_message_history() -> None:
 
 
 def patch_tool_call_json_repair() -> None:
-    """Patch pydantic-ai's _call_tool to auto-repair malformed JSON arguments.
+    """JSON repair is now consolidated into patch_tool_call_callbacks.
 
-    LLMs sometimes produce slightly broken JSON in tool calls (trailing commas,
-    missing quotes, etc.). This patch intercepts tool calls and runs json_repair
-    on the arguments before validation, preventing unnecessary retries.
+    Kept as a no-op for backward compatibility with apply_all_patches().
     """
-    try:
-        import json_repair
-        from pydantic_ai._tool_manager import ToolManager
-
-        # Store the original method
-        _original_call_tool = ToolManager._call_tool
-
-        async def _patched_call_tool(
-            self,
-            call,
-            *,
-            allow_partial: bool,
-            wrap_validation_errors: bool,
-            approved: bool,
-            metadata: Any = None,
-        ):
-            """Patched _call_tool that repairs malformed JSON before validation."""
-            # Only attempt repair if args is a string (JSON)
-            if isinstance(call.args, str) and call.args:
-                try:
-                    repaired = json_repair.repair_json(call.args)
-                    if repaired != call.args:
-                        # Update the call args with repaired JSON
-                        call.args = repaired
-                except Exception:
-                    pass  # If repair fails, let original validation handle it
-
-            # Call the original method
-            return await _original_call_tool(
-                self,
-                call,
-                allow_partial=allow_partial,
-                wrap_validation_errors=wrap_validation_errors,
-                approved=approved,
-                metadata=metadata,
-            )
-
-        # Apply the patch
-        ToolManager._call_tool = _patched_call_tool
-
-    except ImportError:
-        pass  # json_repair or pydantic_ai not available
-    except Exception:
-        pass  # Don't crash on patch failure
+    pass
 
 
 def patch_tool_call_callbacks() -> None:
     """Patch pydantic-ai tool handling to support callbacks and Claude Code tool names.
+
+    Also handles JSON argument repair (consolidated from patch_tool_call_json_repair
+    to avoid double-wrapping ToolManager._call_tool).
 
     Claude Code OAuth prefixes tool names with ``cp_`` on the wire.  pydantic-ai
     classifies tool calls *before* ``_call_tool`` runs, so unprefixing only in
@@ -256,6 +214,17 @@ def patch_tool_call_callbacks() -> None:
             metadata: Any = None,
         ):
             tool_name, call = _normalize_call_tool_name(call)
+
+            # --- JSON repair (moved from patch_tool_call_json_repair) ---
+            try:
+                import json_repair
+
+                if isinstance(call.args, str) and call.args:
+                    repaired = json_repair.repair_json(call.args)
+                    if repaired != call.args:
+                        call.args = repaired
+            except Exception:
+                pass
 
             # Normalise args to a dict for the callback contract
             tool_args: dict = {}
