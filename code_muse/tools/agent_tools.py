@@ -2,6 +2,7 @@
 import asyncio
 import hashlib
 import json
+import logging
 import re
 import threading
 import traceback
@@ -41,6 +42,8 @@ from code_muse.secret_storage import atomic_write_private_json
 from code_muse.tools.common import generate_group_id
 from code_muse.tools.subagent_context import subagent_context
 
+logger = logging.getLogger(__name__)
+
 # ContextVar to track active subagent invocation tasks per-parent agent.
 # Using a ContextVar ensures cancellation walks only the local subtree
 # instead of every sub-agent task in the process.
@@ -54,6 +57,12 @@ _model_instance_cache: dict[str, Any] = {}
 # FREE-THREADED: _model_instance_cache_lock guards a cache accessed from async
 # invoke_agent and potentially sync paths. Keep threading.Lock for safety.
 _model_instance_cache_lock = threading.Lock()
+
+# PERF-15d.4: Cache pydantic-ai Agent instances keyed by
+# (agent_name, model_name, frozenset(tools)) to avoid rebuilding Agents
+# under fan-out (parent → N sub-agents).
+_subagent_agent_cache: dict[tuple[str, str | None, frozenset], Any] = {}
+_SUBAGENT_AGENT_CACHE_MAX = 64
 
 
 def _generate_session_hash_suffix() -> str:
@@ -495,26 +504,39 @@ def register_invoke_agent(agent):
             external_servers = []
 
             from code_muse.agents._compaction import make_history_processor
-
-            # Build the pydantic-ai agent. external servers are always included in
-            # the constructor; plugins may swap them out at run
-            # time via the ``agent_run_context`` hook if their wrapper can't
-            # handle them directly.
-            temp_agent = Agent(
-                model=model,
-                instructions=instructions,
-                output_type=str,
-                retries=3,
-                toolsets=external_servers,
-                history_processors=[make_history_processor(agent_config)],
-                model_settings=model_settings,
-            )
-
-            # Register the tools that the agent needs
             from code_muse.tools import register_tools_for_agent
 
+            # PERF-15d.4: Cache pydantic-ai Agent instances keyed by
+            # (agent_name, model_name, frozenset(tools)) to avoid rebuilding
+            # Agents under fan-out (parent → N sub-agents).
             agent_tools = agent_config.get_available_tools()
-            register_tools_for_agent(temp_agent, agent_tools, model_name=model_name)
+            cache_key = (agent_name, model_name, frozenset(agent_tools))
+            temp_agent = _subagent_agent_cache.get(cache_key)
+
+            if temp_agent is None:
+                # Build the pydantic-ai agent. external servers are always included in
+                # the constructor; plugins may swap them out at run
+                # time via the ``agent_run_context`` hook if their wrapper can't
+                # handle them directly.
+                temp_agent = Agent(
+                    model=model,
+                    instructions=instructions,
+                    output_type=str,
+                    retries=3,
+                    toolsets=external_servers,
+                    history_processors=[make_history_processor(agent_config)],
+                    model_settings=model_settings,
+                )
+
+                # Register the tools that the agent needs
+                register_tools_for_agent(temp_agent, agent_tools, model_name=model_name)
+
+                # Cache the result (simple LRU-like: clear when full)
+                if len(_subagent_agent_cache) >= _SUBAGENT_AGENT_CACHE_MAX:
+                    _subagent_agent_cache.clear()
+                _subagent_agent_cache[cache_key] = temp_agent
+            else:
+                logger.debug(f"Reusing cached pydantic-ai Agent for {agent_name}")
 
             # Always use subagent_stream_handler to silence output and update console manager
             # This ensures all sub-agent output goes through the aggregated dashboard
