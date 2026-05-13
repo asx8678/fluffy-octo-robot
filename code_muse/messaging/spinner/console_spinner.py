@@ -33,24 +33,19 @@ class ConsoleSpinner(SpinnerBase):
         self._paused = False
         self._live = None
         self._animations_enabled = get_animations_enabled()
+        self._debounce_timer = None
 
         # Register this spinner for global management
         from . import register_spinner
 
         register_spinner(self)
 
-    def start(self):
-        """Start the spinner animation."""
-        super().start()
-        self._stop_event.clear()
-
-        # Don't start a new thread if one is already running
-        if self._thread and self._thread.is_alive():
+    def _do_start(self):
+        """Actually create the Live display and start the update thread."""
+        if not self._is_spinning:
             return
-
         # Print blank line before spinner for visual separation from content
         self.console.print()
-
         # Create a Live display for the spinner
         self._live = Live(
             self._generate_spinner_panel(),
@@ -60,14 +55,37 @@ class ConsoleSpinner(SpinnerBase):
             auto_refresh=False,  # Don't auto-refresh to avoid wiping out user input
         )
         self._live.start()
-
         # Start a thread to update the spinner frames
         self._thread = threading.Thread(target=self._update_spinner)
         self._thread.daemon = True
         self._thread.start()
 
+    def start(self):
+        """Start the spinner animation (debounced by 100 ms)."""
+        # Cancel any pending debounce from a previous quick start/stop cycle
+        if self._debounce_timer is not None:
+            self._debounce_timer.cancel()
+            self._debounce_timer = None
+
+        super().start()
+        self._stop_event.clear()
+
+        # Don't start a new thread if one is already running
+        if self._thread and self._thread.is_alive():
+            return
+
+        # Debounce: only start the live display if the spinner runs > 100 ms
+        self._debounce_timer = threading.Timer(0.1, self._do_start)
+        self._debounce_timer.daemon = True
+        self._debounce_timer.start()
+
     def stop(self):
         """Stop the spinner animation."""
+        # Cancel pending debounce so the spinner never appears for short calls
+        if self._debounce_timer is not None:
+            self._debounce_timer.cancel()
+            self._debounce_timer = None
+
         if not self._is_spinning:
             return
 
@@ -176,21 +194,26 @@ class ConsoleSpinner(SpinnerBase):
 
     def pause(self):
         """Pause the spinner animation."""
-        if self._is_spinning:
-            self._paused = True
-            # Stop the live display completely to restore terminal echo during input
-            if self._live:
-                try:
-                    self._live.stop()
-                    self._live = None
-                    # Clear the line to remove any artifacts
-                    import sys
+        if not self._is_spinning:
+            return
+        self._paused = True
+        # Cancel pending debounce so the spinner doesn't start while paused
+        if self._debounce_timer is not None:
+            self._debounce_timer.cancel()
+            self._debounce_timer = None
+        # Stop the live display completely to restore terminal echo during input
+        if self._live:
+            try:
+                self._live.stop()
+                self._live = None
+                # Clear the line to remove any artifacts
+                import sys
 
-                    sys.stdout.write("\r")  # Return to start of line
-                    sys.stdout.write("\x1b[K")  # Clear to end of line
-                    sys.stdout.flush()
-                except Exception:
-                    pass
+                sys.stdout.write("\r")  # Return to start of line
+                sys.stdout.write("\x1b[K")  # Clear to end of line
+                sys.stdout.flush()
+            except Exception:
+                pass
 
     def resume(self):
         """Resume the spinner animation."""
@@ -202,6 +225,21 @@ class ConsoleSpinner(SpinnerBase):
 
         if self._is_spinning and self._paused:
             self._paused = False
+            # If the live display was never created (debounce or pause cancelled it),
+            # restart the debounce timer rather than creating Live immediately.
+            if not self._live and (self._thread is None or not self._thread.is_alive()):
+                try:
+                    import sys
+
+                    sys.stdout.write("\r")
+                    sys.stdout.write("\x1b[K")
+                    sys.stdout.flush()
+                except Exception:
+                    pass
+                self._debounce_timer = threading.Timer(0.1, self._do_start)
+                self._debounce_timer.daemon = True
+                self._debounce_timer.start()
+                return
             # Restart the live display if it was stopped during pause
             if not self._live:
                 try:

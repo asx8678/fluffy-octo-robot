@@ -19,6 +19,7 @@ Backward compatibility:
     ``_meta.json`` files.
 """
 
+import hashlib
 import json
 import pickle
 import warnings
@@ -41,6 +42,19 @@ _FORMAT = "pydantic-ai-model-messages-json"
 
 # Sentinel for _try_load_pkl when file cannot be loaded
 _UNABLE_TO_LOAD = object()
+
+# Per-session hash cache to avoid redundant writes when data is unchanged
+_LAST_SAVED_HASHES: dict[tuple[str, str], str | None] = {}
+
+
+def _hash_session_data(data: dict[str, Any]) -> str | None:
+    """Return a SHA-256 hash of serialised session data for dirty-flag comparison."""
+    try:
+        return hashlib.sha256(
+            json.dumps(data, sort_keys=True).encode("utf-8")
+        ).hexdigest()
+    except (TypeError, ValueError):
+        return None
 
 
 def _unsafe_pickle_loads_for_explicit_legacy_migration_only(data: bytes) -> Any:
@@ -238,6 +252,23 @@ def save_session(
     json_path = _canonical_json_path(base_dir, session_name)
 
     session_data = _wrap_messages(history)
+
+    # Dirty-flag check: skip disk writes if the session data is unchanged
+    hash_key = (str(base_dir), session_name)
+    current_hash = _hash_session_data(session_data)
+    if current_hash is not None and _LAST_SAVED_HASHES.get(hash_key) == current_hash:
+        total_tokens = sum(token_estimator(message) for message in history)
+        return SessionMetadata(
+            session_name=session_name,
+            timestamp=timestamp,
+            message_count=len(history),
+            total_tokens=total_tokens,
+            pickle_path=paths.pickle_path,
+            metadata_path=paths.metadata_path,
+            auto_saved=auto_saved,
+        )
+
+    _LAST_SAVED_HASHES[hash_key] = current_hash
 
     # Write canonical .json file
     _atomic_write_json(json_path, session_data)

@@ -205,8 +205,13 @@ def _compress_dict(
     if level == 0:
         kept = {k: data[k] for k in keep_keys if k in data}
         if not kept:
-            # Fallback: keep all keys but format compactly
-            kept = {k: data[k] for k in data}
+            # Fallback: keep top-3 keys by score in compact mode
+            sorted_keys = sorted(
+                data.keys(),
+                key=lambda k: field_scores.get(k, 0.6),
+                reverse=True,
+            )
+            kept = {k: data[k] for k in sorted_keys[:3]}
         return _format_compact(kept)[:max_chars]
 
     if level >= 1:
