@@ -23,6 +23,29 @@ from code_muse.model_factory import ModelFactory, make_model_settings
 _AGENT_RULE_FILES = ("AGENTS.md", "AGENT.md", "agents.md", "agent.md")
 _MUSE_DIR = ".muse"
 
+# Cache for load_muse_rules: keyed by max mtime of source files.
+# mtime initialised to -1.0 so 0.0 (no files exist) is still a valid cache key.
+_load_muse_rules_cache: dict[str, Any] = {"mtime": -1.0, "content": None}
+
+
+def _load_muse_rules_mtime() -> float:
+    """Max mtime of all AGENT(S).md files checked by ``load_muse_rules()``.
+
+    Returns ``0.0`` when none of the files exist.
+    """
+    max_mtime = 0.0
+    for name in _AGENT_RULE_FILES:
+        for base in (Path(CONFIG_DIR), Path(_MUSE_DIR), Path(".")):
+            try:
+                p = base / name
+                if p.exists():
+                    mtime = p.stat().st_mtime
+                    if mtime > max_mtime:
+                        max_mtime = mtime
+            except OSError:
+                pass
+    return max_mtime
+
 
 def load_muse_rules() -> str | None:
     """Load AGENT(S).md from global config dir and/or the current project dir.
@@ -35,8 +58,14 @@ def load_muse_rules() -> str | None:
     1. ``.muse/AGENTS.md`` (preferred — keeps root clean)
     2. ``./AGENTS.md`` (alternate location)
 
+    Results are cached and invalidated when source files change (mtime-based).
+
     Returns ``None`` if neither exists.
     """
+    current_mtime = _load_muse_rules_mtime()
+    if current_mtime == _load_muse_rules_cache["mtime"]:
+        return _load_muse_rules_cache["content"]
+
     global_rules: str | None = None
     for name in _AGENT_RULE_FILES:
         candidate = Path(CONFIG_DIR) / name
@@ -64,7 +93,10 @@ def load_muse_rules() -> str | None:
                 break
 
     rules = [r for r in (global_rules, project_rules) if r]
-    return "\n\n".join(rules) if rules else None
+    result = "\n\n".join(rules) if rules else None
+    _load_muse_rules_cache["mtime"] = current_mtime
+    _load_muse_rules_cache["content"] = result
+    return result
 
 
 def load_model_with_fallback(
@@ -169,6 +201,7 @@ def build_pydantic_agent(
     from code_muse.tools import register_tools_for_agent
 
     agent._muse_rules = None
+    agent._context_overhead_cache = None
     message_group = message_group or str(uuid.uuid4())
 
     models_config = ModelFactory.load_config()
