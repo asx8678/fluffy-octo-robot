@@ -37,10 +37,12 @@ class TestTerminalSessionID:
 
     def test_get_terminal_session_id_fallback_to_pid(self):
         """Test fallback to PID when PPID not available."""
-        with patch("os.getppid", side_effect=OSError):
-            with patch("os.getpid", return_value=54321):
-                session_id = get_terminal_session_id()
-                assert session_id == "fallback_54321"
+        with (
+            patch("os.getppid", side_effect=OSError),
+            patch("os.getpid", return_value=54321),
+        ):
+            session_id = get_terminal_session_id()
+            assert session_id == "fallback_54321"
 
     def test_get_terminal_session_id_format(self):
         """Test that session ID format is consistent."""
@@ -51,10 +53,12 @@ class TestTerminalSessionID:
 
     def test_get_terminal_session_id_handles_attribute_error(self):
         """Test handling of AttributeError when getting PPID."""
-        with patch("os.getppid", side_effect=AttributeError):
-            with patch("os.getpid", return_value=11111):
-                session_id = get_terminal_session_id()
-                assert session_id == "fallback_11111"
+        with (
+            patch("os.getppid", side_effect=AttributeError),
+            patch("os.getpid", return_value=11111),
+        ):
+            session_id = get_terminal_session_id()
+            assert session_id == "fallback_11111"
 
     def test_get_terminal_session_id_different_calls_same_ppid(self):
         """Test that same PPID produces same session ID across calls."""
@@ -127,7 +131,7 @@ class TestSessionDataPersistence:
         """Test that session file path is correctly constructed."""
         session_file = _get_session_file_path()
         assert session_file.name == "terminal_sessions.json"
-        assert "code_muse" in str(session_file)
+        assert ".muse" in str(session_file)
 
     def test_save_session_data_creates_directory(self, temp_session_dir):
         """Test that save_session_data creates directory if missing."""
@@ -151,7 +155,7 @@ class TestSessionDataPersistence:
             mock_path.return_value = session_file
 
             sessions = {"session_123": "muse", "session_456": "planning-agent"}
-            # Mock _is_process_alive to return True so sessions aren't filtered out during cleanup
+            # Mock _is_process_alive True so sessions aren't filtered out
             with patch(
                 "code_muse.agents.agent_manager._is_process_alive", return_value=True
             ):

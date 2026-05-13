@@ -7,10 +7,10 @@ and stores per-tool approval decisions keyed by code hash.
 import ast
 import contextlib
 import hashlib
+import hmac
 import json
 import logging
 import os
-import hmac
 import re
 from pathlib import Path
 

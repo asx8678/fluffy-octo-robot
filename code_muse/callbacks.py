@@ -327,10 +327,10 @@ def _trigger_callbacks_sync(phase: PhaseType, *args, **kwargs) -> list[Any]:
                     asyncio.get_running_loop()
                     # We're in an async context (e.g., the TUI).
                     # Run the coroutine in a separate thread so it gets
-                    # its own event loop. No timeout — long-running
-                    # commands (MindPack, menus) need unlimited time.
+                    # its own event loop. 30s timeout prevents a
+                    # misbehaving hook from freezing the session.
                     future = _executor.submit(asyncio.run, result)
-                    result = future.result(timeout=None)
+                    result = future.result(timeout=30)
                 except RuntimeError:
                     # No running loop — we're in a sync/worker thread.
                     result = asyncio.run(result)

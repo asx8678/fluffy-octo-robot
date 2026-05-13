@@ -21,11 +21,14 @@ class TestAgentCreatorAgent:
     def test_description_property(self):
         """Test that description property returns the expected value."""
         agent = AgentCreatorAgent()
-        expected = "Helps you create new JSON agent configurations with proper schema validation"
+        expected = (
+            "Helps you create new JSON agent configurations"
+            " with proper schema validation"
+        )
         assert agent.description == expected
 
     def test_get_system_prompt_injects_tools_list(self, monkeypatch):
-        """Test that get_system_prompt() injects the tools list from get_available_tool_names()."""
+        """Test get_system_prompt() injects tools from get_available_tool_names()."""
         # Mock the tools function
         mock_tools = ["tool1", "tool2", "tool3"]
         monkeypatch.setattr(
@@ -82,7 +85,7 @@ class TestAgentCreatorAgent:
         assert f"Save to the agents directory: `{mock_dir}`" in prompt
 
     def test_get_system_prompt_injects_model_inventory(self, monkeypatch):
-        """Test that get_system_prompt() injects model inventory from ModelFactory.load_config()."""
+        """Test get_system_prompt() injects model inventory from ModelFactory."""
         mock_models_config = {
             "gpt-5": {"type": "OpenAI", "context_length": "128k"},
             "claude-4": {"type": "Anthropic", "context_length": "200k"},
@@ -174,7 +177,8 @@ class TestAgentCreatorAgent:
         # Verify key sections are present
         assert "## ALL AVAILABLE TOOLS:" in prompt
         assert "## ALL AVAILABLE MODELS:" in prompt
-        assert "You are Agent Creator 🏗️" in prompt
+        assert "## Agent Creator Mode" in prompt
+        assert "You are Agent Creator" in prompt
 
     def test_get_available_tools_with_uc_enabled(self):
         """Test that get_available_tools includes UC when enabled."""

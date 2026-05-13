@@ -548,12 +548,14 @@ def _truncate_tool_result_content(
             result.append(msg)
             continue
         new_parts = []
+        truncated = False
         for part in msg.parts:
             if (
                 isinstance(part, ToolReturnPart)
                 and part.tool_call_id not in protected_ids
             ):
                 # Replace content, keep structure
+                truncated = True
                 try:
                     if hasattr(part, "model_copy"):
                         new_parts.append(
@@ -565,7 +567,8 @@ def _truncate_tool_result_content(
                     new_parts.append(part)
             else:
                 new_parts.append(part)
-        result.append(ModelRequest(parts=new_parts))
+        # Preserve identity when no parts were actually modified
+        result.append(msg if not truncated else ModelRequest(parts=new_parts))
 
     return result
 

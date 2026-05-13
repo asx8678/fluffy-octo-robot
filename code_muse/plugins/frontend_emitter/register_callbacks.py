@@ -72,7 +72,7 @@ async def on_post_tool_call(
         logger.error(f"Failed to emit post_tool_call event: {e}")
 
 
-async def on_stream_event(
+def on_stream_event(
     event_type: str, event_data: Any, agent_session_id: str | None = None
 ) -> None:
     """Emit streaming events from the agent.

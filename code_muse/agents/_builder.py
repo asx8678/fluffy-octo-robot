@@ -184,7 +184,7 @@ def build_pydantic_agent(
             model=model,
             instructions=instructions,
             output_type=output_type,
-            retries=3,
+            tool_retries=3,
             toolsets=toolsets,
             history_processors=[history_processor],
             model_settings=model_settings,

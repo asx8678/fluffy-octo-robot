@@ -233,7 +233,7 @@ class ClaudeCacheAsyncClient(httpx.AsyncClient):
         """
         try:
             data = json.loads(body.decode("utf-8"))
-        except Exception:
+        except json.JSONDecodeError, UnicodeDecodeError:
             return None
 
         if not isinstance(data, dict):
@@ -431,8 +431,8 @@ class ClaudeCacheAsyncClient(httpx.AsyncClient):
                 usage = extract_cache_usage(data)
                 if usage:
                     _session_stats.record_usage(usage)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Cache usage extraction failed: %s", exc)
 
         # NOTE: Tool name unprefixing is now handled at the pydantic-ai level
         # in pydantic_patches.py rather than wrapping the HTTP response stream.
@@ -530,7 +530,7 @@ class ClaudeCacheAsyncClient(httpx.AsyncClient):
 
                                 date = parsedate_to_datetime(retry_after)
                                 wait_time = max(0, date.timestamp() - time.time())
-                            except Exception:
+                            except ValueError, TypeError, OverflowError:
                                 pass
 
                 # Cap wait time between 0.5s and 60s
@@ -564,10 +564,6 @@ class ClaudeCacheAsyncClient(httpx.AsyncClient):
                 )
                 await asyncio.sleep(wait_time)
 
-            except Exception:
-                # Don't retry on other exceptions (e.g., validation errors)
-                raise
-
         # Return last response if we have one
         if last_response is not None:
             return last_response
@@ -586,7 +582,7 @@ class ClaudeCacheAsyncClient(httpx.AsyncClient):
             content = request.content
             if content:
                 return content
-        except Exception:
+        except AttributeError, RuntimeError:
             pass
 
         # Fallback to private attr if necessary
@@ -594,7 +590,7 @@ class ClaudeCacheAsyncClient(httpx.AsyncClient):
             content = getattr(request, "_content", None)
             if content:
                 return content
-        except Exception:
+        except AttributeError, RuntimeError:
             pass
 
         return None
@@ -640,7 +636,7 @@ class ClaudeCacheAsyncClient(httpx.AsyncClient):
                 # Fallback to text property (should work after aread)
                 try:
                     body = response.text
-                except Exception:
+                except httpx.HTTPError, UnicodeDecodeError, RuntimeError:
                     return False
 
             # Look for Cloudflare and 400 Bad Request markers
@@ -698,7 +694,7 @@ class ClaudeCacheAsyncClient(httpx.AsyncClient):
     def _inject_cache_control(body: bytes) -> bytes | None:
         try:
             data = json.loads(body.decode("utf-8"))
-        except Exception:
+        except json.JSONDecodeError, UnicodeDecodeError:
             return None
 
         if not isinstance(data, dict):
@@ -839,8 +835,8 @@ def patch_anthropic_client_messages(client: Any) -> None:
         messages_obj = getattr(client, "messages", None)
         if messages_obj is not None:
             messages_obj.create = _make_cache_wrapper(messages_obj.create)  # type: ignore[assignment]
-    except Exception:  # pragma: no cover - defensive
-        pass
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("Failed to patch Anthropic messages.create: %s", exc)
 
     # Patch client.beta.messages.create (used by pydantic-ai)
     try:
@@ -849,5 +845,5 @@ def patch_anthropic_client_messages(client: Any) -> None:
             beta_messages_obj = getattr(beta_obj, "messages", None)
             if beta_messages_obj is not None:
                 beta_messages_obj.create = _make_cache_wrapper(beta_messages_obj.create)  # type: ignore[assignment]
-    except Exception:  # pragma: no cover - defensive
-        pass
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("Failed to patch Anthropic beta.messages.create: %s", exc)

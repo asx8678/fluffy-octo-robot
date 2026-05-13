@@ -126,34 +126,51 @@ class TestAgentManagerBasics:
             assert isinstance(session_id, str)
             assert session_id.startswith("fallback_")
 
-    @patch("code_muse.agents.agent_manager.discover_json_agents")
-    @patch("pkgutil.iter_modules")
-    @patch("importlib.import_module")
-    def test_discover_agents_python_classes(
-        self, mock_import, mock_iter_modules, mock_json_agents
-    ):
+    @patch("code_muse.agents.agent_manager._DISCOVERY_DIRTY", True)
+    @patch("code_muse.agents.agent_manager._DISCOVERY_CACHE", {})
+    def test_discover_agents_python_classes(self):
         """Test discovering Python agent classes."""
-        # Mock module discovery
-        mock_iter_modules.return_value = [("code_muse.agents", "mock_agent", True)]
+        import code_muse.agents.agent_manager as am
 
-        # Mock module with agent class
-        mock_module = MagicMock()
-        mock_module.MockAgent = MockAgent
-        mock_import.return_value = mock_module
+        # Use with-statements instead of @patch decorators because
+        # patching importlib.import_module breaks pkgutil.resolve_name
+        # (which @patch uses internally to resolve later targets).
+        with (
+            patch(
+                "code_muse.agents.agent_manager.discover_json_agents"
+            ) as mock_json_agents,
+            patch(
+                "code_muse.agents.agent_manager.pkgutil.iter_modules"
+            ) as mock_iter_modules,
+            patch(
+                "code_muse.agents.agent_manager.importlib.import_module"
+            ) as mock_import,
+        ):
+            # Mock module discovery
+            mock_iter_modules.return_value = [("code_muse.agents", "mock_agent", True)]
 
-        # Mock JSON agents discovery
-        mock_json_agents.return_value = {}
+            # Mock module with agent class
+            mock_module = MagicMock()
+            mock_module.MockAgent = MockAgent
+            mock_import.return_value = mock_module
 
-        _discover_agents()
+            # Mock JSON agents discovery
+            mock_json_agents.return_value = {}
 
-        # Verify agent was registered
-        assert "mock-agent" in _AGENT_REGISTRY
-        assert _AGENT_REGISTRY["mock-agent"] == MockAgent
+            _discover_agents()
 
+            # Verify agent was registered
+            assert "mock-agent" in am._AGENT_REGISTRY
+            assert am._AGENT_REGISTRY["mock-agent"] == MockAgent
+
+    @patch("code_muse.agents.agent_manager._DISCOVERY_DIRTY", True)
+    @patch("code_muse.agents.agent_manager._DISCOVERY_CACHE", {})
     @patch("code_muse.agents.agent_manager.discover_json_agents")
-    @patch("pkgutil.iter_modules")
+    @patch("code_muse.agents.agent_manager.pkgutil.iter_modules")
     def test_discover_agents_json_agents(self, mock_iter_modules, mock_json_agents):
         """Test discovering JSON agents."""
+        import code_muse.agents.agent_manager as am
+
         # Mock no Python modules
         mock_iter_modules.return_value = []
 
@@ -163,11 +180,13 @@ class TestAgentManagerBasics:
         _discover_agents()
 
         # Verify JSON agent was registered
-        assert "json-agent" in _AGENT_REGISTRY
-        assert _AGENT_REGISTRY["json-agent"] == "/path/to/agent.json"
+        assert "json-agent" in am._AGENT_REGISTRY
+        assert am._AGENT_REGISTRY["json-agent"] == "/path/to/agent.json"
 
+    @patch("code_muse.agents.agent_manager._DISCOVERY_DIRTY", True)
+    @patch("code_muse.agents.agent_manager._DISCOVERY_CACHE", {})
     @patch("code_muse.agents.agent_manager.discover_json_agents")
-    @patch("pkgutil.iter_modules")
+    @patch("code_muse.agents.agent_manager.pkgutil.iter_modules")
     def test_discover_agents_skips_internal_modules(
         self, mock_iter_modules, mock_json_agents
     ):
@@ -195,20 +214,27 @@ class TestAgentManagerBasics:
                 return mock_module
             return MagicMock()
 
-        with patch("importlib.import_module", side_effect=mock_import_side_effect):
+        with patch(
+            "code_muse.agents.agent_manager.importlib.import_module",
+            side_effect=mock_import_side_effect,
+        ):
             mock_json_agents.return_value = {}
             _discover_agents()
 
-        # Valid agent should be registered, internal modules should NOT be
-        assert "valid-agent" in _AGENT_REGISTRY
-        # Verify internal modules were properly skipped
-        assert "_internal" not in _AGENT_REGISTRY
-        assert "base_agent" not in _AGENT_REGISTRY
-        assert "json_agent" not in _AGENT_REGISTRY
-        assert "agent_manager" not in _AGENT_REGISTRY
+        import code_muse.agents.agent_manager as am
 
+        # Valid agent should be registered, internal modules should NOT be
+        assert "valid-agent" in am._AGENT_REGISTRY
+        # Verify internal modules were properly skipped
+        assert "_internal" not in am._AGENT_REGISTRY
+        assert "base_agent" not in am._AGENT_REGISTRY
+        assert "json_agent" not in am._AGENT_REGISTRY
+        assert "agent_manager" not in am._AGENT_REGISTRY
+
+    @patch("code_muse.agents.agent_manager._DISCOVERY_DIRTY", True)
+    @patch("code_muse.agents.agent_manager._DISCOVERY_CACHE", {})
     @patch("code_muse.agents.agent_manager.discover_json_agents")
-    @patch("pkgutil.iter_modules")
+    @patch("code_muse.agents.agent_manager.pkgutil.iter_modules")
     def test_discover_agents_handles_import_errors(
         self, mock_iter_modules, mock_json_agents
     ):
@@ -222,66 +248,95 @@ class TestAgentManagerBasics:
             # Import everything else normally
             return importlib.import_module(module_name)
 
-        # Patch emit_warning where it's imported in agent_manager
-        with patch("code_muse.agents.agent_manager.emit_warning") as mock_warn:
-            with patch("importlib.import_module", side_effect=mock_import_side_effect):
-                mock_json_agents.return_value = {}
-                _discover_agents()
+        with (
+            patch("code_muse.agents.agent_manager.emit_warning") as mock_warn,
+            patch(
+                "code_muse.agents.agent_manager.importlib.import_module",
+                side_effect=mock_import_side_effect,
+            ),
+        ):
+            mock_json_agents.return_value = {}
+            _discover_agents()
 
-                # Warning should be emitted for broken module
-                mock_warn.assert_called_once()
-                assert "broken_agent" in mock_warn.call_args[0][0]
+            # Warning should be emitted for broken module
+            mock_warn.assert_called_once()
+            assert "broken_agent" in mock_warn.call_args[0][0]
 
-    @patch("code_muse.agents.agent_manager.discover_json_agents")
-    @patch("pkgutil.iter_modules")
-    @patch("importlib.import_module")
-    def test_get_available_agents(
-        self, mock_import, mock_iter_modules, mock_json_agents
-    ):
+    @patch("code_muse.agents.agent_manager._DISCOVERY_DIRTY", True)
+    @patch("code_muse.agents.agent_manager._DISCOVERY_CACHE", {})
+    @patch("code_muse.agents.agent_manager._AGENT_REGISTRY", {})
+    def test_get_available_agents(self):
         """Test getting available agents with display names."""
-        # Setup mock agents
-        mock_iter_modules.return_value = [("code_muse.agents", "mock_agent", True)]
+        # Use with-statements for mock patches because patching
+        # importlib.import_module breaks pkgutil.resolve_name
+        # (which @patch uses internally to resolve later targets).
+        with (
+            patch(
+                "code_muse.agents.agent_manager.discover_json_agents"
+            ) as mock_json_agents,
+            patch(
+                "code_muse.agents.agent_manager.pkgutil.iter_modules"
+            ) as mock_iter_modules,
+            patch(
+                "code_muse.agents.agent_manager.importlib.import_module"
+            ) as mock_import,
+        ):
+            # Setup mock agents
+            mock_iter_modules.return_value = [("code_muse.agents", "mock_agent", True)]
 
-        mock_module = MagicMock()
-        mock_module.MockAgent = MockAgent
-        mock_import.return_value = mock_module
+            mock_module = MagicMock()
+            mock_module.MockAgent = MockAgent
+            mock_import.return_value = mock_module
 
-        mock_json_agents.return_value = {"json-agent": "/path/to/agent.json"}
+            mock_json_agents.return_value = {"json-agent": "/path/to/agent.json"}
 
-        agents = get_available_agents()
+            agents = get_available_agents()
 
-        assert isinstance(agents, dict)
-        assert len(agents) >= 1
-        assert "mock-agent" in agents
-        assert agents["mock-agent"] == "Mock Agent 🐶"
-        # Check that we have some agents (the actual discovery may include real agents)
-        assert len(agents) > 0
+            assert isinstance(agents, dict)
+            assert len(agents) >= 1
+            assert "mock-agent" in agents
+            assert agents["mock-agent"] == "Mock Agent 🐶"
+            assert len(agents) > 0
 
-    @patch("code_muse.agents.agent_manager.discover_json_agents")
-    @patch("pkgutil.iter_modules")
-    @patch("importlib.import_module")
-    def test_load_agent_python_class(
-        self, mock_import, mock_iter_modules, mock_json_agents
-    ):
+    @patch("code_muse.agents.agent_manager._DISCOVERY_DIRTY", True)
+    @patch("code_muse.agents.agent_manager._DISCOVERY_CACHE", {})
+    @patch("code_muse.agents.agent_manager._AGENT_REGISTRY", {})
+    def test_load_agent_python_class(self):
         """Test loading a Python agent class."""
-        # Setup registry
-        mock_iter_modules.return_value = [("code_muse.agents", "mock_agent", True)]
+        # Use with-statements for mock patches because patching
+        # importlib.import_module breaks pkgutil.resolve_name
+        # (which @patch uses internally to resolve later targets).
+        with (
+            patch(
+                "code_muse.agents.agent_manager.discover_json_agents"
+            ) as mock_json_agents,
+            patch(
+                "code_muse.agents.agent_manager.pkgutil.iter_modules"
+            ) as mock_iter_modules,
+            patch(
+                "code_muse.agents.agent_manager.importlib.import_module"
+            ) as mock_import,
+        ):
+            # Setup registry
+            mock_iter_modules.return_value = [("code_muse.agents", "mock_agent", True)]
 
-        mock_module = MagicMock()
-        mock_module.MockAgent = MockAgent
-        mock_import.return_value = mock_module
+            mock_module = MagicMock()
+            mock_module.MockAgent = MockAgent
+            mock_import.return_value = mock_module
 
-        mock_json_agents.return_value = {}
-        _discover_agents()
+            mock_json_agents.return_value = {}
+            _discover_agents()
 
-        # Load the agent
-        agent = load_agent("mock-agent")
+            # Load the agent
+            agent = load_agent("mock-agent")
 
-        assert isinstance(agent, MockAgent)
-        assert agent.name == "mock-agent"
+            assert isinstance(agent, MockAgent)
+            assert agent.name == "mock-agent"
 
+    @patch("code_muse.agents.agent_manager._DISCOVERY_DIRTY", True)
+    @patch("code_muse.agents.agent_manager._DISCOVERY_CACHE", {})
     @patch("code_muse.agents.agent_manager.discover_json_agents")
-    @patch("pkgutil.iter_modules")
+    @patch("code_muse.agents.agent_manager.pkgutil.iter_modules")
     def test_load_agent_json_class(self, mock_iter_modules, mock_json_agents):
         """Test loading a JSON agent."""
         mock_iter_modules.return_value = []
@@ -304,8 +359,9 @@ class TestAgentManagerBasics:
                 load_agent("nonexistent-agent")
 
     @patch("code_muse.agents.agent_manager.discover_json_agents")
-    @patch("pkgutil.iter_modules")
-    @patch("importlib.import_module")
+    @patch("code_muse.agents.agent_manager.pkgutil.iter_modules")
+    @patch("code_muse.agents.agent_manager.importlib.import_module")
+    @patch("code_muse.agents.agent_manager._AGENT_REGISTRY", {})
     def test_load_agent_fallback_to_code_muse(
         self, mock_import, mock_iter_modules, mock_json_agents
     ):

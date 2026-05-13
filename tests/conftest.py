@@ -45,46 +45,22 @@ def isolate_config_between_tests(tmp_path_factory):
     temp dirs, and tempfile.mkdtemp() is process-local, so each worker
     gets its own config directory with no cross-contamination.
     """
-    import shutil
     import tempfile
     from pathlib import Path
-
-    # Save original config path
-    original_config_file = cp_config.CONFIG_FILE
-    original_config_dir = cp_config.CONFIG_DIR
 
     # Create a completely separate temp directory for config isolation
     # (not using tmp_path which tests may use for their own purposes)
     config_temp_dir = Path(tempfile.mkdtemp(prefix="code_muse_test_config_"))
-    temp_config_dir = config_temp_dir / ".muse"
-    temp_config_dir.mkdir(parents=True, exist_ok=True)
-    temp_config_file = temp_config_dir / "muse.cfg"
 
-    # Copy existing config if it exists (so tests start with real settings)
-    if original_config_file.exists():
-        shutil.copy(original_config_file, temp_config_file)
-
-    # Redirect config to temp location
-    cp_config.CONFIG_FILE = temp_config_file
-    cp_config.CONFIG_DIR = temp_config_dir
-
-    # Clear model cache to ensure fresh state
-    cp_config.clear_model_cache()
-    # Clear session-local model cache (required for /model session sticky behavior)
-    cp_config.reset_session_model()
-
-    yield
-
-    # Restore original config paths
-    cp_config.CONFIG_FILE = original_config_file
-    cp_config.CONFIG_DIR = original_config_dir
-
-    # Clear cache again after test
-    cp_config.clear_model_cache()
-    # Clear session-local model cache
-    cp_config.reset_session_model()
+    with cp_config.isolated_config(config_temp_dir):
+        # Clear session-local model cache (required for /model session sticky behavior)
+        cp_config.reset_session_model()
+        yield
+        cp_config.reset_session_model()
 
     # Clean up the temp directory
+    import shutil
+
     try:
         shutil.rmtree(config_temp_dir)
     except Exception:

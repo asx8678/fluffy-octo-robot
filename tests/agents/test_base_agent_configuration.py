@@ -35,9 +35,9 @@ class TestMuseDynamicPrompt:
         for expected in [
             "divine Muse",
             "replace_in_file",
-            "agent_run_shell_command",
-            "Zen of Python",
-            "MUST deliver the requested outcome",
+            "run_shell_command",
+            "DRY, YAGNI, and SOLID",
+            "NEVER fake success",
             "Continue autonomously",
         ]:
             assert expected in prompt, f"Missing prompt section: {expected}"

@@ -8,8 +8,8 @@
 [![Downloads](https://img.shields.io/badge/Downloads-170k%2B-brightgreen?style=for-the-badge&logo=download)](https://pypi.org/project/code-muse/)
 [![Python](https://img.shields.io/badge/Python-3.14%2B-blue?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
-[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge&logo=github)](https://github.com/asx8678/muse/actions)
-[![Tests](https://img.shields.io/badge/Tests-Passing-success?style=for-the-badge&logo=pytest)](https://github.com/asx8678/muse/tests)
+[![CI](https://img.shields.io/github/actions/workflow/status/asx8678/muse/ci.yml?style=for-the-badge&logo=github&label=CI)](https://github.com/asx8678/muse/actions)
+[![Tests](https://img.shields.io/github/actions/workflow/status/asx8678/muse/ci.yml?style=for-the-badge&logo=pytest&label=Tests)](https://github.com/asx8678/muse/actions)
 
 [![100% Open Source](https://img.shields.io/badge/100%25-Open%20Source-blue?style=for-the-badge)](https://github.com/asx8678/muse)
 [![Pydantic AI](https://img.shields.io/badge/Pydantic-AI-success?style=for-the-badge)](https://github.com/pydantic/pydantic-ai)

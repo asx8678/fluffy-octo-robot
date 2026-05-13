@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "cython>=3.0.0"]
 build-backend = "hatchling.build"
 
 [project]
@@ -87,7 +87,7 @@ path = "code_muse/models.json"
 [[tool.hatch.build.targets.sdist.include]]
 path = "code_muse/models_dev_api.json"
 [tool.ruff]
-target-version = "py313"
+target-version = "py314"
 exclude = ["*.pyx"]
 
 [tool.ruff.lint]

@@ -15,10 +15,10 @@ import json
 import math
 import pathlib
 import weakref
-from annotationlib import get_annotations
 from typing import Any
 
 import pydantic
+from annotationlib import get_annotations
 from pydantic_ai import BinaryContent
 from pydantic_ai.messages import ModelMessage, ModelRequest, ToolReturnPart
 

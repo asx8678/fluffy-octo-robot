@@ -95,7 +95,7 @@ def _get_devtools_port() -> int:
             text = p.read_text(encoding="utf-8").strip()
             first_line = text.splitlines()[0]
             return int(first_line)
-        except Exception:
+        except OSError, ValueError:
             continue
 
     raise FileNotFoundError(
@@ -238,8 +238,8 @@ async def _read_ws_loop(ws, event_buffers: dict[str, list] | None = None) -> Non
                     event_buffers["*"].append({"method": method, "params": params})
     except websockets.exceptions.ConnectionClosed:
         pass
-    except Exception:
-        logger.exception("chrome_cdp WS read loop error")
+    except Exception as exc:
+        logger.exception("chrome_cdp WS read loop error: %s", exc)
     finally:
         for fut in list(_PENDING.values()):
             if not fut.done():
@@ -370,8 +370,8 @@ class CdpSession:
         try:
             result = await self.send("Debugger.getScriptSource", {"scriptId": url})
             return result.get("scriptSource", "")
-        except Exception:
-            pass
+        except (RuntimeError, TimeoutError, ConnectionError) as exc:
+            logger.debug("get_source CDP fallback after %s", exc)
         # Try getting source from page via eval (fetch the URL content)
         result = await self.eval(f"fetch({json.dumps(url)}).then(r => r.text())")
         return result
@@ -450,8 +450,8 @@ class CdpSession:
         try:
             metrics = await self.send("Page.getLayoutMetrics")
             dpr = metrics.get("visualViewport", {}).get("scale", 1.0)
-        except Exception:
-            pass
+        except (RuntimeError, TimeoutError, ConnectionError) as exc:
+            logger.debug("get_screenshot DPR fetch failed: %s", exc)
         return raw, float(dpr)
 
     async def get_snapshot(self) -> str:
@@ -937,6 +937,7 @@ def register_chrome_cdp(agent):
                 await session.disable_network_capture()
                 return ChromeCdpResult(success=True, output="Network capture stopped")
             except Exception as exc:
+                logger.exception("chrome_cdp network_stop failed")
                 return ChromeCdpResult(success=False, error=str(exc))
 
         # --- network_captured ---

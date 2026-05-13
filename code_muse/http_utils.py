@@ -209,6 +209,7 @@ def get_cert_bundle_path() -> str | None:
     ssl_cert_file = os.environ.get("SSL_CERT_FILE")
     if ssl_cert_file and Path(ssl_cert_file).exists():
         return ssl_cert_file
+    return None
 
 
 def create_client(
@@ -293,7 +294,7 @@ def resolve_env_var_in_header(headers: dict[str, str]) -> dict[str, str]:
     for key, value in headers.items():
         if isinstance(value, str):
             try:
-                expanded = Path(value).expandvars()
+                expanded = os.path.expandvars(value)
                 resolved_headers[key] = expanded
             except Exception:
                 resolved_headers[key] = value

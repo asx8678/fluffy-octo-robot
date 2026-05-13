@@ -1,6 +1,7 @@
 import asyncio
 import atexit
 import ctypes
+import logging
 import os
 import select
 import signal
@@ -37,6 +38,8 @@ from code_muse.messaging import (  # Structured messaging types
 from code_muse.tools.background_jobs import register_background_job
 from code_muse.tools.common import generate_group_id, get_user_approval_async
 from code_muse.tools.subagent_context import is_subagent
+
+logger = logging.getLogger(__name__)
 
 # Maximum line length for shell command output to prevent massive token usage
 # This helps avoid exceeding model context limits when commands produce very long lines
@@ -167,7 +170,7 @@ def _kill_process_group(proc: subprocess.Popen) -> None:
                     check=False,
                 )
                 time.sleep(0.3)
-            except Exception:
+            except OSError, subprocess.TimeoutExpired, FileNotFoundError:
                 # Fallback to Python's built-in methods
                 pass
 
@@ -176,7 +179,7 @@ def _kill_process_group(proc: subprocess.Popen) -> None:
                 try:
                     proc.kill()
                     time.sleep(0.3)
-                except Exception:
+                except OSError, PermissionError:
                     pass
             return
 
@@ -208,9 +211,10 @@ def _kill_process_group(proc: subprocess.Popen) -> None:
                     time.sleep(0.2)
                     if proc.poll() is not None:
                         break
-            except Exception:
+            except OSError, PermissionError:
                 pass
     except Exception as e:
+        logger.warning("Kill process error: %s", e)
         emit_error(f"Kill process error: {e}")
 
 
@@ -238,7 +242,7 @@ def kill_all_running_shell_processes() -> int:
                     p.stderr.close()
                 if p.stdin and not p.stdin.closed:
                     p.stdin.close()
-            except (OSError, ValueError):
+            except OSError, ValueError:
                 pass
 
             if p.poll() is None:
@@ -263,12 +267,14 @@ def shutdown() -> None:
         if killed:
             emit_info(f"Shutdown killed {killed} running shell process(es)")
     except Exception as exc:
+        logger.warning("Process cleanup during shutdown: %s", exc)
         emit_warning(f"Process cleanup during shutdown: {exc}")
 
     try:
         _SHELL_EXECUTOR.shutdown(wait=True, cancel_futures=True)
         emit_info("Shell command executor shut down cleanly")
     except Exception as exc:
+        logger.warning("Executor shutdown error: %s", exc)
         emit_warning(f"Executor shutdown error: {exc}")
 
 
@@ -381,20 +387,21 @@ def _listen_for_ctrl_x_windows(
                     if key == "\x18":  # Standard Ctrl+X
                         try:
                             on_escape()
-                        except Exception:
+                        except Exception as exc:
+                            logger.warning(
+                                "Ctrl+X handler raised unexpectedly: %s", exc
+                            )
                             emit_warning(
-                                "Ctrl+X handler raised unexpectedly; Ctrl+C still works."
+                                f"Ctrl+X handler raised unexpectedly ({exc}); Ctrl+C still works."
                             )
                     # Note: In some Windows terminals, Ctrl+X might not be captured
                     # Users can use Ctrl+C as alternative, which is handled by signal handler
-                except (OSError, ValueError):
+                except OSError, ValueError:
                     # kbhit/getwch can fail on Windows in certain terminal states
                     # Just continue, user can use Ctrl+C
                     pass
-        except Exception:
-            # Be silent about Windows listener errors - they're common
-            # User can use Ctrl+C as fallback
-            pass
+        except (OSError, AttributeError) as exc:
+            logger.debug("Windows key listener error: %s", exc)
         time.sleep(0.05)
 
 
@@ -415,7 +422,7 @@ def _listen_for_ctrl_x_posix(
         return
     try:
         original_attrs = termios.tcgetattr(fd)
-    except Exception:
+    except OSError, ValueError:
         return
 
     try:
@@ -423,7 +430,7 @@ def _listen_for_ctrl_x_posix(
         while not stop_event.is_set():
             try:
                 read_ready, _, _ = select.select([stdin], [], [], 0.05)
-            except Exception:
+            except OSError, ValueError:
                 break
             if not read_ready:
                 continue
@@ -433,9 +440,10 @@ def _listen_for_ctrl_x_posix(
             if data == "\x18":  # Ctrl+X
                 try:
                     on_escape()
-                except Exception:
+                except Exception as exc:
+                    logger.warning("Ctrl+X handler raised unexpectedly: %s", exc)
                     emit_warning(
-                        "Ctrl+X handler raised unexpectedly; Ctrl+C still works."
+                        f"Ctrl+X handler raised unexpectedly ({exc}); Ctrl+C still works."
                     )
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, original_attrs)
@@ -457,7 +465,7 @@ def _spawn_ctrl_x_key_listener(
     try:
         if not stdin.isatty():
             return None
-    except Exception:
+    except OSError, ValueError:
         return None
 
     def listener() -> None:
@@ -466,9 +474,10 @@ def _spawn_ctrl_x_key_listener(
                 _listen_for_ctrl_x_windows(stop_event, on_escape)
             else:
                 _listen_for_ctrl_x_posix(stop_event, on_escape)
-        except Exception:
+        except Exception as exc:
+            logger.warning("Ctrl+X listener stopped: %s", exc)
             emit_warning(
-                "Ctrl+X key listener stopped unexpectedly; press Ctrl+C to cancel."
+                f"Ctrl+X key listener stopped unexpectedly ({exc}); press Ctrl+C to cancel."
             )
 
     thread = threading.Thread(
@@ -510,7 +519,7 @@ def _shell_command_keyboard_context():
     # Replace SIGINT handler temporarily
     try:
         _ORIGINAL_SIGINT_HANDLER = signal.signal(signal.SIGINT, shell_sigint_handler)
-    except (ValueError, OSError):
+    except ValueError, OSError:
         # Can't set signal handler (maybe not main thread?)
         _ORIGINAL_SIGINT_HANDLER = None
 
@@ -565,7 +574,7 @@ def _start_keyboard_listener() -> None:
     # Replace SIGINT handler temporarily
     try:
         _ORIGINAL_SIGINT_HANDLER = signal.signal(signal.SIGINT, _shell_sigint_handler)
-    except (ValueError, OSError):
+    except ValueError, OSError:
         # Can't set signal handler (maybe not main thread?)
         _ORIGINAL_SIGINT_HANDLER = None
 
@@ -660,7 +669,7 @@ def run_shell_command_streaming(
     def read_stdout():
         try:
             fd = process.stdout.fileno()
-        except (ValueError, OSError):
+        except ValueError, OSError:
             return
 
         try:
@@ -697,18 +706,18 @@ def run_shell_command_streaming(
                                             stdout_lines.append(line)
                                             if not silent:
                                                 emit_shell_line(line, stream="stdout")
-                                except (ValueError, OSError):
+                                except ValueError, OSError:
                                     pass
                                 break
                             # Sleep briefly to avoid busy-waiting (100ms like POSIX)
                             time.sleep(0.1)
-                    except (ValueError, OSError):
+                    except ValueError, OSError:
                         break
                 else:
                     # POSIX: use select with timeout
                     try:
                         ready, _, _ = select.select([fd], [], [], 0.1)  # 100ms timeout
-                    except (ValueError, OSError):
+                    except ValueError, OSError:
                         break
 
                     if ready:
@@ -722,15 +731,15 @@ def run_shell_command_streaming(
                             emit_shell_line(line, stream="stdout")
                         last_output_time[0] = time.time()
                     # If not ready, loop continues and checks stop event again
-        except (ValueError, OSError):
+        except ValueError, OSError:
             pass
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("stdout reader error: %s", exc)
 
     def read_stderr():
         try:
             fd = process.stderr.fileno()
-        except (ValueError, OSError):
+        except ValueError, OSError:
             return
 
         try:
@@ -766,17 +775,17 @@ def run_shell_command_streaming(
                                             stderr_lines.append(line)
                                             if not silent:
                                                 emit_shell_line(line, stream="stderr")
-                                except (ValueError, OSError):
+                                except ValueError, OSError:
                                     pass
                                 break
                             # Sleep briefly to avoid busy-waiting (100ms like POSIX)
                             time.sleep(0.1)
-                    except (ValueError, OSError):
+                    except ValueError, OSError:
                         break
                 else:
                     try:
                         ready, _, _ = select.select([fd], [], [], 0.1)
-                    except (ValueError, OSError):
+                    except ValueError, OSError:
                         break
 
                     if ready:
@@ -789,10 +798,10 @@ def run_shell_command_streaming(
                         if not silent:
                             emit_shell_line(line, stream="stderr")
                         last_output_time[0] = time.time()
-        except (ValueError, OSError):
+        except ValueError, OSError:
             pass
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("stderr reader error: %s", exc)
 
     def cleanup_process_and_threads(timeout_type: str = "unknown"):
         nonlocal stdout_thread, stderr_thread
@@ -814,7 +823,7 @@ def run_shell_command_streaming(
                     process.stderr.close()
                 if process.stdin and not process.stdin.closed:
                     process.stdin.close()
-            except (OSError, ValueError):
+            except OSError, ValueError:
                 pass
 
             # Unregister once we're done cleaning up
@@ -837,6 +846,7 @@ def run_shell_command_streaming(
                     )
 
         except Exception as e:
+            logger.warning("Error during process cleanup: %s", e)
             if not silent:
                 emit_warning(
                     f"Error during process cleanup: {e}", message_group=group_id
@@ -899,7 +909,7 @@ def run_shell_command_streaming(
                 process.stderr.close()
             if process.stdin and not process.stdin.closed:
                 process.stdin.close()
-        except (OSError, ValueError):
+        except OSError, ValueError:
             pass
 
         _unregister_process(process)
@@ -947,6 +957,7 @@ def run_shell_command_streaming(
         )
 
     except Exception as e:
+        logger.warning("Error during streaming execution: %s", e)
         with _ACTIVE_STOP_EVENTS_LOCK:
             _ACTIVE_STOP_EVENTS.discard(stop_event)
         return ShellCommandOutput(
@@ -1173,6 +1184,7 @@ async def run_shell_command(
                 pid=process.pid,
             )
         except Exception as e:
+            logger.warning("Failed to start background process: %s", e)
             with suppress(Exception):
                 log_file.close()
             # Clean up the temp file on error since no process will write to it
@@ -1258,7 +1270,7 @@ def _run_command_sync(
     if sys.platform.startswith("win"):
         try:
             creationflags = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
-        except Exception:
+        except AttributeError:
             creationflags = 0
     else:
         preexec_fn = os.setsid if hasattr(os, "setsid") else None
@@ -1310,6 +1322,7 @@ async def _run_command_inner(
             partial(_run_command_sync, command, cwd, timeout, group_id, silent),
         )
     except Exception as e:
+        logger.warning("Error executing command: %s", e)
         if not silent:
             emit_error(traceback.format_exc(), message_group=group_id)
         if "stdout" not in locals():

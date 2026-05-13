@@ -71,8 +71,12 @@ class TestDisplayNonStreamedResult:
         mock_parser_class.assert_called_once()
 
         # Verify renderer was instantiated
+        from termflow.render.style import RenderFeatures
+
         mock_renderer_class.assert_called_once_with(
-            output=mock_console.file, width=mock_console.width
+            output=mock_console.file,
+            width=mock_console.width,
+            features=RenderFeatures(clipboard=False),
         )
 
     @patch("code_muse.messaging.spinner.pause_all_spinners")
@@ -512,7 +516,13 @@ class TestDisplayNonStreamedResult:
         display_non_streamed_result(content="test", console=mock_console)
 
         # Verify renderer was created with the correct console.file
-        mock_renderer_class.assert_called_once_with(output=test_file, width=100)
+        from termflow.render.style import RenderFeatures
+
+        mock_renderer_class.assert_called_once_with(
+            output=test_file,
+            width=100,
+            features=RenderFeatures(clipboard=False),
+        )
 
     @patch("code_muse.messaging.spinner.pause_all_spinners")
     @patch("code_muse.messaging.spinner.resume_all_spinners")

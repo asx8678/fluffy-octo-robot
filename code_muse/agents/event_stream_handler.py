@@ -31,7 +31,7 @@ def _handle_stream_task_exception(task: asyncio.Task) -> None:
     try:
         task.result()
     except Exception:
-        logger.debug("Stream event callback failed", exc_info=True)
+        logger.warning("Stream event callback failed", exc_info=True)
 
 
 def _fire_stream_event(event_type: str, event_data: Any) -> None:

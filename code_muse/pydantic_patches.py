@@ -10,14 +10,17 @@ Usage:
 
 import contextlib
 import importlib.metadata
+import logging
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 def _get_muse_version() -> str:
     """Get the current Muse version."""
     try:
         return importlib.metadata.version("code-muse")
-    except Exception:
+    except importlib.metadata.PackageNotFoundError:
         return "0.0.0-dev"
 
 
@@ -48,13 +51,13 @@ def patch_user_agent() -> None:
                 model_name = get_global_model_name()
                 if model_name and "kimi" in model_name.lower():
                     return "KimiCLI/0.63"
-            except Exception:
-                pass
+            except (ImportError, AttributeError, ValueError) as exc:
+                logger.debug("get_global_model_name failed: %s", exc)
             return f"Muse/{version}"
 
         pydantic_models.get_user_agent = _get_dynamic_user_agent
-    except Exception:
-        pass  # Don't crash on patch failure
+    except (ImportError, AttributeError, TypeError) as exc:
+        logger.warning("patch_user_agent failed: %s", exc)
 
 
 def patch_message_history_cleaning() -> None:
@@ -63,8 +66,8 @@ def patch_message_history_cleaning() -> None:
         from pydantic_ai import _agent_graph
 
         _agent_graph._clean_message_history = lambda messages: messages
-    except Exception:
-        pass
+    except (ImportError, AttributeError, TypeError) as exc:
+        logger.warning("patch_message_history_cleaning failed: %s", exc)
 
 
 def patch_process_message_history() -> None:
@@ -120,8 +123,8 @@ def patch_process_message_history() -> None:
             return messages
 
         _agent_graph._process_message_history = _patched_process_message_history
-    except Exception:
-        pass
+    except (ImportError, AttributeError, TypeError) as exc:
+        logger.warning("patch_process_message_history failed: %s", exc)
 
 
 def patch_tool_call_json_repair() -> None:
@@ -223,8 +226,8 @@ def patch_tool_call_callbacks() -> None:
                     repaired = json_repair.repair_json(call.args)
                     if repaired != call.args:
                         call.args = repaired
-            except Exception:
-                pass
+            except (ImportError, AttributeError, ValueError, TypeError) as exc:
+                logger.debug("json_repair failed: %s", exc)
 
             # Normalise args to a dict for the callback contract
             tool_args: dict = {}
@@ -235,7 +238,7 @@ def patch_tool_call_callbacks() -> None:
                     import json
 
                     tool_args = json.loads(call.args)
-                except Exception:
+                except json.JSONDecodeError, TypeError, ValueError:
                     tool_args = {"raw": call.args}
 
             # --- pre_tool_call (with blocking support) ---
@@ -272,8 +275,8 @@ def patch_tool_call_callbacks() -> None:
                         block_msg = f"🚫 Hook blocked this tool call: {clean_reason}"
                         emit_warning(block_msg)
                         return f"ERROR: {block_msg}\n\nThe hook policy prevented this tool from running. Please inform the user and do not retry this specific command."
-            except Exception:
-                pass  # other errors don't block tool execution
+            except Exception as exc:
+                logger.warning("pre_tool_call callback error: %s", exc)
 
             start = time.perf_counter()
             error: Exception | None = None
@@ -300,8 +303,8 @@ def patch_tool_call_callbacks() -> None:
                     await callbacks.on_post_tool_call(
                         tool_name, tool_args, final_result, duration_ms
                     )
-                except Exception:
-                    pass  # never block tool execution
+                except Exception as exc:
+                    logger.warning("post_tool_call callback error: %s", exc)
 
         ToolManager.get_tool_def = _patched_get_tool_def
         ToolManager.handle_call = _patched_handle_call
@@ -309,8 +312,8 @@ def patch_tool_call_callbacks() -> None:
 
     except ImportError:
         pass
-    except Exception:
-        pass
+    except (AttributeError, TypeError) as exc:
+        logger.warning("patch_tool_call_callbacks failed: %s", exc)
 
 
 def patch_prompt_toolkit_emoji_width() -> None:
@@ -362,8 +365,8 @@ def patch_prompt_toolkit_emoji_width() -> None:
 
     except ImportError:
         pass  # wcwidth or prompt_toolkit not available
-    except Exception:
-        pass  # Don't crash on patch failure
+    except (AttributeError, TypeError) as exc:
+        logger.warning("patch_prompt_toolkit_emoji_width failed: %s", exc)
 
 
 def apply_all_patches() -> None:

@@ -268,11 +268,20 @@ class TestModelAllowsStreaming:
         assert _model_allows_streaming(None) is True
 
     def test_crof_kimi_disables_streaming(self):
+        from unittest.mock import patch
+
         from code_muse.agents._runtime import _model_allows_streaming
 
         # crof.ai's kimi-k2.5-lightning has intermittent SSE issues;
         # "streaming": false in models.json forces non-streaming requests.
-        assert _model_allows_streaming("crof-kimi-k2.5-lightning") is False
+        mock_config = {
+            "crof-kimi-k2.5-lightning": {"streaming": False}
+        }
+        with patch(
+            "code_muse.agents._runtime.ModelFactory.load_config",
+            return_value=mock_config,
+        ):
+            assert _model_allows_streaming("crof-kimi-k2.5-lightning") is False
 
     def test_other_model_allows_streaming(self):
         from code_muse.agents._runtime import _model_allows_streaming

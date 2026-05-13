@@ -89,23 +89,23 @@ class TestIsProcessAlive:
         assert result is False or result is True  # Platform-dependent
 
     def test_permission_error(self):
-        with patch("os.kill", side_effect=PermissionError):
-            with patch("os.name", "posix"):
-                assert am._is_process_alive(1) is True
+        with patch("os.kill", side_effect=PermissionError), patch("os.name", "posix"):
+            assert am._is_process_alive(1) is True
 
     def test_os_error(self):
         with patch("os.kill", side_effect=OSError), patch("os.name", "posix"):
             assert am._is_process_alive(99999) is False
 
     def test_value_error(self):
-        with patch("os.kill", side_effect=ValueError):
-            with patch("os.name", "posix"):
-                assert am._is_process_alive(99999) is False
+        with patch("os.kill", side_effect=ValueError), patch("os.name", "posix"):
+            assert am._is_process_alive(99999) is False
 
     def test_generic_exception(self):
-        with patch("os.kill", side_effect=Exception("weird")):
-            with patch("os.name", "posix"):
-                assert am._is_process_alive(99999) is True
+        with (
+            patch("os.kill", side_effect=Exception("weird")),
+            patch("os.name", "posix"),
+        ):
+            assert am._is_process_alive(99999) is True
 
 
 class TestCleanupDeadSessions:
@@ -306,6 +306,8 @@ class TestGetTerminalSessionId:
 class TestDiscoverAgents:
     """Tests for _discover_agents (lines 367-392)."""
 
+    @patch("code_muse.agents.agent_manager._DISCOVERY_DIRTY", True)
+    @patch("code_muse.agents.agent_manager._DISCOVERY_CACHE", {})
     @patch("code_muse.agents.agent_manager.on_register_agents", return_value=[])
     @patch("code_muse.agents.agent_manager.discover_json_agents", return_value={})
     def test_discovers_python_agents(self, mock_json, mock_plugins):
@@ -313,6 +315,8 @@ class TestDiscoverAgents:
         # Should have found at least muse agent
         assert len(am._AGENT_REGISTRY) > 0
 
+    @patch("code_muse.agents.agent_manager._DISCOVERY_DIRTY", True)
+    @patch("code_muse.agents.agent_manager._DISCOVERY_CACHE", {})
     @patch("code_muse.agents.agent_manager.on_register_agents")
     @patch("code_muse.agents.agent_manager.discover_json_agents", return_value={})
     def test_plugin_agents_class(self, mock_json, mock_plugins):
@@ -320,6 +324,8 @@ class TestDiscoverAgents:
         am._discover_agents()
         assert "plugin-agent" in am._AGENT_REGISTRY
 
+    @patch("code_muse.agents.agent_manager._DISCOVERY_DIRTY", True)
+    @patch("code_muse.agents.agent_manager._DISCOVERY_CACHE", {})
     @patch("code_muse.agents.agent_manager.on_register_agents")
     @patch("code_muse.agents.agent_manager.discover_json_agents", return_value={})
     def test_plugin_agents_json_path(self, mock_json, mock_plugins):
@@ -330,6 +336,8 @@ class TestDiscoverAgents:
         assert "json-plugin" in am._AGENT_REGISTRY
         assert am._AGENT_REGISTRY["json-plugin"] == "/path/to/agent.json"
 
+    @patch("code_muse.agents.agent_manager._DISCOVERY_DIRTY", True)
+    @patch("code_muse.agents.agent_manager._DISCOVERY_CACHE", {})
     @patch("code_muse.agents.agent_manager.on_register_agents")
     @patch("code_muse.agents.agent_manager.discover_json_agents", return_value={})
     def test_plugin_agents_none_result(self, mock_json, mock_plugins):
@@ -337,6 +345,8 @@ class TestDiscoverAgents:
         am._discover_agents()
         # Should not crash
 
+    @patch("code_muse.agents.agent_manager._DISCOVERY_DIRTY", True)
+    @patch("code_muse.agents.agent_manager._DISCOVERY_CACHE", {})
     @patch("code_muse.agents.agent_manager.on_register_agents")
     @patch("code_muse.agents.agent_manager.discover_json_agents", return_value={})
     def test_plugin_agents_invalid_def(self, mock_json, mock_plugins):
@@ -347,6 +357,8 @@ class TestDiscoverAgents:
         ]
         am._discover_agents()
 
+    @patch("code_muse.agents.agent_manager._DISCOVERY_DIRTY", True)
+    @patch("code_muse.agents.agent_manager._DISCOVERY_CACHE", {})
     @patch(
         "code_muse.agents.agent_manager.on_register_agents",
         side_effect=Exception("fail"),
@@ -357,6 +369,8 @@ class TestDiscoverAgents:
         am._discover_agents()
         mock_warn.assert_called()
 
+    @patch("code_muse.agents.agent_manager._DISCOVERY_DIRTY", True)
+    @patch("code_muse.agents.agent_manager._DISCOVERY_CACHE", {})
     @patch("code_muse.agents.agent_manager.on_register_agents", return_value=[])
     @patch(
         "code_muse.agents.agent_manager.discover_json_agents",
@@ -367,6 +381,8 @@ class TestDiscoverAgents:
         am._discover_agents()
         mock_warn.assert_called()
 
+    @patch("code_muse.agents.agent_manager._DISCOVERY_DIRTY", True)
+    @patch("code_muse.agents.agent_manager._DISCOVERY_CACHE", {})
     @patch("code_muse.agents.agent_manager.on_register_agents")
     @patch("code_muse.agents.agent_manager.discover_json_agents", return_value={})
     def test_plugin_single_dict(self, mock_json, mock_plugins):
