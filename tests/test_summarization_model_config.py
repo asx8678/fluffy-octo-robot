@@ -9,7 +9,7 @@ Covers:
 
 from unittest.mock import patch
 
-from code_muse import config as cp_config
+import code_muse.config_model as _config_model
 from code_muse.config import (
     get_config_keys,
     get_summarization_model_name,
@@ -22,20 +22,23 @@ class TestGetSummarizationModelName:
 
     def test_returns_configured_value_when_set(self):
         with (
-            patch.object(
-                cp_config, "get_value", return_value="firepass-kimi-k2p5-turbo"
+            patch(
+                "code_muse.config.parser.get_value",
+                return_value="firepass-kimi-k2p5-turbo",
             ),
             patch.object(
-                cp_config, "get_global_model_name", return_value="should-not-be-used"
+                _config_model,
+                "get_global_model_name",
+                return_value="should-not-be-used",
             ),
         ):
             assert get_summarization_model_name() == "firepass-kimi-k2p5-turbo"
 
     def test_falls_back_to_global_when_unset(self):
         with (
-            patch.object(cp_config, "get_value", return_value=None),
+            patch("code_muse.config.parser.get_value", return_value=None),
             patch.object(
-                cp_config, "get_global_model_name", return_value="claude-opus-4-7"
+                _config_model, "get_global_model_name", return_value="claude-opus-4-7"
             ),
         ):
             assert get_summarization_model_name() == "claude-opus-4-7"
@@ -43,9 +46,9 @@ class TestGetSummarizationModelName:
     def test_falls_back_to_global_when_empty_string(self):
         """Empty string in config should be treated as unset, not as a valid model."""
         with (
-            patch.object(cp_config, "get_value", return_value=""),
+            patch("code_muse.config.parser.get_value", return_value=""),
             patch.object(
-                cp_config, "get_global_model_name", return_value="claude-opus-4-7"
+                _config_model, "get_global_model_name", return_value="claude-opus-4-7"
             ),
         ):
             assert get_summarization_model_name() == "claude-opus-4-7"
@@ -53,8 +56,10 @@ class TestGetSummarizationModelName:
     def test_reads_from_summarization_model_key(self):
         """Verify it looks up the correct config key, not some other name."""
         with (
-            patch.object(cp_config, "get_value") as mock_get,
-            patch.object(cp_config, "get_global_model_name", return_value="default"),
+            patch("code_muse.config.parser.get_value") as mock_get,
+            patch.object(
+                _config_model, "get_global_model_name", return_value="default"
+            ),
         ):
             mock_get.return_value = None
             get_summarization_model_name()
@@ -63,7 +68,7 @@ class TestGetSummarizationModelName:
 
 class TestSetSummarizationModelName:
     def test_persists_via_set_config_value(self):
-        with patch.object(cp_config, "set_config_value") as mock_set:
+        with patch("code_muse.config.parser.set_config_value") as mock_set:
             set_summarization_model_name("firepass-kimi-k2p5-turbo")
             mock_set.assert_called_once_with(
                 "summarization_model", "firepass-kimi-k2p5-turbo"
@@ -71,13 +76,13 @@ class TestSetSummarizationModelName:
 
     def test_empty_string_clears_setting(self):
         """Passing empty string should clear the key (falls back to global)."""
-        with patch.object(cp_config, "set_config_value") as mock_set:
+        with patch("code_muse.config.parser.set_config_value") as mock_set:
             set_summarization_model_name("")
             mock_set.assert_called_once_with("summarization_model", "")
 
     def test_none_is_treated_as_clear(self):
         """None should not crash — coerce to empty string."""
-        with patch.object(cp_config, "set_config_value") as mock_set:
+        with patch("code_muse.config.parser.set_config_value") as mock_set:
             set_summarization_model_name(None)  # type: ignore[arg-type]
             mock_set.assert_called_once_with("summarization_model", "")
 

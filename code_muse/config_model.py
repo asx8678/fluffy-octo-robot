@@ -2,7 +2,13 @@
 
 import configparser
 
-import code_muse.config as _config
+import code_muse.config.parser as _parser
+import code_muse.config.paths as paths
+from code_muse.config.models import (
+    get_global_model_name,
+    model_supports_setting,
+)
+from code_muse.config.parser import DEFAULT_SECTION
 
 
 def get_summarization_model_name() -> str:
@@ -17,10 +23,10 @@ def get_summarization_model_name() -> str:
     long-context specialist model. Decoupling it from the global model lets
     users pick the right tool without changing their main agent.
     """
-    value = _config.get_value("summarization_model")
+    value = _parser.get_value("summarization_model")
     if value:
         return value
-    return _config.get_global_model_name()
+    return get_global_model_name()
 
 
 def set_summarization_model_name(model: str) -> None:
@@ -29,24 +35,25 @@ def set_summarization_model_name(model: str) -> None:
     Pass an empty string to clear the setting and fall back to the global
     model on subsequent calls to :func:`get_summarization_model_name`.
     """
-    _config.set_config_value("summarization_model", model or "")
+    _parser.set_config_value("summarization_model", model or "")
 
 
 def get_muse_token():
     """Returns the muse_token from config, or None if not set."""
-    return _config.get_value("muse_token")
+    return _parser.get_value("muse_token")
 
 
 def set_muse_token(token: str):
     """Sets the muse_token in the persistent config file."""
-    _config.set_config_value("muse_token", token)
+    _parser.set_config_value("muse_token", token)
 
 
 def get_openai_reasoning_effort() -> str:
-    """Return the configured OpenAI reasoning effort (minimal, low, medium, high, xhigh)."""
+    """Return the configured OpenAI reasoning effort
+    (minimal, low, medium, high, xhigh)."""
     allowed_values = {"minimal", "low", "medium", "high", "xhigh"}
     configured = (
-        (_config.get_value("openai_reasoning_effort") or "medium").strip().lower()
+        (_parser.get_value("openai_reasoning_effort") or "medium").strip().lower()
     )
     if configured not in allowed_values:
         return "medium"
@@ -59,9 +66,10 @@ def set_openai_reasoning_effort(value: str) -> None:
     normalized = (value or "").strip().lower()
     if normalized not in allowed_values:
         raise ValueError(
-            f"Invalid reasoning effort '{value}'. Allowed: {', '.join(sorted(allowed_values))}"
+            f"Invalid reasoning effort '{value}'. "
+            f"Allowed: {', '.join(sorted(allowed_values))}"
         )
-    _config.set_config_value("openai_reasoning_effort", normalized)
+    _parser.set_config_value("openai_reasoning_effort", normalized)
 
 
 def get_openai_reasoning_summary() -> str:
@@ -74,7 +82,7 @@ def get_openai_reasoning_summary() -> str:
     """
     allowed_values = {"auto", "concise", "detailed"}
     configured = (
-        (_config.get_value("openai_reasoning_summary") or "detailed").strip().lower()
+        (_parser.get_value("openai_reasoning_summary") or "detailed").strip().lower()
     )
     if configured not in allowed_values:
         return "auto"
@@ -87,9 +95,10 @@ def set_openai_reasoning_summary(value: str) -> None:
     normalized = (value or "").strip().lower()
     if normalized not in allowed_values:
         raise ValueError(
-            f"Invalid reasoning summary '{value}'. Allowed: {', '.join(sorted(allowed_values))}"
+            f"Invalid reasoning summary '{value}'. "
+            f"Allowed: {', '.join(sorted(allowed_values))}"
         )
-    _config.set_config_value("openai_reasoning_summary", normalized)
+    _parser.set_config_value("openai_reasoning_summary", normalized)
 
 
 def get_openai_verbosity() -> str:
@@ -101,7 +110,7 @@ def get_openai_verbosity() -> str:
     - high: more verbose responses
     """
     allowed_values = {"low", "medium", "high"}
-    configured = (_config.get_value("openai_verbosity") or "medium").strip().lower()
+    configured = (_parser.get_value("openai_verbosity") or "medium").strip().lower()
     if configured not in allowed_values:
         return "medium"
     return configured
@@ -115,7 +124,7 @@ def set_openai_verbosity(value: str) -> None:
         raise ValueError(
             f"Invalid verbosity '{value}'. Allowed: {', '.join(sorted(allowed_values))}"
         )
-    _config.set_config_value("openai_verbosity", normalized)
+    _parser.set_config_value("openai_verbosity", normalized)
 
 
 def get_temperature() -> float | None:
@@ -125,14 +134,14 @@ def get_temperature() -> float | None:
         Float between 0.0 and 2.0 if set, None if not configured.
         This allows each model to use its own default when not overridden.
     """
-    val = _config.get_value("temperature")
+    val = _parser.get_value("temperature")
     if val is None or val.strip() == "":
         return None
     try:
         temp = float(val)
         # Clamp to valid range (most APIs accept 0-2)
         return max(0.0, min(2.0, temp))
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return None
 
 
@@ -146,11 +155,11 @@ def set_temperature(value: float | None) -> None:
     Note: Consider using set_model_setting() for per-model temperature.
     """
     if value is None:
-        _config.set_config_value("temperature", "")
+        _parser.set_config_value("temperature", "")
     else:
         # Validate and clamp
         temp = max(0.0, min(2.0, float(value)))
-        _config.set_config_value("temperature", str(temp))
+        _parser.set_config_value("temperature", str(temp))
 
 
 def _sanitize_model_name_for_key(model_name: str) -> str:
@@ -176,16 +185,16 @@ def get_model_setting(
     Returns:
         The setting value as a float, or default if not set.
     """
-    sanitized_name = _config._sanitize_model_name_for_key(model_name)
+    sanitized_name = _sanitize_model_name_for_key(model_name)
     key = f"model_settings_{sanitized_name}_{setting}"
-    val = _config.get_value(key)
+    val = _parser.get_value(key)
 
     if val is None or val.strip() == "":
         return default
 
     try:
         return float(val)
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return default
 
 
@@ -197,17 +206,17 @@ def set_model_setting(model_name: str, setting: str, value: float | None) -> Non
         setting: The setting name (e.g., 'temperature', 'seed')
         value: The value to set, or None to clear
     """
-    sanitized_name = _config._sanitize_model_name_for_key(model_name)
+    sanitized_name = _sanitize_model_name_for_key(model_name)
     key = f"model_settings_{sanitized_name}_{setting}"
 
     if value is None:
-        _config.set_config_value(key, "")
+        _parser.set_config_value(key, "")
     elif isinstance(value, float):
         # Round floats to nearest hundredth to avoid floating point weirdness
         # (allows 0.05 step increments for temperature/top_p)
-        _config.set_config_value(key, str(round(value, 2)))
+        _parser.set_config_value(key, str(round(value, 2)))
     else:
-        _config.set_config_value(key, str(value))
+        _parser.set_config_value(key, str(value))
 
 
 def get_all_model_settings(model_name: str) -> dict:
@@ -220,15 +229,15 @@ def get_all_model_settings(model_name: str) -> dict:
         Dictionary of setting_name -> value for all configured settings.
     """
 
-    sanitized_name = _config._sanitize_model_name_for_key(model_name)
+    sanitized_name = _sanitize_model_name_for_key(model_name)
     prefix = f"model_settings_{sanitized_name}_"
 
     config = configparser.ConfigParser()
-    config.read(_config.CONFIG_FILE)
+    config.read(paths.CONFIG_FILE)
 
     settings = {}
-    if _config.DEFAULT_SECTION in config:
-        for key, val in config[_config.DEFAULT_SECTION].items():
+    if DEFAULT_SECTION in config:
+        for key, val in config[DEFAULT_SECTION].items():
             if key.startswith(prefix) and val.strip():
                 setting_name = key[len(prefix) :]
                 # Handle different value types
@@ -244,7 +253,7 @@ def get_all_model_settings(model_name: str) -> dict:
                             settings[setting_name] = int(val_stripped)
                         else:
                             settings[setting_name] = float(val_stripped)
-                    except (ValueError, TypeError):
+                    except ValueError, TypeError:
                         # Keep as string if not a number
                         settings[setting_name] = val_stripped
 
@@ -258,20 +267,20 @@ def clear_model_settings(model_name: str) -> None:
         model_name: The model name
     """
 
-    sanitized_name = _config._sanitize_model_name_for_key(model_name)
+    sanitized_name = _sanitize_model_name_for_key(model_name)
     prefix = f"model_settings_{sanitized_name}_"
 
     config = configparser.ConfigParser()
-    config.read(_config.CONFIG_FILE)
+    config.read(paths.CONFIG_FILE)
 
-    if _config.DEFAULT_SECTION in config:
+    if DEFAULT_SECTION in config:
         keys_to_remove = [
-            key for key in config[_config.DEFAULT_SECTION] if key.startswith(prefix)
+            key for key in config[DEFAULT_SECTION] if key.startswith(prefix)
         ]
         for key in keys_to_remove:
-            del config[_config.DEFAULT_SECTION][key]
+            del config[DEFAULT_SECTION][key]
 
-        with open(_config.CONFIG_FILE, "w", encoding="utf-8") as f:
+        with open(paths.CONFIG_FILE, "w", encoding="utf-8") as f:
             config.write(f)
 
 
@@ -292,21 +301,21 @@ def get_effective_model_settings(model_name: str | None = None) -> dict:
         Ready to be unpacked into ModelSettings.
     """
     if model_name is None:
-        model_name = _config.get_global_model_name()
+        model_name = get_global_model_name()
 
     # Start with all per-model settings
-    settings = _config.get_all_model_settings(model_name)
+    settings = get_all_model_settings(model_name)
 
     # Fall back to global temperature if not set per-model
     if "temperature" not in settings:
-        global_temp = _config.get_temperature()
+        global_temp = get_temperature()
         if global_temp is not None:
             settings["temperature"] = global_temp
 
     # Filter to only settings the model supports
     effective_settings = {}
     for setting_name, value in settings.items():
-        if _config.model_supports_setting(model_name, setting_name):
+        if model_supports_setting(model_name, setting_name):
             # Convert seed to int, keep others as float
             if setting_name == "seed" and value is not None:
                 effective_settings[setting_name] = int(value)
@@ -327,7 +336,7 @@ def get_effective_temperature(model_name: str | None = None) -> float | None:
     Returns:
         Temperature value, or None if not configured.
     """
-    settings = _config.get_effective_model_settings(model_name)
+    settings = get_effective_model_settings(model_name)
     return settings.get("temperature")
 
 
@@ -340,7 +349,7 @@ def get_effective_top_p(model_name: str | None = None) -> float | None:
     Returns:
         top_p value, or None if not configured.
     """
-    settings = _config.get_effective_model_settings(model_name)
+    settings = get_effective_model_settings(model_name)
     return settings.get("top_p")
 
 
@@ -353,5 +362,5 @@ def get_effective_seed(model_name: str | None = None) -> int | None:
     Returns:
         seed value as int, or None if not configured.
     """
-    settings = _config.get_effective_model_settings(model_name)
+    settings = get_effective_model_settings(model_name)
     return settings.get("seed")

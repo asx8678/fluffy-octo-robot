@@ -1,6 +1,6 @@
 """Config: appearance settings."""
 
-import code_muse.config as _config
+import code_muse.config.parser as _parser
 
 
 def set_diff_highlight_style(style: str):
@@ -59,7 +59,7 @@ def get_diff_addition_color() -> str:
     or unparseable.
     """
     return _coerce_to_hex(
-        _config.get_value("highlight_addition_color"), _DEFAULT_DIFF_ADDITION_HEX
+        _parser.get_value("highlight_addition_color"), _DEFAULT_DIFF_ADDITION_HEX
     )
 
 
@@ -70,7 +70,7 @@ def set_diff_addition_color(color: str):
     'rgb(r,g,b)'. The value is normalized to '#RRGGBB' before being written so
     downstream renderers never see a raw name.
     """
-    _config.set_config_value(
+    _parser.set_config_value(
         "highlight_addition_color",
         _coerce_to_hex(color, _DEFAULT_DIFF_ADDITION_HEX),
     )
@@ -83,7 +83,7 @@ def get_diff_deletion_color() -> str:
     unparseable.
     """
     return _coerce_to_hex(
-        _config.get_value("highlight_deletion_color"), _DEFAULT_DIFF_DELETION_HEX
+        _parser.get_value("highlight_deletion_color"), _DEFAULT_DIFF_DELETION_HEX
     )
 
 
@@ -94,7 +94,7 @@ def set_diff_deletion_color(color: str):
     'rgb(r,g,b)'. The value is normalized to '#RRGGBB' before being written so
     downstream renderers never see a raw name.
     """
-    _config.set_config_value(
+    _parser.set_config_value(
         "highlight_deletion_color",
         _coerce_to_hex(color, _DEFAULT_DIFF_DELETION_HEX),
     )
@@ -133,7 +133,7 @@ def get_banner_color(banner_name: str) -> str:
         Rich color name or hex code for the banner background
     """
     config_key = f"banner_color_{banner_name}"
-    val = _config.get_value(config_key)
+    val = _parser.get_value(config_key)
     if val:
         return val
     return DEFAULT_BANNER_COLORS.get(banner_name, "blue")
@@ -147,7 +147,7 @@ def set_banner_color(banner_name: str, color: str):
         color: Rich color name or hex code
     """
     config_key = f"banner_color_{banner_name}"
-    _config.set_config_value(config_key, color)
+    _parser.set_config_value(config_key, color)
 
 
 def get_all_banner_colors() -> dict:
@@ -182,12 +182,12 @@ def get_diff_context_lines() -> int:
     Defaults to 6 if unset or misconfigured.
     Configurable by 'diff_context_lines' key.
     """
-    val = _config.get_value("diff_context_lines")
+    val = _parser.get_value("diff_context_lines")
     try:
         context_lines = int(val) if val else 6
         # Apply reasonable bounds: minimum 0, maximum 50
         return max(0, min(context_lines, 50))
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return 6
 
 
@@ -196,10 +196,11 @@ def get_suppress_thinking_messages() -> bool:
     Checks muse.cfg for 'suppress_thinking_messages' (case-insensitive in value only).
     Defaults to False if not set.
     Allowed values for ON: 1, '1', 'true', 'yes', 'on' (all case-insensitive for value).
-    When enabled, thinking messages (agent_reasoning, planned_next_steps) will be hidden.
+    When enabled, thinking messages (agent_reasoning,
+    planned_next_steps) will be hidden.
     """
     true_vals = {"1", "true", "yes", "on"}
-    cfg_val = _config.get_value("suppress_thinking_messages")
+    cfg_val = _parser.get_value("suppress_thinking_messages")
     if cfg_val is not None:
         return str(cfg_val).strip().lower() in true_vals
     return False
@@ -211,20 +212,21 @@ def set_suppress_thinking_messages(enabled: bool):
     Args:
         enabled: Whether to suppress thinking messages
     """
-    _config.set_config_value(
+    _parser.set_config_value(
         "suppress_thinking_messages", "true" if enabled else "false"
     )
 
 
 def get_suppress_informational_messages() -> bool:
     """
-    Checks muse.cfg for 'suppress_informational_messages' (case-insensitive in value only).
+    Checks muse.cfg for 'suppress_informational_messages'
+    (case-insensitive in value only).
     Defaults to False if not set.
     Allowed values for ON: 1, '1', 'true', 'yes', 'on' (all case-insensitive for value).
     When enabled, informational messages (info, success, warning) will be hidden.
     """
     true_vals = {"1", "true", "yes", "on"}
-    cfg_val = _config.get_value("suppress_informational_messages")
+    cfg_val = _parser.get_value("suppress_informational_messages")
     if cfg_val is not None:
         return str(cfg_val).strip().lower() in true_vals
     return False
@@ -236,6 +238,6 @@ def set_suppress_informational_messages(enabled: bool):
     Args:
         enabled: Whether to suppress informational messages
     """
-    _config.set_config_value(
+    _parser.set_config_value(
         "suppress_informational_messages", "true" if enabled else "false"
     )

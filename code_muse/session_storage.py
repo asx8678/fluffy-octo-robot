@@ -55,7 +55,7 @@ def _hash_session_data(data: dict[str, Any]) -> str | None:
         return hashlib.sha256(
             json.dumps(data, sort_keys=True).encode("utf-8")
         ).hexdigest()
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
 
 
@@ -86,14 +86,11 @@ def _get_legacy_hmac_key() -> bytes | None:
     if env_key:
         return env_key.encode("utf-8")
     # Try config
-    try:
-        from code_muse.config import get_config_value
+    import code_muse.config.parser as _parser
 
-        key = get_config_value("legacy_hmac_key")
-        if key:
-            return key.encode("utf-8") if isinstance(key, str) else key
-    except Exception:
-        pass
+    key = _parser.get_value("legacy_hmac_key")
+    if key:
+        return key.encode("utf-8") if isinstance(key, str) else key
     return None
 
 
@@ -225,7 +222,7 @@ def _is_binary_pickle(data: bytes) -> bool:
     try:
         text = data.decode("utf-8")
         return not text.lstrip().startswith(("{", "["))
-    except (UnicodeDecodeError, ValueError):
+    except UnicodeDecodeError, ValueError:
         return True
 
 
@@ -617,7 +614,7 @@ async def restore_autosave_interactively(base_dir: Path) -> None:
                     ]
                 )
             )
-        except (KeyboardInterrupt, EOFError):
+        except KeyboardInterrupt, EOFError:
             emit_warning("Autosave selection cancelled")
             return
 
@@ -670,12 +667,9 @@ async def restore_autosave_interactively(base_dir: Path) -> None:
     agent.set_message_history(history)
 
     # Set current autosave session id so subsequent autosaves overwrite this session
-    try:
-        from code_muse.config import set_current_autosave_from_session_name
+    from code_muse.config.session import set_current_autosave_from_session_name
 
-        set_current_autosave_from_session_name(chosen_name)
-    except Exception:
-        pass
+    set_current_autosave_from_session_name(chosen_name)
 
     total_tokens = sum(agent.estimate_tokens_for_message(msg) for msg in history)
 

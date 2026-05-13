@@ -20,6 +20,7 @@ from code_muse.config import (
     get_yolo_mode,
     set_config_value,
 )
+from code_muse.config import models as _models
 
 
 class TestConfigExtendedPart1:
@@ -54,7 +55,7 @@ class TestConfigExtendedPart1:
     def mock_config_file(self, temp_config_dir):
         """Mock the CONFIG_FILE to use our temporary config"""
         temp_dir, config_file = temp_config_dir
-        with patch("code_muse.config.CONFIG_FILE", config_file):
+        with patch("code_muse.config.paths.CONFIG_FILE", config_file):
             yield config_file
 
     def test_get_value_with_existing_key(self, mock_config_file):
@@ -110,7 +111,8 @@ class TestConfigExtendedPart1:
         # Test setting various true values
         for true_val in ["true", "TRUE", "True", "1", "yes", "YES", "on", "ON"]:
             set_config_value("test_bool", true_val)
-            # Note: get_yolo_mode specifically checks yolo_mode, so we'll test the pattern
+            # Note: get_yolo_mode specifically checks yolo_mode,
+            # so we'll test the pattern
             val = get_value("test_bool")
             assert val == true_val
 
@@ -135,7 +137,7 @@ class TestConfigExtendedPart1:
         with open(config_file, "w") as f:
             config.write(f)
 
-        with patch("code_muse.config.CONFIG_FILE", config_file):
+        with patch("code_muse.config.paths.CONFIG_FILE", config_file):
             result = get_allow_recursion()
             assert result is True  # Default should be True
 
@@ -149,7 +151,7 @@ class TestConfigExtendedPart1:
         with open(config_file, "w") as f:
             config.write(f)
 
-        with patch("code_muse.config.CONFIG_FILE", config_file):
+        with patch("code_muse.config.paths.CONFIG_FILE", config_file):
             result = get_yolo_mode()
             assert result is False  # Default should be False (safe)
 
@@ -163,7 +165,7 @@ class TestConfigExtendedPart1:
         with open(config_file, "w") as f:
             config.write(f)
 
-        with patch("code_muse.config.CONFIG_FILE", config_file):
+        with patch("code_muse.config.paths.CONFIG_FILE", config_file):
             result = get_auto_save_session()
             assert result is True  # Default should be True
 
@@ -218,7 +220,7 @@ class TestConfigExtendedPart1:
         with open(config_file, "w") as f:
             config.write(f)
 
-        with patch("code_muse.config.CONFIG_FILE", config_file):
+        with patch("code_muse.config.paths.CONFIG_FILE", config_file):
             result = get_agent_name()
             assert result == "Muse"  # Default should be "Muse"
 
@@ -232,12 +234,12 @@ class TestConfigExtendedPart1:
         with open(config_file, "w") as f:
             config.write(f)
 
-        with patch("code_muse.config.CONFIG_FILE", config_file):
+        with patch("code_muse.config.paths.CONFIG_FILE", config_file):
             result = get_owner_name()
             assert result == "Creator"  # Default should be "Creator"
 
-    @patch("code_muse.config._validate_model_exists")
-    @patch("code_muse.config._default_model_from_models_json")
+    @patch("code_muse.config.models._validate_model_exists")
+    @patch("code_muse.config.models._default_model_from_models_json")
     def test_get_global_model_name_with_valid_stored_model(
         self, mock_default, mock_validate, mock_config_file
     ):
@@ -245,13 +247,14 @@ class TestConfigExtendedPart1:
         mock_validate.return_value = True
         mock_default.return_value = "fallback-model"
 
+        _models._SESSION_MODEL = None
         result = get_global_model_name()
         assert result == "gpt-4"  # Should return the stored valid model
         mock_validate.assert_called_once_with("gpt-4")
         mock_default.assert_not_called()
 
-    @patch("code_muse.config._validate_model_exists")
-    @patch("code_muse.config._default_model_from_models_json")
+    @patch("code_muse.config.models._validate_model_exists")
+    @patch("code_muse.config.models._default_model_from_models_json")
     def test_get_global_model_name_with_invalid_stored_model(
         self, mock_default, mock_validate, mock_config_file
     ):
@@ -259,13 +262,14 @@ class TestConfigExtendedPart1:
         mock_validate.return_value = False
         mock_default.return_value = "fallback-model"
 
+        _models._SESSION_MODEL = None
         result = get_global_model_name()
         assert result == "fallback-model"  # Should return the default model
         mock_validate.assert_called_once_with("gpt-4")
         mock_default.assert_called_once()
 
-    @patch("code_muse.config._validate_model_exists")
-    @patch("code_muse.config._default_model_from_models_json")
+    @patch("code_muse.config.models._validate_model_exists")
+    @patch("code_muse.config.models._default_model_from_models_json")
     def test_get_global_model_name_no_stored_model(
         self, mock_default, mock_validate, temp_config_dir
     ):
@@ -280,7 +284,8 @@ class TestConfigExtendedPart1:
 
         mock_default.return_value = "default-model"
 
-        with patch("code_muse.config.CONFIG_FILE", config_file):
+        with patch("code_muse.config.paths.CONFIG_FILE", config_file):
+            _models._SESSION_MODEL = None
             result = get_global_model_name()
             assert result == "default-model"  # Should return the default model
             mock_validate.assert_not_called()

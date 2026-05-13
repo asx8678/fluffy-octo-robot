@@ -1,8 +1,11 @@
 """Config: agent settings."""
 
 import configparser
+from pathlib import Path
 
-import code_muse.config as _config
+import code_muse.config.parser as _parser
+import code_muse.config.paths as paths
+from code_muse.config.parser import DEFAULT_SECTION
 
 PACK_AGENT_NAMES = frozenset(
     [
@@ -26,7 +29,7 @@ def get_pack_agents_enabled() -> bool:
 
     When True, pack agents are available for use.
     """
-    cfg_val = _config.get_value("enable_pack_agents")
+    cfg_val = _parser.get_value("enable_pack_agents")
     if cfg_val is None:
         return False
     return str(cfg_val).strip().lower() in {"1", "true", "yes", "on"}
@@ -41,7 +44,7 @@ def get_universal_constructor_enabled() -> bool:
 
     When False, the universal_constructor tool is not registered with agents.
     """
-    cfg_val = _config.get_value("enable_universal_constructor")
+    cfg_val = _parser.get_value("enable_universal_constructor")
     if cfg_val is None:
         return True  # Enabled by default
     return str(cfg_val).strip().lower() in {"1", "true", "yes", "on"}
@@ -53,7 +56,7 @@ def set_universal_constructor_enabled(enabled: bool) -> None:
     Args:
         enabled: True to enable, False to disable
     """
-    _config.set_value("enable_universal_constructor", "true" if enabled else "false")
+    _parser.set_value("enable_universal_constructor", "true" if enabled else "false")
 
 
 def get_user_agents_directory() -> str:
@@ -63,8 +66,8 @@ def get_user_agents_directory() -> str:
         Path to the user's Muse agents directory.
     """
     # Ensure the agents directory exists
-    _config.AGENTS_DIR.mkdir(parents=True, exist_ok=True)
-    return str(_config.AGENTS_DIR)
+    paths.AGENTS_DIR.mkdir(parents=True, exist_ok=True)
+    return str(paths.AGENTS_DIR)
 
 
 def get_project_agents_directory() -> str | None:
@@ -77,7 +80,7 @@ def get_project_agents_directory() -> str | None:
     Returns:
         Path to the project's agents directory if it exists, or None.
     """
-    project_agents_dir = _config.Path.cwd() / ".muse" / "agents"
+    project_agents_dir = Path.cwd() / ".muse" / "agents"
     if project_agents_dir.is_dir():
         return str(project_agents_dir)
     return None
@@ -92,7 +95,7 @@ def get_agent_pinned_model(agent_name: str) -> str:
     Returns:
         Pinned model name, or None if no model is pinned for this agent.
     """
-    return _config.get_value(f"agent_model_{agent_name}")
+    return _parser.get_value(f"agent_model_{agent_name}")
 
 
 def set_agent_pinned_model(agent_name: str, model_name: str):
@@ -102,7 +105,7 @@ def set_agent_pinned_model(agent_name: str, model_name: str):
         agent_name: Name of the agent to pin the model for.
         model_name: Model name to pin to this agent.
     """
-    _config.set_config_value(f"agent_model_{agent_name}", model_name)
+    _parser.set_config_value(f"agent_model_{agent_name}", model_name)
 
 
 def clear_agent_pinned_model(agent_name: str):
@@ -113,7 +116,7 @@ def clear_agent_pinned_model(agent_name: str):
     """
     # We can't easily delete keys from configparser, so set to empty string
     # which will be treated as None by get_agent_pinned_model
-    _config.set_config_value(f"agent_model_{agent_name}", "")
+    _parser.set_config_value(f"agent_model_{agent_name}", "")
 
 
 def get_all_agent_pinned_models() -> dict:
@@ -124,11 +127,11 @@ def get_all_agent_pinned_models() -> dict:
         Only includes agents that have a pinned model (non-empty value).
     """
     config = configparser.ConfigParser()
-    config.read(_config.CONFIG_FILE)
+    config.read(paths.CONFIG_FILE)
 
     pinnings = {}
-    if _config.DEFAULT_SECTION in config:
-        for key, value in config[_config.DEFAULT_SECTION].items():
+    if DEFAULT_SECTION in config:
+        for key, value in config[DEFAULT_SECTION].items():
             if key.startswith("agent_model_") and value:
                 agent_name = key[len("agent_model_") :]
                 pinnings[agent_name] = value
@@ -155,7 +158,7 @@ def get_default_agent() -> str:
     Returns:
         str: The default agent name, or "planning-agent" if not set.
     """
-    return _config.get_value("default_agent") or "planning-agent"
+    return _parser.get_value("default_agent") or "planning-agent"
 
 
 def set_default_agent(agent_name: str) -> None:
@@ -165,4 +168,4 @@ def set_default_agent(agent_name: str) -> None:
     Args:
         agent_name: The name of the agent to set as default.
     """
-    _config.set_config_value("default_agent", agent_name)
+    _parser.set_config_value("default_agent", agent_name)

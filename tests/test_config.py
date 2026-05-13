@@ -6,6 +6,8 @@ from unittest.mock import MagicMock, mock_open, patch
 import pytest
 
 from code_muse import config as cp_config
+from code_muse.config import parser as _parser
+from code_muse.config import paths as _paths
 
 # Define constants used in config.py to avoid direct import if they change
 CONFIG_DIR_NAME = ".muse"
@@ -25,19 +27,19 @@ def mock_config_paths(monkeypatch):
     mock_state_dir = Path(mock_home) / ".local" / "state" / "code_muse"
     mock_skills_dir = Path(mock_data_dir) / "skills"
 
-    monkeypatch.setattr(cp_config, "CONFIG_DIR", mock_config_dir)
-    monkeypatch.setattr(cp_config, "CONFIG_FILE", mock_config_file)
-    monkeypatch.setattr(cp_config, "DATA_DIR", mock_data_dir)
-    monkeypatch.setattr(cp_config, "CACHE_DIR", mock_cache_dir)
-    monkeypatch.setattr(cp_config, "STATE_DIR", mock_state_dir)
-    monkeypatch.setattr(cp_config, "SKILLS_DIR", mock_skills_dir)
+    monkeypatch.setattr(_paths, "CONFIG_DIR", mock_config_dir)
+    monkeypatch.setattr(_paths, "CONFIG_FILE", mock_config_file)
+    monkeypatch.setattr(_paths, "DATA_DIR", mock_data_dir)
+    monkeypatch.setattr(_paths, "CACHE_DIR", mock_cache_dir)
+    monkeypatch.setattr(_paths, "STATE_DIR", mock_state_dir)
+    monkeypatch.setattr(_paths, "SKILLS_DIR", mock_skills_dir)
     monkeypatch.setattr(
         os.path,
         "expanduser",
         lambda path: mock_home if path == "~" else os.path.expanduser(path),
     )
     # Reset the global config cache so tests don't pollute each other
-    monkeypatch.setattr(cp_config, "_config_cache", None)
+    monkeypatch.setattr(_parser, "_config_cache", None)
     return mock_config_dir, mock_config_file
 
 
@@ -45,12 +47,12 @@ class TestEnsureConfigExists:
     def test_no_config_dir_or_file_prompts_and_creates(self, tmp_path, monkeypatch):
         cfg_dir = tmp_path / "config"
         cfg_file = cfg_dir / CONFIG_FILE_NAME
-        monkeypatch.setattr(cp_config, "CONFIG_DIR", cfg_dir)
-        monkeypatch.setattr(cp_config, "CONFIG_FILE", cfg_file)
-        monkeypatch.setattr(cp_config, "DATA_DIR", tmp_path / "data")
-        monkeypatch.setattr(cp_config, "CACHE_DIR", tmp_path / "cache")
-        monkeypatch.setattr(cp_config, "STATE_DIR", tmp_path / "state")
-        monkeypatch.setattr(cp_config, "SKILLS_DIR", tmp_path / "skills")
+        monkeypatch.setattr(_paths, "CONFIG_DIR", cfg_dir)
+        monkeypatch.setattr(_paths, "CONFIG_FILE", cfg_file)
+        monkeypatch.setattr(_paths, "DATA_DIR", tmp_path / "data")
+        monkeypatch.setattr(_paths, "CACHE_DIR", tmp_path / "cache")
+        monkeypatch.setattr(_paths, "STATE_DIR", tmp_path / "state")
+        monkeypatch.setattr(_paths, "SKILLS_DIR", tmp_path / "skills")
 
         monkeypatch.setattr(
             "builtins.input",
@@ -71,12 +73,12 @@ class TestEnsureConfigExists:
         cfg_dir = tmp_path / "config"
         cfg_file = cfg_dir / "muse.cfg"
         cfg_dir.mkdir()
-        monkeypatch.setattr(cp_config, "CONFIG_DIR", cfg_dir)
-        monkeypatch.setattr(cp_config, "CONFIG_FILE", cfg_file)
-        monkeypatch.setattr(cp_config, "DATA_DIR", tmp_path / "data")
-        monkeypatch.setattr(cp_config, "CACHE_DIR", tmp_path / "cache")
-        monkeypatch.setattr(cp_config, "STATE_DIR", tmp_path / "state")
-        monkeypatch.setattr(cp_config, "SKILLS_DIR", tmp_path / "skills")
+        monkeypatch.setattr(_paths, "CONFIG_DIR", cfg_dir)
+        monkeypatch.setattr(_paths, "CONFIG_FILE", cfg_file)
+        monkeypatch.setattr(_paths, "DATA_DIR", tmp_path / "data")
+        monkeypatch.setattr(_paths, "CACHE_DIR", tmp_path / "cache")
+        monkeypatch.setattr(_paths, "STATE_DIR", tmp_path / "state")
+        monkeypatch.setattr(_paths, "SKILLS_DIR", tmp_path / "skills")
 
         monkeypatch.setattr(
             "builtins.input",
@@ -103,12 +105,12 @@ class TestEnsureConfigExists:
         with open(cfg_file, "w", encoding="utf-8") as f:
             cp.write(f)
 
-        monkeypatch.setattr(cp_config, "CONFIG_DIR", cfg_dir)
-        monkeypatch.setattr(cp_config, "CONFIG_FILE", cfg_file)
-        monkeypatch.setattr(cp_config, "DATA_DIR", tmp_path / "data")
-        monkeypatch.setattr(cp_config, "CACHE_DIR", tmp_path / "cache")
-        monkeypatch.setattr(cp_config, "STATE_DIR", tmp_path / "state")
-        monkeypatch.setattr(cp_config, "SKILLS_DIR", tmp_path / "skills")
+        monkeypatch.setattr(_paths, "CONFIG_DIR", cfg_dir)
+        monkeypatch.setattr(_paths, "CONFIG_FILE", cfg_file)
+        monkeypatch.setattr(_paths, "DATA_DIR", tmp_path / "data")
+        monkeypatch.setattr(_paths, "CACHE_DIR", tmp_path / "cache")
+        monkeypatch.setattr(_paths, "STATE_DIR", tmp_path / "state")
+        monkeypatch.setattr(_paths, "SKILLS_DIR", tmp_path / "skills")
 
         mock_input = MagicMock()
         monkeypatch.setattr("builtins.input", mock_input)
@@ -132,12 +134,12 @@ class TestEnsureConfigExists:
         with open(cfg_file, "w", encoding="utf-8") as f:
             cp.write(f)
 
-        monkeypatch.setattr(cp_config, "CONFIG_DIR", cfg_dir)
-        monkeypatch.setattr(cp_config, "CONFIG_FILE", cfg_file)
-        monkeypatch.setattr(cp_config, "DATA_DIR", tmp_path / "data")
-        monkeypatch.setattr(cp_config, "CACHE_DIR", tmp_path / "cache")
-        monkeypatch.setattr(cp_config, "STATE_DIR", tmp_path / "state")
-        monkeypatch.setattr(cp_config, "SKILLS_DIR", tmp_path / "skills")
+        monkeypatch.setattr(_paths, "CONFIG_DIR", cfg_dir)
+        monkeypatch.setattr(_paths, "CONFIG_FILE", cfg_file)
+        monkeypatch.setattr(_paths, "DATA_DIR", tmp_path / "data")
+        monkeypatch.setattr(_paths, "CACHE_DIR", tmp_path / "cache")
+        monkeypatch.setattr(_paths, "STATE_DIR", tmp_path / "state")
+        monkeypatch.setattr(_paths, "SKILLS_DIR", tmp_path / "skills")
 
         monkeypatch.setattr(
             "builtins.input",
@@ -198,25 +200,25 @@ class TestGetValue:
 
 
 class TestSimpleGetters:
-    @patch("code_muse.config.get_value")
+    @patch("code_muse.config.parser.get_value")
     def test_get_agent_name_exists(self, mock_get_value):
         mock_get_value.return_value = "MyPuppy"
         assert cp_config.get_agent_name() == "MyPuppy"
         mock_get_value.assert_called_once_with("agent_name")
 
-    @patch("code_muse.config.get_value")
+    @patch("code_muse.config.parser.get_value")
     def test_get_agent_name_not_exists_uses_default(self, mock_get_value):
         mock_get_value.return_value = None
         assert cp_config.get_agent_name() == "Muse"  # Default value
         mock_get_value.assert_called_once_with("agent_name")
 
-    @patch("code_muse.config.get_value")
+    @patch("code_muse.config.parser.get_value")
     def test_get_owner_name_exists(self, mock_get_value):
         mock_get_value.return_value = "MyOwner"
         assert cp_config.get_owner_name() == "MyOwner"
         mock_get_value.assert_called_once_with("owner_name")
 
-    @patch("code_muse.config.get_value")
+    @patch("code_muse.config.parser.get_value")
     def test_get_owner_name_not_exists_uses_default(self, mock_get_value):
         mock_get_value.return_value = None
         assert cp_config.get_owner_name() == "Creator"  # Default value
@@ -435,8 +437,8 @@ class TestModelName:
         cp_config.reset_session_model()
         cp_config.clear_model_cache()
 
-    @patch("code_muse.config.get_value")
-    @patch("code_muse.config._validate_model_exists")
+    @patch("code_muse.config.parser.get_value")
+    @patch("code_muse.config.models._validate_model_exists")
     def test_get_model_name_exists(self, mock_validate_model_exists, mock_get_value):
         mock_get_value.return_value = "test_model_from_config"
         mock_validate_model_exists.return_value = True
@@ -453,8 +455,9 @@ class TestModelName:
         mock_parser_instance = MagicMock()
 
         section_dict = {}
-        # This setup ensures that config[DEFAULT_SECTION_NAME] operations work on section_dict
-        # and that the section is considered to exist or is created as needed.
+        # This setup ensures that config[DEFAULT_SECTION_NAME] operations
+        # work on section_dict and that the section is considered to exist
+        # or is created as needed.
         mock_parser_instance.read.return_value = [mock_cfg_file]
 
         # Simulate that the section exists or will be created and then available
@@ -502,7 +505,7 @@ class TestModelName:
 
 
 class TestGetYoloMode:
-    @patch("code_muse.config.get_value")
+    @patch("code_muse.config.parser.get_value")
     def test_get_yolo_mode_from_config_true(self, mock_get_value):
         true_values = ["true", "1", "YES", "ON"]
         for val in true_values:
@@ -511,7 +514,7 @@ class TestGetYoloMode:
             assert cp_config.get_yolo_mode() is True, f"Failed for config value: {val}"
             mock_get_value.assert_called_once_with("yolo_mode")
 
-    @patch("code_muse.config.get_value")
+    @patch("code_muse.config.parser.get_value")
     def test_get_yolo_mode_not_in_config_defaults_false(self, mock_get_value):
         """Yolo mode defaults to False (safe) when not explicitly set."""
         mock_get_value.return_value = None
@@ -525,8 +528,8 @@ class TestCommandHistory:
         self, tmp_path, monkeypatch
     ):
         hist_file = tmp_path / "state" / "history.txt"
-        monkeypatch.setattr(cp_config, "STATE_DIR", tmp_path / "state")
-        monkeypatch.setattr(cp_config, "COMMAND_HISTORY_FILE", hist_file)
+        monkeypatch.setattr(_paths, "STATE_DIR", tmp_path / "state")
+        monkeypatch.setattr(_paths, "COMMAND_HISTORY_FILE", hist_file)
         monkeypatch.setattr(os.path, "expanduser", lambda _: str(tmp_path))
 
         cp_config.initialize_command_history_file()
@@ -541,8 +544,8 @@ class TestCommandHistory:
         old_file = tmp_path / ".muse_history.txt"
         old_file.write_text("old history")
 
-        monkeypatch.setattr(cp_config, "STATE_DIR", state_dir)
-        monkeypatch.setattr(cp_config, "COMMAND_HISTORY_FILE", hist_file)
+        monkeypatch.setattr(_paths, "STATE_DIR", state_dir)
+        monkeypatch.setattr(_paths, "COMMAND_HISTORY_FILE", hist_file)
         monkeypatch.setattr(os.path, "expanduser", lambda _: str(tmp_path))
 
         cp_config.initialize_command_history_file()
@@ -555,8 +558,8 @@ class TestCommandHistory:
         hist_file.parent.mkdir(parents=True)
         hist_file.write_text("existing")
 
-        monkeypatch.setattr(cp_config, "STATE_DIR", tmp_path / "state")
-        monkeypatch.setattr(cp_config, "COMMAND_HISTORY_FILE", hist_file)
+        monkeypatch.setattr(_paths, "STATE_DIR", tmp_path / "state")
+        monkeypatch.setattr(_paths, "COMMAND_HISTORY_FILE", hist_file)
 
         cp_config.initialize_command_history_file()
 
@@ -565,7 +568,7 @@ class TestCommandHistory:
 
     def test_save_command_to_history_with_timestamp(self, tmp_path, monkeypatch):
         hist_file = tmp_path / "history.txt"
-        monkeypatch.setattr(cp_config, "COMMAND_HISTORY_FILE", hist_file)
+        monkeypatch.setattr(_paths, "COMMAND_HISTORY_FILE", hist_file)
 
         cp_config.save_command_to_history("test command")
 
@@ -575,19 +578,20 @@ class TestCommandHistory:
 
     def test_save_command_to_history_handles_error(self, tmp_path, monkeypatch):
         hist_file = tmp_path / "nonexistent" / "history.txt"
-        monkeypatch.setattr(cp_config, "COMMAND_HISTORY_FILE", hist_file)
+        monkeypatch.setattr(_paths, "COMMAND_HISTORY_FILE", hist_file)
 
         # Should not raise
         cp_config.save_command_to_history("test command")
         cp_config.reset_session_model()
 
-    @patch("code_muse.config.get_value")
-    @patch("code_muse.config._validate_model_exists")
-    @patch("code_muse.config._default_model_from_models_json")
+    @patch("code_muse.config.parser.get_value")
+    @patch("code_muse.config.models._validate_model_exists")
+    @patch("code_muse.config.models._default_model_from_models_json")
     def test_get_model_name_no_stored_model(
         self, mock_default_model, mock_validate_model_exists, mock_get_value
     ):
-        # When no model is stored in config, get_model_name should return the default model
+        # When no model is stored in config, get_model_name should return
+        # the default model
         mock_get_value.return_value = None
         mock_default_model.return_value = "synthetic-GLM-5.1"
 
@@ -598,9 +602,9 @@ class TestCommandHistory:
         mock_validate_model_exists.assert_not_called()
         mock_default_model.assert_called_once()
 
-    @patch("code_muse.config.get_value")
-    @patch("code_muse.config._validate_model_exists")
-    @patch("code_muse.config._default_model_from_models_json")
+    @patch("code_muse.config.parser.get_value")
+    @patch("code_muse.config.models._validate_model_exists")
+    @patch("code_muse.config.models._default_model_from_models_json")
     def test_get_model_name_invalid_model(
         self, mock_default_model, mock_validate_model_exists, mock_get_value
     ):
@@ -616,17 +620,18 @@ class TestCommandHistory:
         mock_validate_model_exists.assert_called_once_with("invalid-model")
         mock_default_model.assert_called_once()
 
-    # NOTE: Tests that mock ModelFactory.load_config have been removed because
-    # they can't work due to a circular import issue in the codebase.
-    # The circular import: model_factory -> messaging -> rich_renderer -> tools -> agent_tools -> model_factory
-    # This causes _default_model_from_models_json() to always fall back to 'gpt-5'
-    # when trying to import ModelFactory inside the function.
+    # NOTE: Tests that mock ModelFactory.load_config have been removed
+    # because they can't work due to a circular import issue in the
+    # codebase. The circular import:
+    # model_factory -> messaging -> rich_renderer -> tools -> agent_tools
+    # -> model_factory. This causes _default_model_from_models_json() to
+    # always fall back to 'gpt-5' when trying to import ModelFactory.
 
 
 class TestTemperatureConfig:
     """Tests for the temperature configuration functions."""
 
-    @patch("code_muse.config.get_value")
+    @patch("code_muse.config.parser.get_value")
     def test_get_temperature_returns_none_when_not_set(self, mock_get_value):
         """Temperature should return None when not configured."""
         mock_get_value.return_value = None
@@ -634,14 +639,14 @@ class TestTemperatureConfig:
         assert result is None
         mock_get_value.assert_called_once_with("temperature")
 
-    @patch("code_muse.config.get_value")
+    @patch("code_muse.config.parser.get_value")
     def test_get_temperature_returns_none_for_empty_string(self, mock_get_value):
         """Temperature should return None for empty string."""
         mock_get_value.return_value = ""
         result = cp_config.get_temperature()
         assert result is None
 
-    @patch("code_muse.config.get_value")
+    @patch("code_muse.config.parser.get_value")
     def test_get_temperature_returns_float_value(self, mock_get_value):
         """Temperature should return a float when set."""
         mock_get_value.return_value = "0.7"
@@ -649,40 +654,40 @@ class TestTemperatureConfig:
         assert result == 0.7
         assert isinstance(result, float)
 
-    @patch("code_muse.config.get_value")
+    @patch("code_muse.config.parser.get_value")
     def test_get_temperature_clamps_to_max(self, mock_get_value):
         """Temperature should be clamped to max 2.0."""
         mock_get_value.return_value = "5.0"
         result = cp_config.get_temperature()
         assert result == 2.0
 
-    @patch("code_muse.config.get_value")
+    @patch("code_muse.config.parser.get_value")
     def test_get_temperature_clamps_to_min(self, mock_get_value):
         """Temperature should be clamped to min 0.0."""
         mock_get_value.return_value = "-1.0"
         result = cp_config.get_temperature()
         assert result == 0.0
 
-    @patch("code_muse.config.get_value")
+    @patch("code_muse.config.parser.get_value")
     def test_get_temperature_handles_invalid_value(self, mock_get_value):
         """Temperature should return None for invalid values."""
         mock_get_value.return_value = "not_a_number"
         result = cp_config.get_temperature()
         assert result is None
 
-    @patch("code_muse.config.set_config_value")
+    @patch("code_muse.config.parser.set_config_value")
     def test_set_temperature_with_value(self, mock_set_config_value):
         """Setting temperature should store it as a string."""
         cp_config.set_temperature(0.7)
         mock_set_config_value.assert_called_once_with("temperature", "0.7")
 
-    @patch("code_muse.config.set_config_value")
+    @patch("code_muse.config.parser.set_config_value")
     def test_set_temperature_clamps_value(self, mock_set_config_value):
         """Setting temperature should clamp out-of-range values."""
         cp_config.set_temperature(5.0)
         mock_set_config_value.assert_called_once_with("temperature", "2.0")
 
-    @patch("code_muse.config.set_config_value")
+    @patch("code_muse.config.parser.set_config_value")
     def test_set_temperature_to_none_clears_value(self, mock_set_config_value):
         """Setting temperature to None should clear it."""
         cp_config.set_temperature(None)

@@ -4,6 +4,7 @@ Targets all uncovered lines from existing test suites.
 """
 
 import configparser
+import contextlib
 import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -11,6 +12,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from code_muse import config as cp_config
+from code_muse.config import models as _models
+from code_muse.config import paths as _paths
+from code_muse.config import session as _session
 
 
 # ---------------------------------------------------------------------------
@@ -407,10 +411,12 @@ class TestPerModelSettings:
             assert isinstance(settings.get("seed"), int)
 
     def test_get_effective_model_settings_none_uses_global(self):
-        with patch.object(cp_config, "get_global_model_name", return_value="test"):
-            with patch.object(cp_config, "model_supports_setting", return_value=True):
-                settings = cp_config.get_effective_model_settings(None)
-                assert isinstance(settings, dict)
+        with (
+            patch.object(cp_config, "get_global_model_name", return_value="test"),
+            patch.object(cp_config, "model_supports_setting", return_value=True),
+        ):
+            settings = cp_config.get_effective_model_settings(None)
+            assert isinstance(settings, dict)
 
     def test_get_effective_temperature(self):
         cp_config.set_model_setting("eff-temp", "temperature", 0.3)
@@ -492,33 +498,35 @@ class TestModelSupportsSetting:
 # ---------------------------------------------------------------------------
 class TestModelName:
     def test_get_global_model_name_from_session(self):
-        cp_config._SESSION_MODEL = "cached-model"
+        _models._SESSION_MODEL = "cached-model"
         assert cp_config.get_global_model_name() == "cached-model"
-        cp_config._SESSION_MODEL = None
+        _models._SESSION_MODEL = None
 
     def test_get_global_model_name_from_config(self):
-        cp_config._SESSION_MODEL = None
+        _models._SESSION_MODEL = None
         cp_config.set_config_value("model", "my-model")
-        with patch.object(cp_config, "_validate_model_exists", return_value=True):
+        with patch.object(_models, "_validate_model_exists", return_value=True):
             result = cp_config.get_global_model_name()
             assert result == "my-model"
-        cp_config._SESSION_MODEL = None
+        _models._SESSION_MODEL = None
 
     def test_get_global_model_name_invalid_stored(self):
-        cp_config._SESSION_MODEL = None
+        _models._SESSION_MODEL = None
         cp_config.set_config_value("model", "bad-model")
-        with patch.object(cp_config, "_validate_model_exists", return_value=False):
-            with patch.object(
-                cp_config, "_default_model_from_models_json", return_value="default-m"
-            ):
-                result = cp_config.get_global_model_name()
-                assert result == "default-m"
-        cp_config._SESSION_MODEL = None
+        with (
+            patch.object(_models, "_validate_model_exists", return_value=False),
+            patch.object(
+                _models, "_default_model_from_models_json", return_value="default-m"
+            ),
+        ):
+            result = cp_config.get_global_model_name()
+            assert result == "default-m"
+        _models._SESSION_MODEL = None
 
     def test_reset_session_model(self):
-        cp_config._SESSION_MODEL = "foo"
+        _models._SESSION_MODEL = "foo"
         cp_config.reset_session_model()
-        assert cp_config._SESSION_MODEL is None
+        assert _models._SESSION_MODEL is None
 
 
 # ---------------------------------------------------------------------------
@@ -526,35 +534,35 @@ class TestModelName:
 # ---------------------------------------------------------------------------
 class TestDefaultModel:
     def test_default_model_cached(self):
-        cp_config._default_model_cache = "cached"
+        _models._default_model_cache = "cached"
         assert cp_config._default_model_from_models_json() == "cached"
-        cp_config._default_model_cache = None
+        _models._default_model_cache = None
 
     def test_default_model_from_config(self):
-        cp_config._default_model_cache = None
+        _models._default_model_cache = None
         with patch(
             "code_muse.model_factory.ModelFactory.load_config",
             return_value={"first": {}, "second": {}},
         ):
             result = cp_config._default_model_from_models_json()
             assert result == "first"
-        cp_config._default_model_cache = None
+        _models._default_model_cache = None
 
     def test_default_model_empty_config(self):
-        cp_config._default_model_cache = None
+        _models._default_model_cache = None
         with patch("code_muse.model_factory.ModelFactory.load_config", return_value={}):
             result = cp_config._default_model_from_models_json()
             assert result == "gpt-5"
-        cp_config._default_model_cache = None
+        _models._default_model_cache = None
 
     def test_default_model_exception(self):
-        cp_config._default_model_cache = None
+        _models._default_model_cache = None
         with patch(
             "code_muse.model_factory.ModelFactory.load_config", side_effect=Exception
         ):
             result = cp_config._default_model_from_models_json()
             assert result == "gpt-5"
-        cp_config._default_model_cache = None
+        _models._default_model_cache = None
 
 
 # ---------------------------------------------------------------------------
@@ -562,30 +570,30 @@ class TestDefaultModel:
 # ---------------------------------------------------------------------------
 class TestDefaultVisionModel:
     def test_cached(self):
-        cp_config._default_vision_model_cache = "cached-vision"
+        _models._default_vision_model_cache = "cached-vision"
         assert cp_config._default_vision_model_from_models_json() == "cached-vision"
-        cp_config._default_vision_model_cache = None
+        _models._default_vision_model_cache = None
 
     def test_supports_vision_tag(self):
-        cp_config._default_vision_model_cache = None
+        _models._default_vision_model_cache = None
         with patch(
             "code_muse.model_factory.ModelFactory.load_config",
             return_value={"model-a": {"supports_vision": True}},
         ):
             assert cp_config._default_vision_model_from_models_json() == "model-a"
-        cp_config._default_vision_model_cache = None
+        _models._default_vision_model_cache = None
 
     def test_preferred_candidates(self):
-        cp_config._default_vision_model_cache = None
+        _models._default_vision_model_cache = None
         with patch(
             "code_muse.model_factory.ModelFactory.load_config",
             return_value={"gpt-4.1": {}, "other": {}},
         ):
             assert cp_config._default_vision_model_from_models_json() == "gpt-4.1"
-        cp_config._default_vision_model_cache = None
+        _models._default_vision_model_cache = None
 
     def test_fallback_to_general_default(self):
-        cp_config._default_vision_model_cache = None
+        _models._default_vision_model_cache = None
         with (
             patch(
                 "code_muse.model_factory.ModelFactory.load_config",
@@ -596,21 +604,21 @@ class TestDefaultVisionModel:
             ),
         ):
             assert cp_config._default_vision_model_from_models_json() == "some-model"
-        cp_config._default_vision_model_cache = None
+        _models._default_vision_model_cache = None
 
     def test_empty_config(self):
-        cp_config._default_vision_model_cache = None
+        _models._default_vision_model_cache = None
         with patch("code_muse.model_factory.ModelFactory.load_config", return_value={}):
             assert cp_config._default_vision_model_from_models_json() == "gpt-4.1"
-        cp_config._default_vision_model_cache = None
+        _models._default_vision_model_cache = None
 
     def test_exception(self):
-        cp_config._default_vision_model_cache = None
+        _models._default_vision_model_cache = None
         with patch(
             "code_muse.model_factory.ModelFactory.load_config", side_effect=Exception
         ):
             assert cp_config._default_vision_model_from_models_json() == "gpt-4.1"
-        cp_config._default_vision_model_cache = None
+        _models._default_vision_model_cache = None
 
 
 # ---------------------------------------------------------------------------
@@ -618,24 +626,24 @@ class TestDefaultVisionModel:
 # ---------------------------------------------------------------------------
 class TestValidateModel:
     def test_cached_true(self):
-        cp_config._model_validation_cache["cached-m"] = True
+        _models._model_validation_cache["cached-m"] = True
         assert cp_config._validate_model_exists("cached-m") is True
-        del cp_config._model_validation_cache["cached-m"]
+        del _models._model_validation_cache["cached-m"]
 
     def test_found(self):
-        cp_config._model_validation_cache.clear()
+        _models._model_validation_cache.clear()
         with patch(
             "code_muse.model_factory.ModelFactory.load_config", return_value={"m": {}}
         ):
             assert cp_config._validate_model_exists("m") is True
 
     def test_not_found(self):
-        cp_config._model_validation_cache.clear()
+        _models._model_validation_cache.clear()
         with patch("code_muse.model_factory.ModelFactory.load_config", return_value={}):
             assert cp_config._validate_model_exists("missing") is False
 
     def test_exception(self):
-        cp_config._model_validation_cache.clear()
+        _models._model_validation_cache.clear()
         with patch(
             "code_muse.model_factory.ModelFactory.load_config", side_effect=Exception
         ):
@@ -813,7 +821,7 @@ class TestBannerColors:
 # ---------------------------------------------------------------------------
 class TestAutosaveSession:
     def test_get_current_autosave_id(self):
-        cp_config._CURRENT_AUTOSAVE_ID = None
+        _session._CURRENT_AUTOSAVE_ID = None
         aid = cp_config.get_current_autosave_id()
         assert aid is not None
         assert len(aid) > 0
@@ -846,6 +854,7 @@ class TestAutosaveSession:
         assert cp_config.auto_save_session_if_enabled() is False
 
     def test_auto_save_session_if_enabled_no_history(self):
+        _session._autosave_counter = 3  # bypass throttle so history is checked
         cp_config.set_auto_save_session(True)
         mock_agent = MagicMock()
         mock_agent.get_message_history.return_value = []
@@ -868,10 +877,10 @@ class TestAutosaveSession:
                 "code_muse.agents.agent_manager.get_current_agent",
                 return_value=mock_agent,
             ),
-            patch("code_muse.config.save_session", return_value=mock_metadata),
+            patch("code_muse.session_storage.save_session", return_value=mock_metadata),
+            patch("code_muse.messaging.emit_info"),
         ):
-            with patch("code_muse.messaging.emit_info"):
-                assert cp_config.auto_save_session_if_enabled() is True
+            assert cp_config.auto_save_session_if_enabled() is True
 
     def test_finalize_autosave_session(self):
         with patch.object(cp_config, "auto_save_session_if_enabled"):
@@ -886,11 +895,11 @@ class TestEnsureConfigExists:
     def test_creates_dirs_and_prompts(self, monkeypatch, tmp_path):
         cfg_dir = tmp_path / "config"
         cfg_file = tmp_path / "config" / "muse.cfg"
-        monkeypatch.setattr(cp_config, "CONFIG_DIR", cfg_dir)
-        monkeypatch.setattr(cp_config, "CONFIG_FILE", cfg_file)
-        monkeypatch.setattr(cp_config, "DATA_DIR", tmp_path / "data")
-        monkeypatch.setattr(cp_config, "CACHE_DIR", tmp_path / "cache")
-        monkeypatch.setattr(cp_config, "STATE_DIR", tmp_path / "state")
+        monkeypatch.setattr(_paths, "CONFIG_DIR", cfg_dir)
+        monkeypatch.setattr(_paths, "CONFIG_FILE", cfg_file)
+        monkeypatch.setattr(_paths, "DATA_DIR", tmp_path / "data")
+        monkeypatch.setattr(_paths, "CACHE_DIR", tmp_path / "cache")
+        monkeypatch.setattr(_paths, "STATE_DIR", tmp_path / "state")
 
         inputs = iter(["TestPup", "TestOwner"])
         monkeypatch.setattr("builtins.input", lambda _: next(inputs))
@@ -908,11 +917,11 @@ class TestEnsureConfigExists:
         with open(cfg_file, "w") as f:
             cp.write(f)
 
-        monkeypatch.setattr(cp_config, "CONFIG_DIR", cfg_dir)
-        monkeypatch.setattr(cp_config, "CONFIG_FILE", cfg_file)
-        monkeypatch.setattr(cp_config, "DATA_DIR", tmp_path / "data")
-        monkeypatch.setattr(cp_config, "CACHE_DIR", tmp_path / "cache")
-        monkeypatch.setattr(cp_config, "STATE_DIR", tmp_path / "state")
+        monkeypatch.setattr(_paths, "CONFIG_DIR", cfg_dir)
+        monkeypatch.setattr(_paths, "CONFIG_FILE", cfg_file)
+        monkeypatch.setattr(_paths, "DATA_DIR", tmp_path / "data")
+        monkeypatch.setattr(_paths, "CACHE_DIR", tmp_path / "cache")
+        monkeypatch.setattr(_paths, "STATE_DIR", tmp_path / "state")
 
         config = cp_config.ensure_config_exists()
         assert config["muse"]["agent_name"] == "Buddy"
@@ -924,7 +933,7 @@ class TestEnsureConfigExists:
 class TestCommandHistory:
     def test_save_command_to_history(self, tmp_path):
         hist_file = tmp_path / "history.txt"
-        with patch.object(cp_config, "COMMAND_HISTORY_FILE", hist_file):
+        with patch.object(_paths, "COMMAND_HISTORY_FILE", hist_file):
             cp_config.save_command_to_history("test command")
             content = hist_file.read_text()
             assert "test command" in content
@@ -932,7 +941,7 @@ class TestCommandHistory:
     def test_save_command_error(self, tmp_path):
         with (
             patch.object(
-                cp_config, "COMMAND_HISTORY_FILE", Path("/nonexistent/dir/hist.txt")
+                _paths, "COMMAND_HISTORY_FILE", Path("/nonexistent/dir/hist.txt")
             ),
             patch("code_muse.messaging.emit_error"),
         ):
@@ -941,8 +950,8 @@ class TestCommandHistory:
     def test_initialize_command_history_file_new(self, tmp_path, monkeypatch):
         state_dir = tmp_path / "state"
         hist_file = tmp_path / "state" / "history.txt"
-        monkeypatch.setattr(cp_config, "STATE_DIR", state_dir)
-        monkeypatch.setattr(cp_config, "COMMAND_HISTORY_FILE", hist_file)
+        monkeypatch.setattr(_paths, "STATE_DIR", state_dir)
+        monkeypatch.setattr(_paths, "COMMAND_HISTORY_FILE", hist_file)
         cp_config.initialize_command_history_file()
         assert hist_file.exists()
 
@@ -953,8 +962,8 @@ class TestCommandHistory:
         old_file = tmp_path / ".muse_history.txt"
         old_file.write_text("old history")
 
-        monkeypatch.setattr(cp_config, "STATE_DIR", state_dir)
-        monkeypatch.setattr(cp_config, "COMMAND_HISTORY_FILE", hist_file)
+        monkeypatch.setattr(_paths, "STATE_DIR", state_dir)
+        monkeypatch.setattr(_paths, "COMMAND_HISTORY_FILE", hist_file)
         monkeypatch.setattr(os.path, "expanduser", lambda _: str(tmp_path))
 
         cp_config.initialize_command_history_file()
@@ -1020,10 +1029,8 @@ class TestAPIKeys:
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".env").write_text("OPENAI_API_KEY=from-dotenv\n")
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        try:
+        with contextlib.suppress(Exception):
             cp_config.load_api_keys_to_environment()
-        except Exception:
-            pass  # dotenv may not be installed
 
 
 # ---------------------------------------------------------------------------
@@ -1043,10 +1050,10 @@ class TestAllowRecursion:
 # ---------------------------------------------------------------------------
 class TestClearModelCache:
     def test_clears_all(self):
-        cp_config._model_validation_cache["x"] = True
-        cp_config._default_model_cache = "y"
-        cp_config._default_vision_model_cache = "z"
+        _models._model_validation_cache["x"] = True
+        _models._default_model_cache = "y"
+        _models._default_vision_model_cache = "z"
         cp_config.clear_model_cache()
-        assert len(cp_config._model_validation_cache) == 0
-        assert cp_config._default_model_cache is None
-        assert cp_config._default_vision_model_cache is None
+        assert len(_models._model_validation_cache) == 0
+        assert _models._default_model_cache is None
+        assert _models._default_vision_model_cache is None
