@@ -87,7 +87,7 @@ path = "code_muse/models.json"
 [[tool.hatch.build.targets.sdist.include]]
 path = "code_muse/models_dev_api.json"
 [tool.ruff]
-target-version = "py314"
+target-version = "py313"
 exclude = ["*.pyx"]
 
 [tool.ruff.lint]
