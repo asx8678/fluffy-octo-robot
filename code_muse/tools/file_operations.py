@@ -3,6 +3,7 @@
 import contextlib
 import os
 import shutil
+import stat
 import subprocess
 import tempfile
 from collections import deque
@@ -250,15 +251,17 @@ def _list_files(
                 else:
                     file_path = full_path
 
-                # Check if path is a file or directory
-                if fp.is_file():
+                try:
+                    st = fp.stat()
+                except OSError:
+                    continue
+                if stat.S_ISREG(st.st_mode):
                     entry_type = "file"
-                    size = fp.stat().st_size
-                elif fp.is_dir():
+                    size = st.st_size
+                elif stat.S_ISDIR(st.st_mode):
                     entry_type = "directory"
                     size = 0
                 else:
-                    # Skip if it's neither a file nor directory
                     continue
 
                 try:

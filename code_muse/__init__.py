@@ -15,17 +15,20 @@ except Exception:
     __version__ = "0.0.0-dev"
 
 
-def _rebuild_stale_cython_modules(package_root: Path) -> None:
+def _rebuild_stale_cython_modules(package_root: Path) -> list[Path]:
     """Delete stale compiled extensions so pyximport rebuilds them.
 
     Checks both file mtime AND embedded module name to catch extensions
     compiled from an older package version (e.g. after a rename from
     ``code_puppy`` to ``code_muse``).
 
+    Returns the list of ``.pyx`` files found (empty list if none).
+
     Safe no-op when no ``.pyx`` files exist or no stale extensions found.
     """
-    if not list(package_root.rglob("*.pyx")):
-        return
+    pyx_files = list(package_root.rglob("*.pyx"))
+    if not pyx_files:
+        return pyx_files
 
     import importlib.util
 
@@ -35,7 +38,7 @@ def _rebuild_stale_cython_modules(package_root: Path) -> None:
     _OLD_NAMES = [b"code_puppy", b"code.puppy"]
 
     stale_count = 0
-    for pyx_file in package_root.rglob("*.pyx"):
+    for pyx_file in pyx_files:
         pyx_mtime = pyx_file.stat().st_mtime
         parent = pyx_file.parent
         stem = pyx_file.stem
@@ -68,6 +71,8 @@ def _rebuild_stale_cython_modules(package_root: Path) -> None:
             stale_count,
         )
 
+    return pyx_files
+
 
 # Enable Cython JIT compilation for .pyx modules throughout the package.
 _CYTHON_AVAILABLE = False
@@ -77,11 +82,11 @@ try:
 
     pyximport.install(language_level=3, build_in_temp=True, inplace=True)
     _CYTHON_AVAILABLE = True
-    _rebuild_stale_cython_modules(_PACKAGE_ROOT)
+    _pyx_files = _rebuild_stale_cython_modules(_PACKAGE_ROOT)
 except Exception:
+    _pyx_files = []
     pass  # Cython not available — .pyx modules will need pre-compiled extension files
 
-# Scan the package tree for .pyx modules and record Cython status.
-_pyx_files = list(_PACKAGE_ROOT.rglob("*.pyx"))
+# Record Cython status (pyx_files already scanned by _rebuild_stale_cython_modules)
 PYX_MODULE_COUNT: int = len(_pyx_files)
 CYTHON_ENABLED: bool = _CYTHON_AVAILABLE and PYX_MODULE_COUNT > 0
