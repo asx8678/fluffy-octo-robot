@@ -53,7 +53,7 @@ def _on_message_history_processor_start(
     agent_name: str | None = None,
     session_id: str | None = None,
     message_history: list | None = None,
-    **kwargs,
+    incoming_messages: list | None = None,
 ) -> None:
     """No-op — could be used to restore from store in future."""
     pass
