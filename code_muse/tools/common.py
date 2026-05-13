@@ -2,6 +2,7 @@ import asyncio
 import fnmatch
 import hashlib
 import os
+from functools import lru_cache
 import sys
 import time
 from collections.abc import Callable
@@ -1358,6 +1359,12 @@ async def get_user_approval_async(
     return confirmed, user_feedback
 
 
+@lru_cache(maxsize=4096)
+def _jaro_winkler_similarity(s1: str, s2: str) -> float:
+    """Jaro-Winkler similarity with LRU cache for repeated comparisons."""
+    return JaroWinkler.normalized_similarity(s1, s2)
+
+
 def _find_best_window(
     haystack_lines: list[str],
     needle: str,
@@ -1375,7 +1382,7 @@ def _find_best_window(
     # Pre-join the needle once; join windows on the fly
     for i in range(len(haystack_lines) - win_size + 1):
         window = "\n".join(haystack_lines[i : i + win_size])
-        score = JaroWinkler.normalized_similarity(window, needle)
+        score = _jaro_winkler_similarity(window, needle)
         if score > best_score:
             best_score = score
             best_span = (i, i + win_size)
@@ -1401,7 +1408,7 @@ def generate_group_id(tool_name: str, extra_context: str | Path = "") -> str:
     context_string = f"{tool_name}_{timestamp}_{random_component}_{extra_context}"
 
     # Generate a short hash
-    hash_obj = hashlib.md5(context_string.encode())
+    hash_obj = hashlib.blake2b(context_string.encode(), digest_size=16)
     short_hash = hash_obj.hexdigest()[:8]
 
     return f"{tool_name}_{short_hash}"

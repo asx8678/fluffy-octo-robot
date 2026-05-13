@@ -91,7 +91,7 @@ def _models_config_fingerprint() -> tuple[float, str]:
         pass
 
     max_mtime = 0.0
-    hasher = _hashlib.md5(usedforsecurity=False)
+    hasher = _hashlib.blake2b(digest_size=16)
     for sp in source_paths:
         try:
             if sp.exists():
