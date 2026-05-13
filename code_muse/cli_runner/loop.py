@@ -27,7 +27,6 @@ from code_muse.config import (
     finalize_autosave_session,
     save_command_to_history,
 )
-from code_muse.keymap import get_cancel_agent_display_name
 from code_muse.messaging import (
     emit_error,
     emit_info,
@@ -44,37 +43,16 @@ from code_muse.terminal_utils import (
 
 def _show_startup_info(display_console) -> None:
     """Display startup messages and terminal capability warnings."""
-    emit_system_message(
-        "Type '/exit', '/quit', or press Ctrl+D to exit the interactive mode."
-    )
     emit_system_message("Type 'clear' to reset the conversation history.")
-    emit_system_message("Type /help to view all commands")
     emit_system_message(
         "Type @ for path completion, or /model to pick a model. "
         "Toggle multiline with Alt+M or F2; newline: Ctrl+J."
-    )
-    import platform
-
-    paste_tip = (
-        "💡 Tip: Use Ctrl+V to paste images in terminal."
-        if platform.system() == "Darwin"
-        else "Paste images: Ctrl+V, F3, or /paste command."
-    )
-    emit_system_message(paste_tip)
-    cancel_key = get_cancel_agent_display_name()
-    emit_system_message(
-        f"Press {cancel_key} during processing to cancel the current task "
-        f"or inference. Use Ctrl+X to interrupt running shell commands."
     )
     emit_system_message(
         "Use /autosave_load to manually load a previous autosave session."
     )
     emit_system_message(
         "Use /diff to configure diff highlighting colors for file changes."
-    )
-    emit_system_message("To re-run the tutorial, use /tutorial.")
-    emit_system_message(
-        "!<command> to run shell commands directly (e.g., !git status)",
     )
     # Print truecolor warning LAST so it's the most visible thing on startup
     # Big ugly red box should be impossible to miss! 🔴

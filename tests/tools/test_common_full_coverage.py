@@ -739,9 +739,7 @@ class TestGetUserApproval:
         from code_muse.tools.common import get_user_approval
 
         with (
-            patch(
-                "code_muse.tools.common.arrow_select", side_effect=KeyboardInterrupt
-            ),
+            patch("code_muse.tools.common.arrow_select", side_effect=KeyboardInterrupt),
             patch("code_muse.tools.common.Console"),
         ):
             with patch("code_muse.tools.command_runner.set_awaiting_user_input"):

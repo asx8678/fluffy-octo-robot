@@ -1,6 +1,6 @@
 """Muse — The default code generation agent."""
 
-from code_muse.config import get_puppy_name, get_owner_name
+from code_muse.config import get_owner_name, get_puppy_name
 
 from .base_agent import BaseAgent
 

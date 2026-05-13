@@ -154,9 +154,7 @@ class TestReasoningCommand:
             patch(
                 "code_muse.config.get_openai_reasoning_effort", return_value="medium"
             ),
-            patch(
-                "code_muse.agents.agent_manager.get_current_agent"
-            ) as mock_get_agent,
+            patch("code_muse.agents.agent_manager.get_current_agent") as mock_get_agent,
         ):
             mock_agent = MagicMock()
             mock_agent.reload_code_generation_agent.side_effect = Exception(

@@ -194,6 +194,8 @@ def _on_custom_command(command: str, name: str) -> bool | None:  # noqa: ARG001
 # Register all callbacks
 # ---------------------------------------------------------------------------
 
+# Priority: default 0 (runs after policy_engine/shell_safety=50, alongside shell_minimizer).
+# Compresses build tool output (maven, gradle, cargo, go build, etc.).
 register_callback("run_shell_command", build_filter_callback)
 register_callback("custom_command", _on_custom_command)
 register_callback("custom_command_help", _on_custom_command_help)

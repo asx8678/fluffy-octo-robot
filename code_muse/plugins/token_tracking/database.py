@@ -327,6 +327,7 @@ class TrackingDatabase:
                     DELETE FROM executions
                     WHERE timestamp < datetime('now', ?)
                     """,
+                    # TODO: PEP 750 t-string — use templatelib when stable
                     (f"-{retention_days} days",),
                 )
                 cursor2 = conn.execute(
@@ -334,6 +335,7 @@ class TrackingDatabase:
                     DELETE FROM edit_analysis
                     WHERE timestamp < datetime('now', ?)
                     """,
+                    # TODO: PEP 750 t-string — use templatelib when stable
                     (f"-{retention_days} days",),
                 )
                 conn.commit()

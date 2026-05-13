@@ -392,9 +392,7 @@ class TestInteractiveModelPicker:
                 "code_muse.command_line.model_picker_completion.ModelSelectionMenu.run_async",
                 return_value="gpt-4",
             ) as mock_run,
-            patch(
-                "code_muse.tools.command_runner.set_awaiting_user_input"
-            ) as mock_set,
+            patch("code_muse.tools.command_runner.set_awaiting_user_input") as mock_set,
         ):
             result = await interactive_model_picker()
 

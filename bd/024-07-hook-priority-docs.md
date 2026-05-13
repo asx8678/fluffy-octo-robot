@@ -1,11 +1,13 @@
 ---
 id: "024-07"
 title: "Document run_shell_command Hook Execution Priority (P3)"
-status: open
+status: closed
 epic: "024"
 labels: ["docs", "hooks", "P3"]
 created: "2026-05-18"
 priority: "P3"
+closed: "2026-05-21"
+resolution: "completed — docstring existed in callbacks.py; priority comments added to policy_engine, destructive_command_guard, force_push_guard, and build_filter register_callbacks.py files"
 ---
 
 ## Summary

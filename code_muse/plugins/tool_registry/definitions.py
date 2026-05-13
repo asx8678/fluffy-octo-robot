@@ -1,7 +1,5 @@
 """Auto-generated tool definitions from Muse's TOOL_REGISTRY."""
 
-from __future__ import annotations
-
 from code_muse.plugins.tool_registry.registry import (
     ToolCategory,
     ToolMetadata,

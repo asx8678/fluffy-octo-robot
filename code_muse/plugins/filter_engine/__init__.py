@@ -13,8 +13,12 @@ from code_muse.plugins.filter_engine.registry import StrategyRegistry
 
 # Import strategies so they self-register with the strategy registry
 from code_muse.plugins.filter_engine.strategies import (  # noqa: F401
+    ast_compressor,
+    ast_parser,
     code,
     git,
+    json_compressor,
+    json_patterns,
     lint,
     test,
 )

@@ -93,6 +93,107 @@ logger = logging.getLogger(__name__)
 # no GIL contention for I/O-bound callback work.
 _executor = concurrent.futures.ThreadPoolExecutor(max_workers=8)
 
+# ---------------------------------------------------------------------------
+# Deferred (atomic) registration support
+# ---------------------------------------------------------------------------
+
+# When True, register_callback buffers calls instead of committing them.
+_defer_mode: bool = False
+_deferred_registrations: list[tuple[PhaseType, CallbackFunc, int]] = []
+
+
+def begin_deferred() -> None:
+    """Enter deferred registration mode.
+
+    While active, ``register_callback`` buffers calls instead of committing
+    them.  Call ``commit_deferred()`` to apply the batch or
+    ``rollback_deferred()`` to discard it.
+    """
+    global _defer_mode
+    _defer_mode = True
+    _deferred_registrations.clear()
+
+
+def commit_deferred() -> list[str]:
+    """Commit all buffered registrations atomically.
+
+    Validates the full batch first, then applies every registration.  If any
+    application fails after partial commit, all successfully committed entries
+    are rolled back and a ``RuntimeError`` is raised.
+
+    Returns a list of non-fatal validation warnings (empty on success).
+    """
+    global _defer_mode
+    _defer_mode = False
+
+    batch = list(_deferred_registrations)
+    _deferred_registrations.clear()
+
+    if not batch:
+        return []
+
+    # --- Phase 1: validate everything before touching state ---
+    warnings: list[str] = []
+    seen_keys: set[tuple[PhaseType, int, str]] = set()
+    for phase, func, _priority in batch:
+        if phase not in _callbacks:
+            _defer_mode = False
+            raise ValueError(
+                f"Deferred registration references unsupported phase: {phase}"
+            )
+        if not callable(func):
+            raise TypeError(f"Deferred callback must be callable, got {type(func)}")
+        key = (phase, id(func), func.__name__)
+        if key in seen_keys:
+            warnings.append(
+                f"Duplicate deferred registration: {func.__name__} for '{phase}'"
+            )
+        seen_keys.add(key)
+
+    # --- Phase 2: apply; rollback on any unexpected error ---
+    committed: list[tuple[PhaseType, CallbackFunc, int]] = []
+    try:
+        for phase, func, priority in batch:
+            # Bypass the duplicate-is-func check in register_callback so that
+            # deferred registrations for *different* plugins can coexist.
+            # We still guard against the exact-same-func duplicate at commit
+            # time.
+            if any(f is func for _, f in _callbacks[phase]):
+                warnings.append(
+                    f"Skipping duplicate: {func.__name__} already in '{phase}'"
+                )
+                continue
+            _callbacks[phase].append((priority, func))
+            committed.append((phase, func, priority))
+            logger.debug(
+                f"Committed deferred callback {func.__name__} for "
+                f"phase '{phase}' (priority={priority})"
+            )
+    except Exception:
+        # Rollback everything we managed to commit
+        for phase, func, _priority in committed:
+            for idx, (_, existing_func) in enumerate(_callbacks[phase]):
+                if existing_func is func:
+                    del _callbacks[phase][idx]
+                    break
+        logger.error(
+            "Deferred commit failed; rolled back %d registrations",
+            len(committed),
+        )
+        raise
+
+    logger.debug("Committed %d deferred registrations", len(committed))
+    return warnings
+
+
+def rollback_deferred() -> None:
+    """Discard all buffered registrations without committing."""
+    global _defer_mode
+    count = len(_deferred_registrations)
+    _defer_mode = False
+    _deferred_registrations.clear()
+    logger.debug("Rolled back %d deferred registrations", count)
+
 
 def _shutdown_executor() -> None:
     """Gracefully shut down the callback ThreadPoolExecutor.
@@ -120,6 +221,15 @@ def register_callback(phase: PhaseType, func: CallbackFunc, priority: int = 0) -
 
     if not callable(func):
         raise TypeError(f"Callback must be callable, got {type(func)}")
+
+    # In deferred mode, buffer the registration for later atomic commit
+    if _defer_mode:
+        _deferred_registrations.append((phase, func, priority))
+        logger.debug(
+            f"Buffered deferred callback {func.__name__} for "
+            f"phase '{phase}' (priority={priority})"
+        )
+        return
 
     # Prevent duplicate registration of the same callback function
     # This can happen if plugins are accidentally loaded multiple times
@@ -241,9 +351,12 @@ async def _trigger_callbacks(phase: PhaseType, *args, **kwargs) -> list[Any]:
 
     Hook execution order: callbacks run from highest priority to lowest.
     For ``run_shell_command``, the caller (``command_runner.py``) iterates
-    results and the first non-None dict with ``pre_executed: True`` wins.
-    By default priority values, ``filter_engine`` runs before
-    ``policy_engine`` before ``shell_minimizer``.
+    through results in priority order and the **first non-None** result
+    containing ``{"pre_executed": True, ...}`` wins — subsequent results
+    are ignored.
+
+    Intended priority chain for ``run_shell_command``:
+        filter_engine (100) → policy_engine / shell_safety (50) → shell_minimizer (0)
     """
     callbacks = get_callbacks(phase)
 
@@ -292,9 +405,11 @@ async def on_startup() -> list[Any]:
     if failed_names:
         count = len(failed_names)
         names_str = ", ".join(failed_names)
+        # TODO: PEP 750 t-string — use templatelib when stable
         logger.warning(f"{count} startup callback(s) failed: {names_str}")
         from code_muse.messaging import emit_warning
 
+        # TODO: PEP 750 t-string — use templatelib when stable
         emit_warning(f"⚠️ {count} plugin(s) failed to load: {names_str}")
 
     # Report Cython status from the core package
@@ -304,6 +419,7 @@ async def on_startup() -> list[Any]:
         from code_muse.messaging import emit_success
 
         emit_success(
+            # TODO: PEP 750 t-string — use templatelib when stable
             f"✅ Cython enabled — {code_muse.PYX_MODULE_COUNT} modules compiled"
         )
     else:
@@ -369,19 +485,21 @@ def on_delete_file(*args, **kwargs) -> Any:
 async def on_run_shell_command(*args, **kwargs) -> Any:
     """Trigger callbacks for shell command execution.
 
-    Multiple plugins can register for this hook. The caller iterates through
-    registered callbacks in priority order (highest first). The first callback
-    returning ``{"pre_executed": True, "output": ...}`` wins — the rest are
-    skipped.
+    Execution order and resolution rule:
+        Callbacks fire in priority order (highest first).  The caller
+        (``command_runner.py``) iterates the result list and the **first
+        non-None** dict containing ``"pre_executed": True`` wins — all
+        remaining results are ignored.
 
-    Recommended priority chain for ``run_shell_command``:
+    Intended priority chain for ``run_shell_command``:
 
-    1. ``filter_engine`` (priority 100) — intercepts and transforms shell output
-    2. ``policy_engine`` / ``shell_safety`` (priority 50) — enforces allow/deny/ask-user rules
-    3. ``shell_minimizer`` (priority 0) — compresses known command output
+        1. ``filter_engine`` (priority 100) — intercepts and transforms shell output
+        2. ``policy_engine`` / ``shell_safety`` (priority 50) — enforces allow/deny/ask-user rules
+        3. ``shell_minimizer`` (priority 0) — compresses known command output
 
-    Future handlers should use an explicit ``priority`` argument when calling
-    ``register_callback()`` if they need to run earlier or later in the pipeline.
+    Future handlers **must** pass an explicit ``priority`` argument to
+    ``register_callback()`` to position themselves correctly in the
+    pipeline.
 
     Args:
         *args: Positional arguments passed to callbacks (context, command, ...).

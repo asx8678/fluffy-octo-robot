@@ -486,9 +486,7 @@ class TestIsCertBundleAvailable:
     def test_returns_true_with_valid_cert(self, tmp_path):
         cert = tmp_path / "cert.pem"
         cert.write_text("cert")
-        with patch(
-            "code_muse.http_utils.get_cert_bundle_path", return_value=str(cert)
-        ):
+        with patch("code_muse.http_utils.get_cert_bundle_path", return_value=str(cert)):
             from code_muse.http_utils import is_cert_bundle_available
 
             assert is_cert_bundle_available() is True

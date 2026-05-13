@@ -252,9 +252,7 @@ def test_model_settings_keybindings():
         menu = ModelSettingsMenu()
 
     with (
-        patch(
-            "code_muse.command_line.model_settings_menu.Application"
-        ) as mock_app_cls,
+        patch("code_muse.command_line.model_settings_menu.Application") as mock_app_cls,
         patch("code_muse.command_line.model_settings_menu.set_awaiting_user_input"),
         patch("sys.stdout"),
         patch("time.sleep"),
@@ -470,9 +468,7 @@ def test_uc_menu_keybindings():
         patch("code_muse.command_line.uc_menu._get_tool_entries", return_value=tools),
         patch("code_muse.command_line.uc_menu.Application") as mock_app_cls,
         patch("code_muse.command_line.uc_menu.set_awaiting_user_input"),
-        patch(
-            "code_muse.command_line.uc_menu._toggle_tool_enabled", return_value=True
-        ),
+        patch("code_muse.command_line.uc_menu._toggle_tool_enabled", return_value=True),
         patch("code_muse.command_line.uc_menu._delete_tool", return_value=False),
         patch(
             "code_muse.command_line.uc_menu._load_source_code",

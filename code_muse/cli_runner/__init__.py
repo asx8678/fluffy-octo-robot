@@ -16,7 +16,7 @@ import traceback
 from rich.console import Console
 
 from code_muse import __version__, callbacks, plugins
-from code_muse.agents import get_available_agents, get_current_agent, set_current_agent
+from code_muse.agents import get_available_agents, set_current_agent
 from code_muse.cli_runner.args import build_parser
 from code_muse.cli_runner.loop import interactive_mode
 from code_muse.cli_runner.resume import _resume_session_from_path
@@ -24,35 +24,11 @@ from code_muse.cli_runner.runner import (
     execute_single_prompt,
     run_prompt_with_attachments,
 )
-from code_muse.command_line.attachments import parse_prompt_attachments
-from code_muse.command_line.clipboard import get_clipboard_manager
-from code_muse.config import (
-    AUTOSAVE_DIR,
-    COMMAND_HISTORY_FILE,
-    ensure_config_exists,
-    finalize_autosave_session,
-    initialize_command_history_file,
-    save_command_to_history,
-)
+from code_muse.config import ensure_config_exists, initialize_command_history_file
 from code_muse.http_utils import find_available_port
-from code_muse.keymap import (
-    KeymapError,
-    get_cancel_agent_display_name,
-    validate_cancel_agent_key,
-)
-from code_muse.messaging import (
-    emit_error,
-    emit_info,
-    emit_success,
-    emit_system_message,
-    emit_warning,
-)
-from code_muse.terminal_utils import (
-    print_truecolor_warning,
-    reset_unix_terminal,
-    reset_windows_terminal_ansi,
-    reset_windows_terminal_full,
-)
+from code_muse.keymap import KeymapError, validate_cancel_agent_key
+from code_muse.messaging import emit_error, emit_system_message
+from code_muse.terminal_utils import reset_unix_terminal, reset_windows_terminal_full
 from code_muse.version_checker import default_version_mismatch_behavior
 
 plugins.load_plugin_callbacks()

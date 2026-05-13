@@ -90,6 +90,7 @@ def assign_redirect_uri(context: OAuthContext, port: int) -> str:
         raise RuntimeError(
             f"OAuth flow must use port {required_port}; attempted to assign port {port}"
         )
+    # TODO: PEP 750 t-string — use templatelib when stable
     redirect_uri = f"{host}:{port}/{path}"
     context.redirect_uri = redirect_uri
     return redirect_uri
@@ -409,6 +410,7 @@ def fetch_chatgpt_models(access_token: str, account_id: str) -> list[str | None]
     # Build the models URL with client version
     client_version = CHATGPT_OAUTH_CONFIG.get("client_version", "0.72.0")
     base_url = CHATGPT_OAUTH_CONFIG["api_base_url"].rstrip("/")
+    # TODO: PEP 750 t-string — use templatelib when stable
     models_url = f"{base_url}/models"
 
     # Build User-Agent to match codex-rs CLI format
@@ -424,6 +426,7 @@ def fetch_chatgpt_models(access_token: str, account_id: str) -> list[str | None]
     )
 
     headers = {
+        # TODO: PEP 750 t-string — use templatelib when stable
         "Authorization": f"Bearer {access_token}",
         "ChatGPT-Account-Id": account_id,
         "User-Agent": user_agent,

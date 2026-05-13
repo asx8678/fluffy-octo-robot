@@ -1,7 +1,5 @@
 """Shared type definitions for the command-line subsystem."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 
 

@@ -4,8 +4,6 @@ Pure-Python CDP client using websockets. No Node.js dependency.
 Connects directly to Chrome's remote-debugging WebSocket endpoint.
 """
 
-from __future__ import annotations
-
 import asyncio
 import json
 import logging

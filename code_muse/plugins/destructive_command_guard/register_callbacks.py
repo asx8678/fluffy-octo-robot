@@ -141,6 +141,8 @@ def _block_command(command: str, match: Any) -> dict[str, Any]:
 
 def register() -> None:
     """Register the destructive command guard callback."""
+    # Priority: default 0 (runs after policy_engine/shell_safety=50, alongside shell_minimizer).
+    # Blocks dangerous shell commands (e.g. rm -rf /) before execution.
     register_callback("run_shell_command", destructive_command_guard_callback)
 
 

@@ -1614,20 +1614,22 @@ class TestChatGPTOAuthErrorPaths:
             {"type": "chatgpt_oauth", "handler": _create_chatgpt_oauth_model}
         ]
 
-        with patch(
-            "code_muse.model_factory.callbacks.on_register_model_types",
-            return_value=[mock_handlers],
-        ):
-            with patch(
+        with (
+            patch(
+                "code_muse.model_factory.callbacks.on_register_model_types",
+                return_value=[mock_handlers],
+            ),
+            patch(
                 "code_muse.plugins.chatgpt_oauth.register_callbacks.get_valid_access_token",
                 return_value=None,
-            ):
-                with patch(
-                    "code_muse.plugins.chatgpt_oauth.register_callbacks.emit_warning"
-                ) as mock_warn:
-                    model = ModelFactory.get_model("chatgpt-oauth", config)
-                    assert model is None
-                    mock_warn.assert_called()
+            ),
+            patch(
+                "code_muse.plugins.chatgpt_oauth.register_callbacks.emit_warning"
+            ) as mock_warn,
+        ):
+            model = ModelFactory.get_model("chatgpt-oauth", config)
+            assert model is None
+            mock_warn.assert_called()
 
     def test_chatgpt_oauth_missing_account_id(self):
         """Test chatgpt_oauth when account_id is missing."""
@@ -1648,24 +1650,26 @@ class TestChatGPTOAuthErrorPaths:
             {"type": "chatgpt_oauth", "handler": _create_chatgpt_oauth_model}
         ]
 
-        with patch(
-            "code_muse.model_factory.callbacks.on_register_model_types",
-            return_value=[mock_handlers],
-        ):
-            with patch(
+        with (
+            patch(
+                "code_muse.model_factory.callbacks.on_register_model_types",
+                return_value=[mock_handlers],
+            ),
+            patch(
                 "code_muse.plugins.chatgpt_oauth.register_callbacks.get_valid_access_token",
                 return_value="valid-token",
-            ):
-                with patch(
-                    "code_muse.plugins.chatgpt_oauth.register_callbacks.load_stored_tokens",
-                    return_value={},  # No account_id
-                ):
-                    with patch(
-                        "code_muse.plugins.chatgpt_oauth.register_callbacks.emit_warning"
-                    ) as mock_warn:
-                        model = ModelFactory.get_model("chatgpt-oauth", config)
-                        assert model is None
-                        mock_warn.assert_called()
+            ),
+            patch(
+                "code_muse.plugins.chatgpt_oauth.register_callbacks.load_stored_tokens",
+                return_value={},  # No account_id
+            ),
+        ):
+            with patch(
+                "code_muse.plugins.chatgpt_oauth.register_callbacks.emit_warning"
+            ) as mock_warn:
+                model = ModelFactory.get_model("chatgpt-oauth", config)
+                assert model is None
+                mock_warn.assert_called()
 
 
 class TestAnthropicInterleaved:
@@ -1682,41 +1686,31 @@ class TestAnthropicInterleaved:
             }
         }
 
-        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key"}):
-            with patch(
-                "code_muse.model_factory.get_cert_bundle_path", return_value=None
-            ):
-                with patch("code_muse.model_factory.get_http2", return_value=True):
-                    with patch("code_muse.model_factory.ClaudeCacheAsyncClient"):
-                        with patch(
-                            "code_muse.model_factory.AsyncAnthropic"
-                        ) as mock_anthropic:
-                            with patch(
-                                "code_muse.model_factory.patch_anthropic_client_messages"
-                            ):
+        with (
+            patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key"}),
+            patch("code_muse.model_factory.get_cert_bundle_path", return_value=None),
+            patch("code_muse.model_factory.get_http2", return_value=True),
+        ):
+            with patch("code_muse.model_factory.ClaudeCacheAsyncClient"):
+                with patch("code_muse.model_factory.AsyncAnthropic") as mock_anthropic:
+                    with patch(
+                        "code_muse.model_factory.patch_anthropic_client_messages"
+                    ):
+                        with patch("code_muse.model_factory.make_anthropic_provider"):
+                            with patch("code_muse.model_factory.AnthropicModel"):
                                 with patch(
-                                    "code_muse.model_factory.make_anthropic_provider"
+                                    "code_muse.config.get_effective_model_settings",
+                                    return_value={"interleaved_thinking": True},
                                 ):
-                                    with patch(
-                                        "code_muse.model_factory.AnthropicModel"
-                                    ):
-                                        with patch(
-                                            "code_muse.config.get_effective_model_settings",
-                                            return_value={"interleaved_thinking": True},
-                                        ):
-                                            ModelFactory.get_model(
-                                                "claude-test", config
-                                            )
-                                            call_args = mock_anthropic.call_args
-                                            headers = call_args[1].get(
-                                                "default_headers"
-                                            )
-                                            assert headers is not None
-                                            assert "anthropic-beta" in headers
-                                            assert (
-                                                "interleaved-thinking-2025-05-14"
-                                                in headers["anthropic-beta"]
-                                            )
+                                    ModelFactory.get_model("claude-test", config)
+                                    call_args = mock_anthropic.call_args
+                                    headers = call_args[1].get("default_headers")
+                                    assert headers is not None
+                                    assert "anthropic-beta" in headers
+                                    assert (
+                                        "interleaved-thinking-2025-05-14"
+                                        in headers["anthropic-beta"]
+                                    )
 
     def test_anthropic_no_interleaved_thinking(self):
         """Test that no header is added when interleaved thinking is disabled."""
@@ -1729,39 +1723,27 @@ class TestAnthropicInterleaved:
             }
         }
 
-        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key"}):
-            with patch(
-                "code_muse.model_factory.get_cert_bundle_path", return_value=None
-            ):
-                with patch("code_muse.model_factory.get_http2", return_value=True):
-                    with patch("code_muse.model_factory.ClaudeCacheAsyncClient"):
-                        with patch(
-                            "code_muse.model_factory.AsyncAnthropic"
-                        ) as mock_anthropic:
-                            with patch(
-                                "code_muse.model_factory.patch_anthropic_client_messages"
-                            ):
+        with (
+            patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key"}),
+            patch("code_muse.model_factory.get_cert_bundle_path", return_value=None),
+            patch("code_muse.model_factory.get_http2", return_value=True),
+        ):
+            with patch("code_muse.model_factory.ClaudeCacheAsyncClient"):
+                with patch("code_muse.model_factory.AsyncAnthropic") as mock_anthropic:
+                    with patch(
+                        "code_muse.model_factory.patch_anthropic_client_messages"
+                    ):
+                        with patch("code_muse.model_factory.make_anthropic_provider"):
+                            with patch("code_muse.model_factory.AnthropicModel"):
                                 with patch(
-                                    "code_muse.model_factory.make_anthropic_provider"
+                                    "code_muse.config.get_effective_model_settings",
+                                    return_value={"interleaved_thinking": False},
                                 ):
-                                    with patch(
-                                        "code_muse.model_factory.AnthropicModel"
-                                    ):
-                                        with patch(
-                                            "code_muse.config.get_effective_model_settings",
-                                            return_value={
-                                                "interleaved_thinking": False
-                                            },
-                                        ):
-                                            ModelFactory.get_model(
-                                                "claude-test", config
-                                            )
-                                            call_args = mock_anthropic.call_args
-                                            # default_headers should be None or empty
-                                            headers = call_args[1].get(
-                                                "default_headers"
-                                            )
-                                            assert headers is None
+                                    ModelFactory.get_model("claude-test", config)
+                                    call_args = mock_anthropic.call_args
+                                    # default_headers should be None or empty
+                                    headers = call_args[1].get("default_headers")
+                                    assert headers is None
 
 
 class TestContext1MBetaHeader:

@@ -719,9 +719,7 @@ class TestSubAgentSuppression:
         # Run in sub-agent context BUT with verbose=True
         with subagent_context("test-agent"):
             with patch("code_muse.agents.event_stream_handler.pause_all_spinners"):
-                with patch(
-                    "code_muse.agents.event_stream_handler.resume_all_spinners"
-                ):
+                with patch("code_muse.agents.event_stream_handler.resume_all_spinners"):
                     with patch(
                         "code_muse.agents.event_stream_handler.get_banner_color",
                         return_value="blue",

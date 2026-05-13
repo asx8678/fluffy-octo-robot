@@ -137,6 +137,8 @@ def _block_command(command: str, match: Any) -> dict[str, Any]:
 
 def register() -> None:
     """Register the force push guard callback."""
+    # Priority: default 0 (runs after policy_engine/shell_safety=50, alongside shell_minimizer).
+    # Blocks git force push commands with user confirmation.
     register_callback("run_shell_command", force_push_guard_callback)
 
 

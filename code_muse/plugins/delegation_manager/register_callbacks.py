@@ -38,8 +38,8 @@ def _register_agents():
 
 def _register_delegation_tools() -> list[dict[str, Any]]:
     """Dynamically create delegation tools for all available agents."""
-    from code_muse.agents.agent_manager import load_agent
     from code_muse.agents import get_available_agents
+    from code_muse.agents.agent_manager import load_agent
 
     manager = _get_manager()
 

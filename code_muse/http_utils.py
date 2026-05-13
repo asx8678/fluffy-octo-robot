@@ -293,7 +293,7 @@ def resolve_env_var_in_header(headers: dict[str, str]) -> dict[str, str]:
     for key, value in headers.items():
         if isinstance(value, str):
             try:
-                expanded = os.path.expandvars(value)
+                expanded = Path(value).expandvars()
                 resolved_headers[key] = expanded
             except Exception:
                 resolved_headers[key] = value

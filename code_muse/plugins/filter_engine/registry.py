@@ -59,17 +59,25 @@ class StrategyRegistry:
         if existing is not None:
             _, existing_priority = existing
             if priority > existing_priority:
-                logger.warning(
+                logger.debug(
                     "StrategyRegistry: overriding '%s' strategy (priority %d > %d)",
                     category,
                     priority,
                     existing_priority,
                 )
                 self._strategies[category] = (strategy_fn, priority)
-            else:
+            elif priority == existing_priority:
                 logger.warning(
+                    "StrategyRegistry: equal-priority collision for '%s' "
+                    "(priority %d == %d)",
+                    category,
+                    priority,
+                    existing_priority,
+                )
+            else:
+                logger.debug(
                     "StrategyRegistry: ignoring '%s' strategy registration "
-                    "(priority %d <= %d)",
+                    "(priority %d < %d)",
                     category,
                     priority,
                     existing_priority,

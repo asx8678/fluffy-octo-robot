@@ -356,9 +356,7 @@ class TestAddModelToExtraConfig:
         p = _make_provider()
         with tempfile.TemporaryDirectory() as td:
             path = str(Path(td) / "extra_models.json")
-            with patch(
-                "code_muse.command_line.add_model_menu.EXTRA_MODELS_FILE", path
-            ):
+            with patch("code_muse.command_line.add_model_menu.EXTRA_MODELS_FILE", path):
                 result = menu._add_model_to_extra_config(m, p)
             assert result is True
             with open(path) as f:
@@ -373,9 +371,7 @@ class TestAddModelToExtraConfig:
             path = str(Path(td) / "extra_models.json")
             with open(path, "w") as f:
                 json.dump({"openai-gpt-4": {}}, f)
-            with patch(
-                "code_muse.command_line.add_model_menu.EXTRA_MODELS_FILE", path
-            ):
+            with patch("code_muse.command_line.add_model_menu.EXTRA_MODELS_FILE", path):
                 result = menu._add_model_to_extra_config(m, p)
             assert result is True  # Not an error
 
@@ -387,9 +383,7 @@ class TestAddModelToExtraConfig:
             path = str(Path(td) / "extra_models.json")
             with open(path, "w") as f:
                 f.write("not json")
-            with patch(
-                "code_muse.command_line.add_model_menu.EXTRA_MODELS_FILE", path
-            ):
+            with patch("code_muse.command_line.add_model_menu.EXTRA_MODELS_FILE", path):
                 result = menu._add_model_to_extra_config(m, p)
             assert result is False
 
@@ -401,9 +395,7 @@ class TestAddModelToExtraConfig:
             path = str(Path(td) / "extra_models.json")
             with open(path, "w") as f:
                 json.dump(["not", "a", "dict"], f)
-            with patch(
-                "code_muse.command_line.add_model_menu.EXTRA_MODELS_FILE", path
-            ):
+            with patch("code_muse.command_line.add_model_menu.EXTRA_MODELS_FILE", path):
                 result = menu._add_model_to_extra_config(m, p)
             assert result is False
 
@@ -851,9 +843,7 @@ class TestRun:
 
         with tempfile.TemporaryDirectory() as td:
             path = str(Path(td) / "extra_models.json")
-            with patch(
-                "code_muse.command_line.add_model_menu.EXTRA_MODELS_FILE", path
-            ):
+            with patch("code_muse.command_line.add_model_menu.EXTRA_MODELS_FILE", path):
                 result = menu.run()
         assert result is True
 
@@ -881,9 +871,7 @@ class TestRun:
 
         with tempfile.TemporaryDirectory() as td:
             path = str(Path(td) / "extra_models.json")
-            with patch(
-                "code_muse.command_line.add_model_menu.EXTRA_MODELS_FILE", path
-            ):
+            with patch("code_muse.command_line.add_model_menu.EXTRA_MODELS_FILE", path):
                 result = menu.run()
         assert result is True
 
@@ -957,9 +945,7 @@ class TestRun:
 
         with tempfile.TemporaryDirectory() as td:
             path = str(Path(td) / "extra_models.json")
-            with patch(
-                "code_muse.command_line.add_model_menu.EXTRA_MODELS_FILE", path
-            ):
+            with patch("code_muse.command_line.add_model_menu.EXTRA_MODELS_FILE", path):
                 result = menu.run()
         assert result is True
 

@@ -7,6 +7,7 @@ import pytest
 
 from code_muse.config import (
     DEFAULT_SECTION,
+    get_agent_name,
     get_allow_recursion,
     get_auto_save_session,
     get_compaction_threshold,
@@ -15,7 +16,6 @@ from code_muse.config import (
     get_message_limit,
     get_owner_name,
     get_protected_token_count,
-    get_agent_name,
     get_value,
     get_yolo_mode,
     set_config_value,

@@ -530,9 +530,7 @@ class TestTokenRefresh:
         """Test forced refresh even for valid tokens."""
         mock_load.return_value = sample_token_data
 
-        with patch(
-            "code_muse.plugins.claude_code_oauth.utils.httpx.post"
-        ) as mock_post:
+        with patch("code_muse.plugins.claude_code_oauth.utils.httpx.post") as mock_post:
             new_token = "forced_new_token"
             mock_response = Mock()
             mock_response.status_code = 200

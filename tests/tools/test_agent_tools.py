@@ -267,9 +267,7 @@ class TestRegisterInvokeAgent:
             patch("code_muse.tools.agent_tools.emit_error"),
             patch("code_muse.tools.agent_tools.emit_info"),
             patch("code_muse.tools.agent_tools.get_message_bus"),
-            patch(
-                "code_muse.tools.agent_tools.get_session_context", return_value=None
-            ),
+            patch("code_muse.tools.agent_tools.get_session_context", return_value=None),
             patch("code_muse.tools.agent_tools.set_session_context"),
             patch(
                 "code_muse.tools.browser.browser_manager.set_browser_session",

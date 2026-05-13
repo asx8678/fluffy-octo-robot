@@ -53,7 +53,7 @@ def _hash_session_data(data: dict[str, Any]) -> str | None:
         return hashlib.sha256(
             json.dumps(data, sort_keys=True).encode("utf-8")
         ).hexdigest()
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
 
 

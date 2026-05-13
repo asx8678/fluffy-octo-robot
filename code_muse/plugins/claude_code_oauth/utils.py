@@ -523,8 +523,10 @@ def filter_latest_claude_models(
 
 def fetch_claude_code_models(access_token: str) -> list[str | None]:
     try:
+        # TODO: PEP 750 t-string — use templatelib when stable
         api_url = f"{CLAUDE_CODE_OAUTH_CONFIG['api_base_url']}/v1/models"
         headers = {
+            # TODO: PEP 750 t-string — use templatelib when stable
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json",
             "anthropic-beta": "oauth-2025-04-20",

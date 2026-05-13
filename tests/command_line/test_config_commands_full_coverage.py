@@ -225,9 +225,7 @@ class TestHandleSetCommand:
             patch("code_muse.config.set_config_value"),
             patch("code_muse.messaging.emit_success"),
             patch("code_muse.messaging.emit_info"),
-            patch(
-                "code_muse.keymap.VALID_CANCEL_KEYS", {"ctrl+c", "ctrl+k", "ctrl+q"}
-            ),
+            patch("code_muse.keymap.VALID_CANCEL_KEYS", {"ctrl+c", "ctrl+k", "ctrl+q"}),
             patch("code_muse.agents.get_current_agent", return_value=mock_agent),
         ):
             assert handle_set_command("/set cancel_agent_key ctrl+c") is True
@@ -236,9 +234,7 @@ class TestHandleSetCommand:
         from code_muse.command_line.config_commands import handle_set_command
 
         with (
-            patch(
-                "code_muse.keymap.VALID_CANCEL_KEYS", {"ctrl+c", "ctrl+k", "ctrl+q"}
-            ),
+            patch("code_muse.keymap.VALID_CANCEL_KEYS", {"ctrl+c", "ctrl+k", "ctrl+q"}),
             patch("code_muse.messaging.emit_error") as err,
         ):
             assert handle_set_command("/set cancel_agent_key bad_key") is True

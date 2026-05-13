@@ -13,10 +13,7 @@ import pytest
 # Import directly from the module file
 spec = importlib.util.spec_from_file_location(
     "subagent_context_module",
-    Path(__file__).parent.parent.parent
-    / "code_muse"
-    / "tools"
-    / "subagent_context.py",
+    Path(__file__).parent.parent.parent / "code_muse" / "tools" / "subagent_context.py",
 )
 subagent_context_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(subagent_context_module)

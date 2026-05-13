@@ -12,10 +12,10 @@ that the supervisor explicitly provides.  No conversation history is passed.
 
 import asyncio
 import hashlib
-import json
 import logging
 import threading
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from pydantic_ai import Agent, RunContext, UsageLimits
 

@@ -267,7 +267,8 @@ def _on_startup() -> None:
 # Register all callbacks
 # ---------------------------------------------------------------------------
 
-# Priority: runs third (after policy_engine=50). Compresses shell output when no other handler matches.
+# Priority: intended 0 (runs third, after policy_engine/shell_safety=50).
+# Compresses shell output when no other handler matches.
 register_callback("run_shell_command", _minimizer_callback, priority=-10)
 register_callback("custom_command", _handle_minimizer_command)
 register_callback("custom_command_help", _minimizer_help)

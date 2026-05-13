@@ -1154,8 +1154,10 @@ async def run_shell_command(
 
             # Emit info about background execution
             emit_info(
+                # TODO: PEP 750 t-string — use templatelib when stable
                 f"🚀 Background process started (PID: {process.pid}) - no timeout, runs until complete"
             )
+            # TODO: PEP 750 t-string — use templatelib when stable
             emit_info(f"📄 Output logging to: {log_file.name}")
 
             # Return immediately - don't wait, don't block

@@ -45,14 +45,14 @@ Findings from comprehensive code review by `planning-agent-f77d40` (2026-05-18).
 
 ## Acceptance Criteria
 
-- [ ] All 8 `except` syntax errors fixed; `ruff check` passes on all affected files
-- [ ] `annotationlib` importable at startup (either as dependency or inlined)
-- [ ] Dead code removed without regressions
-- [ ] `cli_runner.py` has ≤3 in-function imports (only where module-level import would cause circular deps)
-- [ ] `interactive_mode` split into ≤5 helper functions, each ≤100 lines
-- [ ] `MarkdownCommandResult` lives in `code_muse/command_line/types.py` (or similar) and is imported from there by both `command_handler.py` and `customizable_commands/register_callbacks.py`
-- [ ] `run_shell_command` callback docstring or hook docs explain priority order
-- [ ] All existing tests pass
+- [x] All 8 `except` syntax errors fixed; `ruff check` passes on all affected files
+- [x] `annotationlib` importable at startup (either as dependency or inlined)
+- [x] Dead code removed without regressions
+- [x] `cli_runner.py` has ≤3 in-function imports (only where module-level import would cause circular deps)
+- [x] `interactive_mode` split into ≤5 helper functions, each ≤100 lines
+- [x] `MarkdownCommandResult` lives in `code_muse/command_line/types.py` (or similar) and is imported from there by both `command_handler.py` and `customizable_commands/register_callbacks.py`
+- [x] `run_shell_command` callback docstring or hook docs explain priority order
+- [x] All existing tests pass
 
 ## Dependencies
 

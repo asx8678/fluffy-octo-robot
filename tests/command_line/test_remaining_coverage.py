@@ -314,9 +314,7 @@ def test_config_pin_json_agent_reload_failure():
             "code_muse.agents.json_agent.discover_json_agents",
             return_value={"myagent": "/path"},
         ),
-        patch(
-            "code_muse.agents.agent_manager.get_agent_descriptions", return_value={}
-        ),
+        patch("code_muse.agents.agent_manager.get_agent_descriptions", return_value={}),
         patch("code_muse.messaging.emit_info"),
         patch("code_muse.messaging.emit_success"),
         patch("code_muse.messaging.emit_warning") as _mock_warn,
@@ -345,9 +343,7 @@ def test_config_pin_list_json_agents_with_pinned():
             "code_muse.agents.json_agent.discover_json_agents",
             return_value={"myagent": "/path/agent.json"},
         ),
-        patch(
-            "code_muse.agents.agent_manager.get_agent_descriptions", return_value={}
-        ),
+        patch("code_muse.agents.agent_manager.get_agent_descriptions", return_value={}),
         patch("code_muse.messaging.emit_info") as _mock_info,
         patch("code_muse.messaging.emit_warning"),
     ):
@@ -507,9 +503,7 @@ def test_model_settings_menu_keybindings():
         menu = ModelSettingsMenu()
 
     with (
-        patch(
-            "code_muse.command_line.model_settings_menu.Application"
-        ) as mock_app_cls,
+        patch("code_muse.command_line.model_settings_menu.Application") as mock_app_cls,
         patch("code_muse.command_line.model_settings_menu.set_awaiting_user_input"),
         patch("sys.stdout"),
         patch("time.sleep"),

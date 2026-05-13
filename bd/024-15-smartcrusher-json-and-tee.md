@@ -1,11 +1,13 @@
 ---
 id: "024-15"
 title: "SmartCrusher JSON Reachability & Tee Recovery UX (P2)"
-status: open
+status: closed
 epic: "024"
 labels: ["feature", "json", "ux", "P2"]
 created: "2026-05-18"
 priority: "P2"
+closed: "2026-05-21"
+resolution: "completed — json_command classifier category exists; tee recovery writes with user-facing emit_warning notification; /tee list deferred as future enhancement (tee directory is /tmp/muse_tee/)"
 ---
 
 ## Summary

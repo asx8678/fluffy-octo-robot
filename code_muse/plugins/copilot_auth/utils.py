@@ -454,8 +454,10 @@ def fetch_copilot_models(session_token: str, host: str = "github.com") -> list[s
     Uses the host-specific API endpoint discovered during token exchange.
     """
     api_base = get_api_endpoint_for_host(host)
+    # TODO: PEP 750 t-string — use templatelib when stable
     url = f"{api_base}/models"
     headers = {
+        # TODO: PEP 750 t-string — use templatelib when stable
         "Authorization": f"Bearer {session_token}",
         "Accept": "application/json",
         "Editor-Version": COPILOT_AUTH_CONFIG["editor_version"],

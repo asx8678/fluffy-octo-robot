@@ -112,9 +112,7 @@ class TestOAuthFlowIntegration:
                 "code_muse.plugins.chatgpt_oauth.utils.get_token_storage_path",
                 return_value=mock_token_storage,
             ),
-            patch(
-                "code_muse.plugins.chatgpt_oauth.utils.parse_jwt_claims"
-            ) as mock_jwt,
+            patch("code_muse.plugins.chatgpt_oauth.utils.parse_jwt_claims") as mock_jwt,
         ):
             mock_jwt.return_value = {
                 "https://api.openai.com/auth": {
@@ -183,9 +181,7 @@ class TestOAuthFlowIntegration:
                 "code_muse.plugins.chatgpt_oauth.utils.get_chatgpt_models_path",
                 return_value=mock_models_storage,
             ),
-            patch(
-                "code_muse.plugins.chatgpt_oauth.utils.parse_jwt_claims"
-            ) as mock_jwt,
+            patch("code_muse.plugins.chatgpt_oauth.utils.parse_jwt_claims") as mock_jwt,
         ):
             mock_jwt.return_value = {
                 "https://api.openai.com/auth": {

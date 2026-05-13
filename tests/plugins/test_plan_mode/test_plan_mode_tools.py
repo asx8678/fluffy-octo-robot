@@ -144,9 +144,7 @@ class TestRegisterOpenPlanInEditor:
         register_open_plan_in_editor(agent)
         tool = agent.tools["open_plan_in_editor"]
         mock_ctx = MagicMock()
-        with patch(
-            "code_muse.plugins.plan_mode.plan_mode_tools.Path"
-        ) as mock_path_cls:
+        with patch("code_muse.plugins.plan_mode.plan_mode_tools.Path") as mock_path_cls:
             mock_path = MagicMock()
             mock_path.exists.return_value = False
             mock_path_cls.return_value = mock_path

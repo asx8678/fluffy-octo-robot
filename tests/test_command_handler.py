@@ -197,9 +197,7 @@ def test_set_config_value_equals():
     try:
         with (
             patch("code_muse.config.set_config_value") as mock_set_cfg,
-            patch(
-                "code_muse.config.get_config_keys", return_value=["pony", "rainbow"]
-            ),
+            patch("code_muse.config.get_config_keys", return_value=["pony", "rainbow"]),
         ):
             result = handle_command("/set pony=rainbow")
             assert result is True
@@ -220,9 +218,7 @@ def test_set_config_value_space():
     try:
         with (
             patch("code_muse.config.set_config_value") as mock_set_cfg,
-            patch(
-                "code_muse.config.get_config_keys", return_value=["pony", "rainbow"]
-            ),
+            patch("code_muse.config.get_config_keys", return_value=["pony", "rainbow"]),
         ):
             result = handle_command("/set pony rainbow")
             assert result is True

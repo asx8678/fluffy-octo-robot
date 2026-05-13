@@ -3,6 +3,7 @@
 import json
 import os
 from datetime import UTC, datetime
+from pathlib import Path
 
 
 class TrafficCapture:
@@ -60,7 +61,7 @@ class TrafficCapture:
         self.flows.append(entry)
 
     def done(self):
-        out_dir = os.path.dirname(self.output)
+        out_dir = Path(self.output).parent
         if out_dir:
             os.makedirs(out_dir, exist_ok=True)
         with open(self.output, "w") as f:

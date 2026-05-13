@@ -103,7 +103,6 @@ class TestCrossPlatformReset:
         mock_unix_reset.assert_called_once()
 
 
-
 class TestTruecolorDetection:
     """Test truecolor support detection."""
 
@@ -172,7 +171,6 @@ class TestTruecolorDetection:
 
                 assert detect_truecolor_support() is False
 
-
     def test_rich_fallback_256(self):
         """Test Rich fallback with 256 colors."""
         with patch.dict(os.environ, {}, clear=True):
@@ -182,7 +180,6 @@ class TestTruecolorDetection:
                 mock_console_class.return_value = mock_console
 
                 assert detect_truecolor_support() is False
-
 
     def test_case_insensitive_colorterm(self):
         """Test COLORTERM detection is case-insensitive."""
@@ -200,7 +197,6 @@ class TestTruecolorDetection:
 
 class TestPrintTruecolorWarning:
     """Test truecolor warning printing."""
-
 
     def test_warning_with_rich(self):
         """Test warning printed with Rich when available."""
@@ -329,6 +325,7 @@ class TestEdgeCasesAndIntegration:
 
                     result = detect_truecolor_support()
                     assert result == expected, f"Failed for {env_vars}"
+
 
 class TestANSISequenceFormats:
     """Test ANSI escape sequence formats used in the module."""

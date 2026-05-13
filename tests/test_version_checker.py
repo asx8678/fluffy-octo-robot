@@ -134,8 +134,7 @@ class TestDefaultVersionMismatchBehavior:
         mock_emit_warning.assert_called()
         # Should emit success message with an actionable uvx refresh command
         mock_emit_success.assert_called_once_with(
-            "Run to refresh uvx and start the latest version: "
-            "uvx code-muse"
+            "Run to refresh uvx and start the latest version: uvx code-muse"
         )
 
     @patch("code_muse.version_checker.get_message_bus")

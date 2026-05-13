@@ -23,7 +23,6 @@ class TestMessagingExtended:
         if self.queue:
             self.queue.stop()
 
-
     def test_emit_with_group(self):
         """Test message groups."""
         self.queue.mark_renderer_active()

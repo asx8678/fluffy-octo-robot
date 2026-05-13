@@ -233,6 +233,15 @@ class FilterDispatcher:
                 logger.warning(
                     "⚠ FilterDispatcher: tee recovery wrote raw output to %s", tee_path
                 )
+                # Notify user with a visible message
+                try:
+                    from code_muse.messaging import emit_warning
+                    emit_warning(
+                        f"⚠ Filter error — raw output saved to {tee_path}. "
+                        "Recovered files stored in: /tmp/muse_tee/"
+                    )
+                except ImportError:
+                    pass
                 # Return hint that includes the tee path
                 return {
                     "pre_executed": True,

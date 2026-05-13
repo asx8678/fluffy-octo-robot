@@ -515,7 +515,6 @@ class TestModelName:
                 assert result == "default-m"
         cp_config._SESSION_MODEL = None
 
-
     def test_reset_session_model(self):
         cp_config._SESSION_MODEL = "foo"
         cp_config.reset_session_model()
@@ -543,9 +542,7 @@ class TestDefaultModel:
 
     def test_default_model_empty_config(self):
         cp_config._default_model_cache = None
-        with patch(
-            "code_muse.model_factory.ModelFactory.load_config", return_value={}
-        ):
+        with patch("code_muse.model_factory.ModelFactory.load_config", return_value={}):
             result = cp_config._default_model_from_models_json()
             assert result == "gpt-5"
         cp_config._default_model_cache = None
@@ -603,9 +600,7 @@ class TestDefaultVisionModel:
 
     def test_empty_config(self):
         cp_config._default_vision_model_cache = None
-        with patch(
-            "code_muse.model_factory.ModelFactory.load_config", return_value={}
-        ):
+        with patch("code_muse.model_factory.ModelFactory.load_config", return_value={}):
             assert cp_config._default_vision_model_from_models_json() == "gpt-4.1"
         cp_config._default_vision_model_cache = None
 
@@ -636,9 +631,7 @@ class TestValidateModel:
 
     def test_not_found(self):
         cp_config._model_validation_cache.clear()
-        with patch(
-            "code_muse.model_factory.ModelFactory.load_config", return_value={}
-        ):
+        with patch("code_muse.model_factory.ModelFactory.load_config", return_value={}):
             assert cp_config._validate_model_exists("missing") is False
 
     def test_exception(self):

@@ -171,7 +171,8 @@ def _on_custom_command_help() -> list[tuple[str, str]]:
 
 register_callback("startup", _on_startup)
 register_callback("startup", _setup_cython_hooks)
-# Priority: runs first (before policy_engine=50). Performs content-type detection and routing.
+# Priority: intended 100 (runs first, before policy_engine/shell_safety=50).
+# Performs content-type detection and routing.
 register_callback("run_shell_command", filter_engine_callback, priority=10)
 register_callback("custom_command", _on_custom_command)
 register_callback("custom_command_help", _on_custom_command_help)

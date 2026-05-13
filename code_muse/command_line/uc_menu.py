@@ -572,6 +572,7 @@ def _show_source_code(tool: UCToolInfo) -> None:
         )
         panel = Panel(
             syntax,
+            # TODO: PEP 750 t-string — use templatelib when stable
             title=f"[bold cyan]{tool.full_name}[/bold cyan]",
             border_style="cyan",
             padding=(0, 1),

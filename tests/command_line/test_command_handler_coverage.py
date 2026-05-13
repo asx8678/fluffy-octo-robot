@@ -224,9 +224,7 @@ class TestHandleCommand:
 
     @patch("code_muse.command_line.command_handler._ensure_plugins_loaded")
     @patch("code_muse.command_line.command_registry.get_command", return_value=None)
-    @patch(
-        "code_muse.callbacks.on_custom_command", side_effect=Exception("plugin err")
-    )
+    @patch("code_muse.callbacks.on_custom_command", side_effect=Exception("plugin err"))
     @patch("code_muse.messaging.emit_warning")
     def test_custom_command_hook_error(
         self, mock_warn, mock_custom, mock_get, mock_plugins

@@ -44,9 +44,7 @@ class TestLoadContextCompleter:
             # Create fake pkl files
             for name in ["session1.pkl", "session2.pkl"]:
                 (contexts_dir / name).write_text("")
-            with patch(
-                "code_muse.command_line.load_context_completion.CONFIG_DIR", td
-            ):
+            with patch("code_muse.command_line.load_context_completion.CONFIG_DIR", td):
                 result = self._get_completions("/load_context ")
                 names = [c.text for c in result]
                 assert "session1" in names
@@ -58,9 +56,7 @@ class TestLoadContextCompleter:
             contexts_dir.mkdir(parents=True)
             for name in ["alpha.pkl", "beta.pkl"]:
                 (contexts_dir / name).write_text("")
-            with patch(
-                "code_muse.command_line.load_context_completion.CONFIG_DIR", td
-            ):
+            with patch("code_muse.command_line.load_context_completion.CONFIG_DIR", td):
                 result = self._get_completions("/load_context al")
                 names = [c.text for c in result]
                 assert "alpha" in names

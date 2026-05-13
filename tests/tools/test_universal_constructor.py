@@ -66,9 +66,7 @@ class TestHelpers:
     def test_emit_uc_message(self):
         from code_muse.tools.universal_constructor import _emit_uc_message
 
-        with patch(
-            "code_muse.tools.universal_constructor.get_message_bus"
-        ) as mock_bus:
+        with patch("code_muse.tools.universal_constructor.get_message_bus") as mock_bus:
             _emit_uc_message("list", True, "ok", "tool", "details")
             mock_bus.return_value.emit.assert_called_once()
 

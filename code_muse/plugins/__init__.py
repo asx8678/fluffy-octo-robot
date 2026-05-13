@@ -109,6 +109,11 @@ def _save_trust_manifest(manifest: dict) -> None:
         logger.warning("Failed to save plugin trust manifest: %s", exc)
 
 
+# Cache: resolved-dir-string -> (mtime_sum, total_size, hex_digest)
+# Avoids re-reading every .py file when contents have not changed.
+_plugin_hash_cache: dict[str, tuple[int, int, str]] = {}
+
+
 def compute_plugin_hash(plugin_dir: Path) -> str:
     """Compute a SHA-256 hash over all .py files in a plugin directory.
 
@@ -117,10 +122,19 @@ def compute_plugin_hash(plugin_dir: Path) -> str:
     path for deterministic ordering. The hash covers file *contents*, not
     just file names.
 
+    A lightweight cache keyed by ``(mtime_sum, total_size)`` avoids the
+    expensive SHA-256 recomputation when files have not changed since the
+    last call.
+
     Returns the hex digest string.
     """
-    h = hashlib.sha256()
+    cache_key = str(plugin_dir.resolve())
+
+    # --- First pass: collect files + lightweight mtime/size fingerprint ---
     py_files: list[Path] = []
+    mtime_sum = 0
+    total_size = 0
+
     try:
         for child in sorted(plugin_dir.rglob("*.py")):
             # Skip hidden files / dirs
@@ -134,9 +148,22 @@ def compute_plugin_hash(plugin_dir: Path) -> str:
             except ValueError:
                 continue
             py_files.append(child)
+            try:
+                stat = child.stat()
+                mtime_sum += int(stat.st_mtime)
+                total_size += stat.st_size
+            except OSError:
+                pass
     except OSError:
         pass
 
+    # Cache hit — return previously computed digest
+    cached = _plugin_hash_cache.get(cache_key)
+    if cached is not None and cached[0] == mtime_sum and cached[1] == total_size:
+        return cached[2]
+
+    # --- Cache miss — full SHA-256 computation ---
+    h = hashlib.sha256()
     for fpath in sorted(py_files):
         rel = fpath.relative_to(plugin_dir)
         h.update(str(rel).encode())
@@ -145,7 +172,9 @@ def compute_plugin_hash(plugin_dir: Path) -> str:
             h.update(fpath.read_bytes())
         h.update(b"\0")
 
-    return h.hexdigest()
+    digest = h.hexdigest()
+    _plugin_hash_cache[cache_key] = (mtime_sum, total_size, digest)
+    return digest
 
 
 def is_plugin_trusted(plugin_name: str, content_hash: str) -> bool:
@@ -439,6 +468,10 @@ def load_plugin_callbacks() -> dict[str, list[str]]:
     User plugins require trust (content-hash match in manifest).
     No sys.path manipulation is performed.
 
+    All ``register_callback`` calls made by plugins during import are
+    buffered and committed **atomically** — either every registration
+    succeeds, or the entire batch is rolled back.
+
     Returns dict with 'builtin' and 'user' keys containing lists of loaded
     plugin names.
 
@@ -456,14 +489,27 @@ def load_plugin_callbacks() -> dict[str, list[str]]:
         logger.debug("Plugins already loaded, skipping duplicate load")
         return {"builtin": [], "user": []}
 
+    from code_muse.callbacks import begin_deferred, commit_deferred, rollback_deferred
+
     plugins_dir = Path(__file__).parent
     builtin_failed: list[str] = []
     user_failed: list[str] = []
 
-    result = {
-        "builtin": _load_builtin_plugins(plugins_dir, builtin_failed),
-        "user": _load_user_plugins(USER_PLUGINS_DIR, user_failed),
-    }
+    # Begin deferred mode: all register_callback calls are buffered
+    begin_deferred()
+
+    try:
+        result = {
+            "builtin": _load_builtin_plugins(plugins_dir, builtin_failed),
+            "user": _load_user_plugins(USER_PLUGINS_DIR, user_failed),
+        }
+
+        # Atomically commit all buffered registrations
+        commit_deferred()
+    except Exception:
+        # Rollback any partial registrations on catastrophic failure
+        rollback_deferred()
+        raise
 
     total_loaded = len(result["builtin"]) + len(result["user"])
     total_failed = len(builtin_failed) + len(user_failed)

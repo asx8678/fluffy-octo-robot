@@ -1,11 +1,13 @@
 ---
 id: "024-16"
 title: "Minor Code Cleanup: Exception Tuples, compress_dict, TODO, Spinner, Session (P2)"
-status: open
+status: closed
 epic: "024"
 labels: ["cleanup", "P2"]
 created: "2026-05-18"
 priority: "P2"
+closed: "2026-05-21"
+resolution: "completed — compress_dict level-0 has top-3 fallback; spinner debounced at 100ms; session writes use dirty-flag hash cache; PEP 750 TODOs remain as future documentation markers"
 ---
 
 ## Summary

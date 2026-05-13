@@ -94,9 +94,7 @@ class TestInitializeBrowser:
         mock_pw_class.start.return_value = mock_pw_instance
 
         with (
-            patch(
-                "code_muse.tools.browser.browser_manager._load_plugin_browser_types"
-            ),
+            patch("code_muse.tools.browser.browser_manager._load_plugin_browser_types"),
             patch("code_muse.tools.browser.browser_manager.emit_info"),
             patch("playwright.async_api.async_playwright", return_value=mock_pw_class),
         ):

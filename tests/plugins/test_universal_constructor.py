@@ -1491,9 +1491,7 @@ def greet(name: str = "World") -> str:
     return f"Hello, {name}!"
 '''
             with (
-                patch(
-                    "code_muse.plugins.universal_constructor.USER_UC_DIR", tools_dir
-                ),
+                patch("code_muse.plugins.universal_constructor.USER_UC_DIR", tools_dir),
                 patch(
                     "code_muse.plugins.universal_constructor.registry.get_registry"
                 ) as mock_get_registry,
@@ -1538,9 +1536,7 @@ def my_func() -> str:
     return "result"
 """
             with (
-                patch(
-                    "code_muse.plugins.universal_constructor.USER_UC_DIR", tools_dir
-                ),
+                patch("code_muse.plugins.universal_constructor.USER_UC_DIR", tools_dir),
                 patch(
                     "code_muse.plugins.universal_constructor.registry.get_registry"
                 ) as mock_get_registry,
@@ -1575,9 +1571,7 @@ def weather(city: str) -> str:
     return f"Weather for {city}"
 """
             with (
-                patch(
-                    "code_muse.plugins.universal_constructor.USER_UC_DIR", tools_dir
-                ),
+                patch("code_muse.plugins.universal_constructor.USER_UC_DIR", tools_dir),
                 patch(
                     "code_muse.plugins.universal_constructor.registry.get_registry"
                 ) as mock_get_registry,
@@ -1621,9 +1615,7 @@ def calculator(a: int, b: int) -> int:
     return a + b
 """
             with (
-                patch(
-                    "code_muse.plugins.universal_constructor.USER_UC_DIR", tools_dir
-                ),
+                patch("code_muse.plugins.universal_constructor.USER_UC_DIR", tools_dir),
                 patch(
                     "code_muse.plugins.universal_constructor.registry.get_registry"
                 ) as mock_get_registry,
@@ -1721,9 +1713,7 @@ def stocks(symbol: str) -> str:
     return f"Stock: {symbol}"
 """
             with (
-                patch(
-                    "code_muse.plugins.universal_constructor.USER_UC_DIR", tools_dir
-                ),
+                patch("code_muse.plugins.universal_constructor.USER_UC_DIR", tools_dir),
                 patch(
                     "code_muse.plugins.universal_constructor.registry.get_registry"
                 ) as mock_get_registry,

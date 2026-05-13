@@ -32,6 +32,7 @@ def handle_show_command(command: str) -> bool:
     from code_muse.agents import get_current_agent
     from code_muse.command_line.model_picker_completion import get_active_model
     from code_muse.config import (
+        get_agent_name,
         get_auto_save_session,
         get_compaction_strategy,
         get_compaction_threshold,
@@ -41,7 +42,6 @@ def handle_show_command(command: str) -> bool:
         get_openai_verbosity,
         get_owner_name,
         get_protected_token_count,
-        get_agent_name,
         get_resume_message_count,
         get_temperature,
         get_yolo_mode,
