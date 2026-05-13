@@ -239,6 +239,44 @@ def run_tool_subprocess(
                     stderr_path,
                 )
                 future.result(timeout=timeout)
+
+            # Read results BEFORE cleanup
+            execution_time = time.time() - start_time
+            try:
+                with open(result_path, encoding="utf-8") as f:
+                    result_data = json.load(f)
+            except (json.JSONDecodeError, OSError) as e:
+                return {
+                    "success": False,
+                    "error": f"Failed to read tool result: {e}",
+                    "stdout": "",
+                    "stderr": "",
+                    "execution_time": execution_time,
+                }
+            try:
+                with open(stdout_path, encoding="utf-8") as f:
+                    stdout_text = _cap_output(
+                        f.read(), _MAX_STDOUT_CHARS, _MAX_STDOUT_LINES
+                    )
+            except OSError:
+                stdout_text = ""
+            try:
+                with open(stderr_path, encoding="utf-8") as f:
+                    stderr_text = _cap_output(
+                        f.read(), _MAX_STDERR_CHARS, _MAX_STDERR_LINES
+                    )
+            except OSError:
+                stderr_text = ""
+            return {
+                "success": result_data.get("success", False),
+                "result": result_data.get("result") if result_data.get("success") else None,
+                "error": result_data.get("error")
+                if not result_data.get("success")
+                else None,
+                "stdout": stdout_text,
+                "stderr": stderr_text,
+                "execution_time": execution_time,
+            }
         except Exception as exc:
             return {
                 "success": False,
@@ -251,43 +289,6 @@ def run_tool_subprocess(
             for p in (result_path, stdout_path, stderr_path):
                 with contextlib.suppress(OSError):
                     os.unlink(p)
-        # Fall through to result reading (same as subprocess path)
-        execution_time = time.time() - start_time
-        try:
-            with open(result_path, encoding="utf-8") as f:
-                result_data = json.load(f)
-        except (json.JSONDecodeError, OSError) as e:
-            return {
-                "success": False,
-                "error": f"Failed to read tool result: {e}",
-                "stdout": "",
-                "stderr": "",
-                "execution_time": execution_time,
-            }
-        try:
-            with open(stdout_path, encoding="utf-8") as f:
-                stdout_text = _cap_output(
-                    f.read(), _MAX_STDOUT_CHARS, _MAX_STDOUT_LINES
-                )
-        except OSError:
-            stdout_text = ""
-        try:
-            with open(stderr_path, encoding="utf-8") as f:
-                stderr_text = _cap_output(
-                    f.read(), _MAX_STDERR_CHARS, _MAX_STDERR_LINES
-                )
-        except OSError:
-            stderr_text = ""
-        return {
-            "success": result_data.get("success", False),
-            "result": result_data.get("result") if result_data.get("success") else None,
-            "error": result_data.get("error")
-            if not result_data.get("success")
-            else None,
-            "stdout": stdout_text,
-            "stderr": stderr_text,
-            "execution_time": execution_time,
-        }
 
     # TODO: PEP 734 — replace multiprocessing with InterpreterPoolExecutor when stable
     try:
