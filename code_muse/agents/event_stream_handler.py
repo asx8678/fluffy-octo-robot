@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-import math
 from collections.abc import AsyncIterable
 from typing import Any
 
@@ -19,6 +18,7 @@ from rich.console import Console
 from rich.markup import escape
 from rich.text import Text
 
+from code_muse.agents._history import estimate_tokens
 from code_muse.config import get_banner_color, get_subagent_verbose
 from code_muse.messaging.spinner import pause_all_spinners, resume_all_spinners
 from code_muse.tools.subagent_context import is_subagent
@@ -293,7 +293,7 @@ async def event_stream_handler(
                     args_delta = getattr(delta, "args_delta", "") or ""
                     if args_delta:
                         # Same 2.5 chars/token heuristic as BaseAgent and file_operations
-                        estimated_tokens = max(1, math.floor(len(args_delta) / 2.5))
+                        estimated_tokens = max(1, estimate_tokens(args_delta))
                         token_count[event.index] += estimated_tokens
                     else:
                         # Even empty deltas count as activity

@@ -12,6 +12,8 @@ from pathlib import Path
 from pydantic import BaseModel, conint
 from pydantic_ai import RunContext
 
+from code_muse.agents._history import estimate_tokens
+
 # ---------------------------------------------------------------------------
 # Module-level helper functions (exposed for unit tests _and_ used as tools)
 # ---------------------------------------------------------------------------
@@ -554,8 +556,8 @@ def _read_file(
                     for char in content
                 )
 
-            # Simple approximation: ~4 characters per token
-            num_tokens = len(content) // 4
+            # Simple approximation using canonical estimator (~3 chars/token)
+            num_tokens = estimate_tokens(content)
             if num_tokens > 10000:
                 return ReadFileOutput(
                     content=None,
