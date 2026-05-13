@@ -531,6 +531,12 @@ def load_plugin_callbacks() -> dict[str, list[str]]:
     return result
 
 
+def reset_plugins_loaded_flag() -> None:
+    """Reset the plugins loaded flag (primarily for testing)."""
+    global _PLUGINS_LOADED
+    _PLUGINS_LOADED = False
+
+
 def get_user_plugins_dir() -> Path:
     """Return the path to the user plugins directory."""
     return USER_PLUGINS_DIR

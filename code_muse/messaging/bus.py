@@ -74,6 +74,7 @@ class MessageBus:
         # FREE-THREADED: _lock guards data accessed from BOTH sync and async code.
         # Must remain threading.Lock to avoid event-loop blocking from sync callers.
         self._lock = threading.Lock()
+        self._incoming_event = asyncio.Event()
 
         # Use sync queues by default (works in any context)
         self._outgoing: asyncio.Queue[AnyMessage] = asyncio.Queue(maxsize=maxsize)
@@ -389,11 +390,13 @@ class MessageBus:
             # put them in the incoming queue for the agent to process
             try:
                 self._incoming.put_nowait(command)
+                self._incoming_event.set()
             except queue.Full:
                 # Drop oldest and retry
                 try:
                     self._incoming.get_nowait()
                     self._incoming.put_nowait(command)
+                    self._incoming_event.set()
                 except queue.Empty:
                     pass
 
@@ -451,17 +454,18 @@ class MessageBus:
         """Get the next incoming command (async).
 
         Called by the agent to consume commands (e.g., CancelAgentCommand).
-        Blocks until a command is available.
+        Blocks until a command is available using an asyncio.Event signal
+        (no busy-wait polling).
 
         Returns:
             The next command to process.
         """
-        # For async usage, wrap sync queue in asyncio-friendly way
         while True:
             try:
                 return self._incoming.get_nowait()
             except queue.Empty:
-                await asyncio.sleep(0.01)
+                self._incoming_event.clear()
+                await self._incoming_event.wait()
 
     # =========================================================================
     # Startup Buffering

@@ -364,9 +364,10 @@ def get_available_agents() -> dict[str, str]:
         get_universal_constructor_enabled,
     )
 
-    # Generate a message group ID for this operation
-    message_group_id = str(uuid.uuid4())
-    _discover_agents(message_group_id=message_group_id)
+    # Only discover if cache is dirty or registry is empty
+    if _DISCOVERY_DIRTY or not _AGENT_REGISTRY:
+        message_group_id = str(uuid.uuid4())
+        _discover_agents(message_group_id=message_group_id)
 
     # Check if pack agents are enabled
     pack_agents_enabled = get_pack_agents_enabled()
@@ -432,9 +433,10 @@ def set_current_agent(agent_name: str) -> bool:
     if curr_agent is not None:
         # Store a shallow copy so future mutations don't affect saved history
         _AGENT_HISTORIES[curr_agent.name] = list(curr_agent.get_message_history())
-    # Generate a message group ID for agent switching
-    message_group_id = str(uuid.uuid4())
-    _discover_agents(message_group_id=message_group_id)
+    # Only discover if cache is dirty or registry is empty
+    if _DISCOVERY_DIRTY or not _AGENT_REGISTRY:
+        message_group_id = str(uuid.uuid4())
+        _discover_agents(message_group_id=message_group_id)
 
     # Save current agent's history before switching
 
@@ -483,9 +485,10 @@ def load_agent(agent_name: str) -> BaseAgent:
     Raises:
         ValueError: If the agent is not found.
     """
-    # Generate a message group ID for agent loading
-    message_group_id = str(uuid.uuid4())
-    _discover_agents(message_group_id=message_group_id)
+    # Only discover if cache is dirty or registry is empty
+    if _DISCOVERY_DIRTY or not _AGENT_REGISTRY:
+        message_group_id = str(uuid.uuid4())
+        _discover_agents(message_group_id=message_group_id)
 
     if agent_name not in _AGENT_REGISTRY:
         # Fallback to muse if agent not found
@@ -516,9 +519,10 @@ def get_agent_descriptions() -> dict[str, str]:
         get_universal_constructor_enabled,
     )
 
-    # Generate a message group ID for this operation
-    message_group_id = str(uuid.uuid4())
-    _discover_agents(message_group_id=message_group_id)
+    # Only discover if cache is dirty or registry is empty
+    if _DISCOVERY_DIRTY or not _AGENT_REGISTRY:
+        message_group_id = str(uuid.uuid4())
+        _discover_agents(message_group_id=message_group_id)
 
     # Check if pack agents are enabled
     pack_agents_enabled = get_pack_agents_enabled()
