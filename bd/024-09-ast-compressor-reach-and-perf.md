@@ -1,7 +1,7 @@
 ---
 id: "024-09"
 title: "AST Compressor: Language Reach, O(n²) Perf & Double-Detection (P1)"
-status: open
+status: closed
 epic: "024"
 labels: ["bug", "performance", "ast-compressor", "P1", "correctness"]
 created: "2026-05-18"
@@ -21,17 +21,17 @@ Remove hardcoded language map; let `LanguageParser` infer from filename. Precomp
 
 ## Deliverables
 
-- [ ] All extensions get AST compression (Rust, Java, C, Ruby, Bash, SQL)
-- [ ] O(n²) line collection → O(n log n)
-- [ ] Single detection path from `compress_code` to `compress_ast_code`
-- [ ] All tests pass
+- [x] All extensions get AST compression (Rust, Java, C, Ruby, Bash, SQL)
+- [x] O(n²) line collection → O(n log n)
+- [x] Single detection path from `compress_code` to `compress_ast_code`
+- [x] All tests pass
 
 ## Acceptance Criteria
 
-- [ ] Files with `.rs`, `.java`, `.c`, `.rb`, `.sh`, `.sql` extensions compressed via AST
-- [ ] Line collection benchmarked at O(n log n) or better
-- [ ] No duplicate parsing / language detection
-- [ ] `ruff check` and all tests pass
+- [x] Files with `.rs`, `.java`, `.c`, `.rb`, `.sh`, `.sql` extensions compressed via AST
+- [x] Line collection benchmarked at O(n log n) or better
+- [x] No duplicate parsing / language detection
+- [x] `ruff check` and all tests pass
 
 ## Dependencies
 
