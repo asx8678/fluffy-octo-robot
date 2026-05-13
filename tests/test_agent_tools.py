@@ -11,6 +11,7 @@ from pydantic_ai.messages import ModelRequest, ModelResponse, TextPart, UserProm
 from code_muse.tools.agent_tools import (
     _generate_session_hash_suffix,
     _load_session_history,
+    _sanitize_for_session_id,
     _save_session_history,
     _validate_session_id,
     register_invoke_agent,
@@ -111,6 +112,36 @@ class TestGenerateSessionHashSuffix:
         session_id = f"test-session-{suffix}"
         # Should not raise
         _validate_session_id(session_id)
+
+
+class TestSanitizeForSessionId:
+    """Test suite for _sanitize_for_session_id function."""
+
+    def test_lowercase_and_hyphens(self):
+        """Test basic lowercase conversion and hyphen replacement."""
+        assert _sanitize_for_session_id("My_Agent") == "my-agent"
+        assert _sanitize_for_session_id("LPZ-Main-Coder") == "lpz-main-coder"
+
+    def test_multiple_special_chars_collapsed(self):
+        """Test that runs of disallowed characters collapse to a single hyphen."""
+        assert _sanitize_for_session_id("My__Agent") == "my-agent"
+        assert _sanitize_for_session_id("My!!!Agent") == "my-agent"
+        assert _sanitize_for_session_id("My   Agent") == "my-agent"
+
+    def test_leading_trailing_hyphens_stripped(self):
+        """Test that leading/trailing hyphens are stripped."""
+        assert _sanitize_for_session_id("_MyAgent_") == "myagent"
+        assert _sanitize_for_session_id("!!!MyAgent!!!") == "myagent"
+
+    def test_already_valid(self):
+        """Test that already valid kebab-case strings pass through unchanged."""
+        assert _sanitize_for_session_id("my-agent") == "my-agent"
+        assert _sanitize_for_session_id("agent123") == "agent123"
+
+    def test_empty_result(self):
+        """Test that purely invalid input results in an empty string."""
+        assert _sanitize_for_session_id("!!!") == ""
+        assert _sanitize_for_session_id("") == ""
 
 
 class TestSessionIdValidation:
