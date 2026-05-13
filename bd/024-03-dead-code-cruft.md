@@ -1,10 +1,12 @@
 ---
 id: "024-03"
 title: "Dead Code & Cruft Elimination (P1)"
-status: open
+status: closed
 epic: "024"
 labels: ["cleanup", "dead-code", "P1"]
 created: "2026-05-18"
+closed: "2026-05-18"
+resolution: "already completed — code was already removed"
 priority: "P1"
 ---
 

@@ -1,10 +1,12 @@
 ---
 id: "024-01"
 title: "Critical Python 2-Style except Syntax Fixes (P0)"
-status: open
+status: closed
 epic: "024"
 labels: ["bug", "syntax", "py314", "P0", "critical"]
 created: "2026-05-18"
+closed: "2026-05-18"
+resolution: "not-a-bug — PEP 758 re-legalized bare comma-separated except in Python 3.14"
 priority: "P0"
 ---
 
