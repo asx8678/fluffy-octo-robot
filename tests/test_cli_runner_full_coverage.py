@@ -58,7 +58,7 @@ def _base_main_patches():
         "code_muse.cli_runner.ensure_config_exists": MagicMock(),
         "code_muse.cli_runner.validate_cancel_agent_key": MagicMock(),
         "code_muse.cli_runner.initialize_command_history_file": MagicMock(),
-        "code_muse.cli_runner.start_version_check": MagicMock(),
+        "code_muse.cli_runner.default_version_mismatch_behavior": AsyncMock(),
         "code_muse.cli_runner.loop.print_truecolor_warning": MagicMock(),
         "code_muse.cli_runner.reset_unix_terminal": MagicMock(),
         "code_muse.terminal_utils.reset_windows_terminal_ansi": MagicMock(),

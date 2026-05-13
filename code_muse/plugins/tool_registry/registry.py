@@ -1,7 +1,7 @@
 """Core registry for tool metadata."""
 
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Callable, Literal
 
 ToolTier = Literal["high", "medium", "low"]
 ToolCategory = Literal[
@@ -37,6 +37,11 @@ class ToolMetadata:
     aliases: list[str] = field(default_factory=list)
     description: str = ""
 
+    # Execution metadata
+    timeout_seconds: int = 60  # Max execution time for this tool
+    max_retries: int = 2  # Max retries on transient failure
+    retry_delay_seconds: float = 1.0  # Base delay between retries
+
 
 class ToolRegistry:
     """In-memory registry of tool metadata."""
@@ -44,10 +49,15 @@ class ToolRegistry:
     def __init__(self) -> None:
         self._tools: dict[str, ToolMetadata] = {}
         self._aliases: dict[str, str] = {}
+        self._register_funcs: dict[str, Callable] = {}
 
-    def register(self, metadata: ToolMetadata) -> None:
+    def register(
+        self, metadata: ToolMetadata, register_func: Callable | None = None
+    ) -> None:
         """Register a tool and its aliases."""
         self._tools[metadata.name] = metadata
+        if register_func:
+            self._register_funcs[metadata.name] = register_func
         for alias in metadata.aliases:
             self._aliases[alias] = metadata.name
 

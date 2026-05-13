@@ -87,6 +87,7 @@ from code_muse.tools.skills_tools import (
     register_activate_skill,
     register_list_or_search_skills,
 )
+from code_muse.plugins.tool_registry.registry import ToolMetadata, ToolRegistry
 from code_muse.tools.universal_constructor import register_universal_constructor
 
 # Map of tool names to their individual registration functions
@@ -457,3 +458,99 @@ def get_available_tool_names() -> list[str]:
     """
     _load_plugin_tools()
     return list(TOOL_REGISTRY.keys())
+
+
+# Create a rich metadata registry alongside the simple TOOL_REGISTRY
+TOOL_METADATA_REGISTRY: ToolRegistry = ToolRegistry()
+
+
+def register_tool_metadata(
+    name: str,
+    *,
+    destructive: bool = False,
+    idempotent: bool = False,
+    requires_confirmation: bool = False,
+    timeout: int = 60,
+    max_retries: int = 2,
+    tier: str = "medium",
+    category: str = "utility",
+    description: str = "",
+) -> None:
+    """Register rich metadata for a tool."""
+    metadata = ToolMetadata(
+        name=name,
+        tier=tier,  # type: ignore[arg-type]
+        category=category,  # type: ignore[arg-type]
+        destructive=destructive,
+        idempotent=idempotent,
+        requires_confirmation=requires_confirmation,
+        description=description,
+        timeout_seconds=timeout,
+        max_retries=max_retries,
+    )
+    TOOL_METADATA_REGISTRY.register(metadata)
+
+
+def get_tool_metadata(name: str) -> ToolMetadata | None:
+    """Look up tool metadata by name."""
+    return TOOL_METADATA_REGISTRY.get_metadata(name)
+
+
+# Register metadata for key tools
+# Destructive tools
+register_tool_metadata(
+    "create_file",
+    destructive=True,
+    requires_confirmation=True,
+    timeout=30,
+    category="file_mods",
+)
+register_tool_metadata(
+    "delete_file",
+    destructive=True,
+    requires_confirmation=True,
+    timeout=30,
+    category="file_mods",
+)
+register_tool_metadata(
+    "replace_in_file",
+    destructive=True,
+    requires_confirmation=True,
+    timeout=30,
+    category="file_mods",
+)
+register_tool_metadata(
+    "edit_file", destructive=True, timeout=30, category="file_mods"
+)
+register_tool_metadata(
+    "delete_snippet",
+    destructive=True,
+    requires_confirmation=True,
+    timeout=30,
+    category="file_mods",
+)
+register_tool_metadata(
+    "agent_run_shell_command",
+    destructive=True,
+    requires_confirmation=True,
+    timeout=120,
+    category="shell",
+)
+# Safe / read-only tools
+register_tool_metadata(
+    "read_file",
+    destructive=False,
+    idempotent=True,
+    timeout=30,
+    category="file_ops",
+)
+register_tool_metadata(
+    "grep", destructive=False, idempotent=True, timeout=60, category="file_ops"
+)
+register_tool_metadata(
+    "list_files",
+    destructive=False,
+    idempotent=True,
+    timeout=30,
+    category="file_ops",
+)
