@@ -3,7 +3,11 @@
 import sys
 from unittest.mock import patch
 
-from code_muse.plugins.filter_engine.verbosity import VerbosityLevel, get_verbosity, set_verbosity
+from code_muse.plugins.filter_engine.verbosity import (
+    VerbosityLevel,
+    get_verbosity,
+    set_verbosity,
+)
 
 
 class TestVerbosityDefaults:
@@ -69,4 +73,3 @@ class TestVerbosityCliFlags:
         with patch.dict("os.environ", {"FAST_PUPPY_VERBOSITY": "4"}):
             assert get_verbosity() == VerbosityLevel.ULTRA_COMPACT
         set_verbosity(VerbosityLevel.COMPACT)  # reset
-

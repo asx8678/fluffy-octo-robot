@@ -31,8 +31,6 @@ from code_muse.messaging import emit_error, emit_system_message
 from code_muse.terminal_utils import reset_unix_terminal, reset_windows_terminal_full
 from code_muse.version_checker import start_version_check
 
-plugins.load_plugin_callbacks()
-
 __all__ = [
     "interactive_mode",
     "execute_single_prompt",
@@ -46,6 +44,9 @@ async def main():
     """Main async entry point for Muse CLI."""
     parser = build_parser()
     args = parser.parse_args()
+
+    # Load plugins after arg parsing (not at module level — avoids eager import-time side effects)
+    plugins.load_plugin_callbacks()
 
     # Set verbosity level from CLI flags (no sys.argv scan — args are parsed above)
     if args.ultra_compact:

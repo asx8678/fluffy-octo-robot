@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 SCAN_PATTERNS: list[tuple[str, str]] = [
     ("aws_access_key", r"AKIA[0-9A-Z]{16}"),
     ("github_token", r"ghp_[0-9a-zA-Z]{36}"),
-    ("openai_api_key", r"sk-[0-9a-zA-Z]{48}"),
+    ("openai_api_key", r"sk-(?:proj-)?[0-9a-zA-Z]{20,}"),
     (
         "private_key_header",
         r"-----BEGIN (RSA|EC|OPENSSH|PGP) PRIVATE KEY-----",

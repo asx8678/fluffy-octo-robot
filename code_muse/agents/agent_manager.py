@@ -18,6 +18,10 @@ from code_muse.messaging import emit_success, emit_warning
 
 # Registry of available agents (Python classes and JSON file paths)
 _AGENT_REGISTRY: dict[str, type[BaseAgent] | str] = {}
+
+# Discovery cache — avoid re-scanning filesystem on every call
+_DISCOVERY_DIRTY: bool = True
+_DISCOVERY_CACHE: dict[str, type[BaseAgent] | str] = {}
 _AGENT_HISTORIES: dict[str, list[ModelMessage]] = {}
 _CURRENT_AGENT: BaseAgent | None = None
 
@@ -187,9 +191,22 @@ def _ensure_session_cache_loaded() -> None:
 
 
 def _discover_agents(message_group_id: str | None = None):
-    """Dynamically discover all agent classes and JSON agents."""
-    # Always clear the registry to force refresh
+    """Dynamically discover all agent classes and JSON agents.
+
+    Results are cached after the first full discovery.  Subsequent calls
+    return the cached registry unless ``refresh_agents()`` (or a
+    mutating operation like clone/delete) has marked the cache dirty.
+    """
+    global _DISCOVERY_DIRTY, _DISCOVERY_CACHE
+
+    if not _DISCOVERY_DIRTY and _DISCOVERY_CACHE:
+        # Cache is warm — copy into the live registry and return
+        _AGENT_REGISTRY.update(_DISCOVERY_CACHE)
+        return
+
+    # Clear for a fresh scan
     _AGENT_REGISTRY.clear()
+    _DISCOVERY_CACHE.clear()
 
     # 1. Discover Python agent classes in the agents package
     import code_muse.agents as agents_package
@@ -328,6 +345,10 @@ def _discover_agents(message_group_id: str | None = None):
             f"Warning: Could not load plugin agents: {e}",
             message_group=message_group_id,
         )
+
+    # Commit discovery results to cache and mark clean
+    _DISCOVERY_CACHE.update(_AGENT_REGISTRY)
+    _DISCOVERY_DIRTY = False
 
 
 def get_available_agents() -> dict[str, str]:
@@ -530,9 +551,13 @@ def get_agent_descriptions() -> dict[str, str]:
 def refresh_agents():
     """Refresh the agent discovery to pick up newly created agents.
 
-    This clears the agent registry cache and forces a rediscovery of all agents.
+    This invalidates the discovery cache and forces a full rediscovery
+    on the next call to ``_discover_agents``.
     """
-    # Generate a message group ID for agent refreshing
+    global _DISCOVERY_DIRTY, _DISCOVERY_CACHE
+    _DISCOVERY_DIRTY = True
+    _DISCOVERY_CACHE.clear()
+    # Force an immediate rediscovery so callers see fresh results
     message_group_id = str(uuid.uuid4())
     _discover_agents(message_group_id=message_group_id)
 
@@ -682,6 +707,9 @@ def clone_agent(agent_name: str) -> str | None:
         with open(clone_path, "w", encoding="utf-8") as f:
             json.dump(clone_config, f, indent=2, ensure_ascii=False)
         emit_success(f"Cloned '{agent_name}' to '{clone_name}'.")
+        global _DISCOVERY_DIRTY, _DISCOVERY_CACHE
+        _DISCOVERY_DIRTY = True
+        _DISCOVERY_CACHE.clear()
         return clone_name
     except Exception as exc:
         emit_warning(f"Failed to write clone file '{clone_path}': {exc}")
@@ -734,6 +762,9 @@ def delete_clone_agent(agent_name: str) -> bool:
         emit_success(f"Deleted clone '{agent_name}'.")
         _AGENT_REGISTRY.pop(agent_name, None)
         _AGENT_HISTORIES.pop(agent_name, None)
+        global _DISCOVERY_DIRTY, _DISCOVERY_CACHE
+        _DISCOVERY_DIRTY = True
+        _DISCOVERY_CACHE.clear()
         return True
     except Exception as exc:
         emit_warning(f"Failed to delete clone '{agent_name}': {exc}")

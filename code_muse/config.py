@@ -1027,6 +1027,18 @@ def auto_save_session_if_enabled() -> bool:
             f"[Done] Auto-saved session: {metadata.message_count} messages ({metadata.total_tokens} tokens)"
         )
 
+        # Clean up old sessions after successful save
+        try:
+            from code_muse.session_storage import cleanup_sessions
+
+            max_sessions = get_max_saved_sessions()
+            if max_sessions > 0:
+                removed = cleanup_sessions(autosave_dir, max_sessions)
+                if removed:
+                    emit_info(f"Cleaned up {len(removed)} old session(s)")
+        except Exception:
+            pass  # Non-critical; don't let cleanup failure affect the user
+
         return True
 
     except Exception as exc:  # pragma: no cover - defensive logging

@@ -59,7 +59,8 @@ class MessageBus:
     """Central coordinator for bidirectional Agent <-> UI communication.
 
     Thread-safe message bus that works in both sync and async contexts.
-    Uses stdlib queue.Queue for thread-safe sync operation.
+    Uses asyncio.Queue for outgoing (async-native, no busy-wait)
+    and queue.Queue for incoming.
     Manages outgoing messages, incoming commands, and request/response correlation.
     """
 
@@ -75,7 +76,7 @@ class MessageBus:
         self._lock = threading.Lock()
 
         # Use sync queues by default (works in any context)
-        self._outgoing: queue.Queue[AnyMessage] = queue.Queue(maxsize=maxsize)
+        self._outgoing: asyncio.Queue[AnyMessage] = asyncio.Queue(maxsize=maxsize)
         self._incoming: queue.Queue[AnyCommand] = queue.Queue(maxsize=maxsize)
 
         # Event loop reference for async request/response (optional)
@@ -94,6 +95,33 @@ class MessageBus:
     # =========================================================================
     # Outgoing Messages (Agent → UI)
     # =========================================================================
+
+    def _enqueue_outgoing(self, message: AnyMessage) -> None:
+        """Thread-safe put into the outgoing asyncio.Queue.
+
+        Uses call_soon_threadsafe when the event loop is running to ensure
+        safe cross-thread access to asyncio.Queue. Falls back to direct
+        put_nowait when no event loop is available (single-threaded context).
+        Handles QueueFull by dropping the oldest message.
+        """
+
+        def _do_put() -> None:
+            try:
+                self._outgoing.put_nowait(message)
+            except asyncio.QueueFull:
+                try:
+                    self._outgoing.get_nowait()
+                    self._outgoing.put_nowait(message)
+                except asyncio.QueueEmpty:
+                    pass
+
+        if self._event_loop is not None and self._event_loop.is_running():
+            try:
+                self._event_loop.call_soon_threadsafe(_do_put)
+                return
+            except RuntimeError:
+                pass  # Event loop closed, fall through
+        _do_put()
 
     def emit(self, message: AnyMessage) -> None:
         """Emit a message to the UI.
@@ -117,16 +145,8 @@ class MessageBus:
                     self._startup_buffer = self._startup_buffer[-self._maxsize :]
                 return
 
-            # Direct put into thread-safe queue - inside lock to prevent race
-            try:
-                self._outgoing.put_nowait(message)
-            except queue.Full:
-                # Drop oldest and retry
-                try:
-                    self._outgoing.get_nowait()
-                    self._outgoing.put_nowait(message)
-                except queue.Empty:
-                    pass
+            # Put into asyncio.Queue (thread-safe via event loop scheduling)
+            self._enqueue_outgoing(message)
 
         # Fire global observation hook for plugins (non-blocking)
         from code_muse.callbacks import fire_callbacks
@@ -414,12 +434,7 @@ class MessageBus:
         Returns:
             The next message to display.
         """
-        # For async usage, wrap sync queue in asyncio-friendly way
-        while True:
-            try:
-                return self._outgoing.get_nowait()
-            except queue.Empty:
-                await asyncio.sleep(0.01)
+        return await self._outgoing.get()
 
     def get_message_nowait(self) -> AnyMessage | None:
         """Get the next outgoing message without blocking.
@@ -429,7 +444,7 @@ class MessageBus:
         """
         try:
             return self._outgoing.get_nowait()
-        except queue.Empty:
+        except asyncio.QueueEmpty:
             return None
 
     async def get_command(self) -> AnyCommand:

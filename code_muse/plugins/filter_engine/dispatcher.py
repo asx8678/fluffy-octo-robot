@@ -236,6 +236,7 @@ class FilterDispatcher:
                 # Notify user with a visible message
                 try:
                     from code_muse.messaging import emit_warning
+
                     emit_warning(
                         f"⚠ Filter error — raw output saved to {tee_path}. "
                         "Recovered files stored in: /tmp/muse_tee/"

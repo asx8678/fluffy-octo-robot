@@ -272,13 +272,11 @@ def _list_files(
                         if dir_path:
                             # Add directory path components if they don't exist
                             path_parts = dir_path.split(os.sep)
+                            seen_dirs: set[str] = set()
                             for i in range(len(path_parts)):
                                 partial_path = os.sep.join(path_parts[: i + 1])
                                 # Check if we already added this directory
-                                if not any(
-                                    f.path == partial_path and f.type == "directory"
-                                    for f in results
-                                ):
+                                if partial_path not in seen_dirs:
                                     results.append(
                                         ListedFile(
                                             path=partial_path,
@@ -288,6 +286,7 @@ def _list_files(
                                             depth=partial_path.count(os.sep),
                                         )
                                     )
+                                    seen_dirs.add(partial_path)
 
                     # Add the entry (file or directory)
                     results.append(

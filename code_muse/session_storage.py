@@ -210,10 +210,12 @@ def _try_load_pkl(path: Path, *, allow_legacy: bool = False) -> Any:
 
     - JSON-format .pkl files (written by current save_session) are always
       loaded.
-    - Signed legacy pickle files (with ``_LEGACY_SIGNED_HEADER``) are
-      loaded without ``allow_legacy`` because they were created by our
-      own code and are not arbitrary.
-    - Unsigned arbitrary binary pickle requires ``allow_legacy=True``.
+    - Binary pickle files (with or without the ``_LEGACY_SIGNED_HEADER``
+      prefix) require ``allow_legacy=True``.  The legacy header provides
+      **no** security guarantee — it is an unverified magic prefix, not
+      a cryptographic signature.  Any file starting with the header + 32
+      arbitrary bytes + pickle payload would previously bypass the
+      ``allow_legacy`` guard (CVE-class RCE).
     """
     raw = path.read_bytes()
 
@@ -225,12 +227,7 @@ def _try_load_pkl(path: Path, *, allow_legacy: bool = False) -> Any:
         except json.JSONDecodeError:
             pass
 
-    # Signed legacy pickle — safe to load without allow_legacy
-    if raw.startswith(_LEGACY_SIGNED_HEADER):
-        pickle_data = _extract_pickle_payload(raw)
-        return _unsafe_pickle_loads_for_explicit_legacy_migration_only(pickle_data)
-
-    # Unsigned binary pickle — only with explicit legacy flag
+    # Binary pickle — only with explicit legacy flag
     if allow_legacy:
         pickle_data = _extract_pickle_payload(raw)
         return _unsafe_pickle_loads_for_explicit_legacy_migration_only(pickle_data)

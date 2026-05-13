@@ -205,9 +205,16 @@ def _memory_extract() -> str:
             secrets = scan_for_secrets(consolidated)
             if secrets:
                 secret_names = ", ".join(sorted({s.pattern_name for s in secrets}))
-                logger.warning(
-                    f"Secrets detected in consolidated memory: {secret_names}"
+                from code_muse.messaging import emit_error
+
+                emit_error(
+                    f"Secrets detected in consolidated memory — write BLOCKED: {secret_names}"
                 )
+                logger.warning(
+                    "Secret write blocked: %s",
+                    secret_names,
+                )
+                return f"Memory extraction BLOCKED: secrets detected ({secret_names}). Remove secrets and retry."
 
             memory_path, summary_path = write_memory_files(consolidated, memory_dir)
             return (
