@@ -8,11 +8,8 @@ SDK dependency.
 import base64
 import json
 import logging
-import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from dataclasses import dataclass, field
-from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -22,7 +19,6 @@ from pydantic_ai.messages import (
     ModelRequest,
     ModelResponse,
     ModelResponsePart,
-    ModelResponseStreamEvent,
     RetryPromptPart,
     SystemPromptPart,
     TextPart,
@@ -36,198 +32,18 @@ from pydantic_ai.settings import ModelSettings
 from pydantic_ai.tools import ToolDefinition
 from pydantic_ai.usage import RequestUsage
 
+from code_muse.gemini_schema import (
+    _flatten_union_to_object_gemini,  # noqa: F401
+    _sanitize_schema_for_gemini,
+)
+from code_muse.gemini_streaming import GeminiStreamingResponse
+from code_muse.gemini_utils import generate_tool_call_id
+
 logger = logging.getLogger(__name__)
 
 # Bypass thought signature for Gemini when no pending signature is available.
 # This allows function calls to work with thinking models.
 BYPASS_THOUGHT_SIGNATURE = "context_engineering_is_the_way_to_go"
-
-
-def generate_tool_call_id() -> str:
-    """Generate a unique tool call ID."""
-    return str(uuid.uuid4())
-
-
-def _flatten_union_to_object_gemini(union_items: list, defs: dict, resolve_fn) -> dict:
-    """Flatten a union of object types into a single object with all properties.
-
-    For discriminated unions like EditFilePayload, we merge all object types
-    into one with all properties (Gemini doesn't support anyOf/oneOf).
-    """
-    import copy as copy_module
-
-    merged_properties = {}
-    has_string_type = False
-
-    for item in union_items:
-        if not isinstance(item, dict):
-            continue
-
-        # Resolve $ref first
-        if "$ref" in item:
-            ref_path = item["$ref"]
-            ref_name = None
-            if ref_path.startswith("#/$defs/"):
-                ref_name = ref_path[8:]
-            elif ref_path.startswith("#/definitions/"):
-                ref_name = ref_path[14:]
-            if ref_name and ref_name in defs:
-                item = copy_module.deepcopy(defs[ref_name])
-            else:
-                continue
-
-        if item.get("type") == "string":
-            has_string_type = True
-            continue
-
-        if item.get("type") == "null":
-            continue
-
-        if item.get("type") == "object" or "properties" in item:
-            props = item.get("properties", {})
-            for prop_name, prop_schema in props.items():
-                if prop_name not in merged_properties:
-                    merged_properties[prop_name] = resolve_fn(
-                        copy_module.deepcopy(prop_schema)
-                    )
-
-    if not merged_properties:
-        return {"type": "string"} if has_string_type else {"type": "object"}
-
-    return {
-        "type": "object",
-        "properties": merged_properties,
-    }
-
-
-def _sanitize_schema_for_gemini(schema: dict) -> dict:
-    """Sanitize JSON schema for Gemini API compatibility.
-
-    Removes/transforms fields that Gemini doesn't support:
-    - $defs, definitions, $schema, $id
-    - additionalProperties
-    - $ref (inlined)
-    - anyOf/oneOf/allOf (flattened - Gemini doesn't support unions!)
-      - For unions of objects: merges into single object with all properties
-      - For simple unions (string | null): picks first non-null type
-    """
-    import copy
-
-    if not isinstance(schema, dict):
-        return schema
-
-    # Make a deep copy to avoid modifying original
-    schema = copy.deepcopy(schema)
-
-    # Extract $defs for reference resolution
-    defs = schema.pop("$defs", schema.pop("definitions", {}))
-
-    def resolve_refs(obj):
-        """Recursively resolve $ref references and clean schema."""
-        if isinstance(obj, dict):
-            # Handle anyOf/oneOf unions
-            for union_key in ["anyOf", "oneOf"]:
-                if union_key in obj:
-                    union = obj[union_key]
-                    if isinstance(union, list):
-                        # Check if this is a complex union of objects
-                        object_count = 0
-                        has_refs = False
-                        for item in union:
-                            if isinstance(item, dict):
-                                if "$ref" in item:
-                                    has_refs = True
-                                    object_count += 1
-                                elif (
-                                    item.get("type") == "object" or "properties" in item
-                                ):
-                                    object_count += 1
-
-                        # If multiple objects or has refs, flatten to single object
-                        if object_count > 1 or has_refs:
-                            flattened = _flatten_union_to_object_gemini(
-                                union, defs, resolve_refs
-                            )
-                            if "description" in obj:
-                                flattened["description"] = obj["description"]
-                            return flattened
-
-                        # Simple union - pick first non-null type
-                        for item in union:
-                            if isinstance(item, dict) and item.get("type") != "null":
-                                result = dict(item)
-                                if "description" in obj:
-                                    result["description"] = obj["description"]
-                                return resolve_refs(result)
-
-            # Handle allOf by merging all schemas
-            if "allOf" in obj:
-                all_of = obj["allOf"]
-                if isinstance(all_of, list):
-                    merged = {}
-                    merged_properties = {}
-                    for item in all_of:
-                        if isinstance(item, dict):
-                            resolved_item = resolve_refs(item)
-                            if "properties" in resolved_item:
-                                merged_properties.update(
-                                    resolved_item.pop("properties")
-                                )
-                            merged.update(resolved_item)
-                    if merged_properties:
-                        merged["properties"] = merged_properties
-                    for k, v in obj.items():
-                        if k != "allOf":
-                            merged[k] = v
-                    return resolve_refs(merged)
-
-            # Check for $ref
-            if "$ref" in obj:
-                ref_path = obj["$ref"]
-                ref_name = None
-
-                # Parse ref like "#/$defs/SomeType" or "#/definitions/SomeType"
-                if ref_path.startswith("#/$defs/"):
-                    ref_name = ref_path[8:]
-                elif ref_path.startswith("#/definitions/"):
-                    ref_name = ref_path[14:]
-
-                if ref_name and ref_name in defs:
-                    resolved = resolve_refs(copy.deepcopy(defs[ref_name]))
-                    other_props = {k: v for k, v in obj.items() if k != "$ref"}
-                    if other_props:
-                        resolved.update(resolve_refs(other_props))
-                    return resolved
-                else:
-                    return {"type": "object"}
-
-            # Recursively process and transform
-            result = {}
-            for key, value in obj.items():
-                # Skip unsupported fields
-                if key in (
-                    "$defs",
-                    "definitions",
-                    "$schema",
-                    "$id",
-                    "additionalProperties",
-                    "default",
-                    "examples",
-                    "const",
-                    "anyOf",  # Skip any remaining union types
-                    "oneOf",
-                    "allOf",
-                ):
-                    continue
-
-                result[key] = resolve_refs(value)
-            return result
-        elif isinstance(obj, list):
-            return [resolve_refs(item) for item in obj]
-        else:
-            return obj
-
-    return resolve_refs(schema)
 
 
 class GeminiModel(Model):
@@ -509,7 +325,8 @@ class GeminiModel(Model):
                 pass
             elif thinking_level is not None:
                 # Gemini 3 Pro uses thinkingLevel with values "low" or "high"
-                # includeThoughts=True is required to surface the thinking in the response
+                # includeThoughts=True is required to surface the thinking
+                # in the response
                 config["thinkingConfig"] = {
                     "thinkingLevel": thinking_level,
                     "includeThoughts": True,
@@ -674,165 +491,3 @@ class GeminiModel(Model):
             _provider_name_str=self.system,
             _provider_url_str=self._base_url,
         )
-
-
-_MISSING = object()
-
-
-def _extract_partial_value(p_arg: dict) -> Any:
-    for key in [
-        "stringValue",
-        "numberValue",
-        "boolValue",
-        "nullValue",
-        "structValue",
-        "listValue",
-    ]:
-        if key in p_arg:
-            val = p_arg[key]
-            if key == "nullValue":
-                return None
-            return val
-    return _MISSING
-
-
-def _apply_json_path(target: dict, path: str, value: Any):
-    parts = path.split(".")
-    curr = target
-    for i, part in enumerate(parts):
-        if "[" in part and part.endswith("]"):
-            key, idx_str = part.split("[")
-            idx = int(idx_str[:-1])
-            if key not in curr:
-                curr[key] = []
-            while len(curr[key]) <= idx:
-                curr[key].append(None)
-
-            if i == len(parts) - 1:
-                curr[key][idx] = value
-            else:
-                if curr[key][idx] is None:
-                    curr[key][idx] = {}
-                curr = curr[key][idx]
-        else:
-            if i == len(parts) - 1:
-                curr[part] = value
-            else:
-                if part not in curr or curr[part] is None:
-                    curr[part] = {}
-                curr = curr[part]
-
-
-@dataclass
-class GeminiStreamingResponse(StreamedResponse):
-    """Streaming response handler for Gemini API."""
-
-    _chunks: AsyncIterator[dict[str, Any]]
-    _model_name_str: str
-    _provider_name_str: str = "google"
-    _provider_url_str: str | None = None
-    _timestamp_val: datetime = field(default_factory=lambda: datetime.now(UTC))
-    _current_tool_call_id: str | None = None
-    _current_tool_name: str | None = None
-    _current_vendor_part_id: uuid.UUID | None = None
-    _current_args: dict[str, Any] = field(default_factory=dict)
-
-    async def _get_event_iterator(self) -> AsyncIterator[ModelResponseStreamEvent]:
-        """Process streaming chunks and yield events."""
-        async for chunk in self._chunks:
-            # Extract usage
-            usage_meta = chunk.get("usageMetadata", {})
-            if usage_meta:
-                self._usage = RequestUsage(
-                    input_tokens=usage_meta.get("promptTokenCount", 0),
-                    output_tokens=usage_meta.get("candidatesTokenCount", 0),
-                )
-
-            # Extract response ID
-            if chunk.get("responseId"):
-                self.provider_response_id = chunk["responseId"]
-
-            candidates = chunk.get("candidates", [])
-            if not candidates:
-                continue
-
-            candidate = candidates[0]
-            content = candidate.get("content", {})
-            parts = content.get("parts", [])
-
-            for part in parts:
-                # Handle thinking part
-                if part.get("thought") and part.get("text") is not None:
-                    for event in self._parts_manager.handle_thinking_delta(
-                        vendor_part_id=None,
-                        content=part["text"],
-                    ):
-                        yield event
-
-                # Handle regular text
-                elif part.get("text") is not None and not part.get("thought"):
-                    text = part["text"]
-                    if len(text) == 0:
-                        continue
-                    for event in self._parts_manager.handle_text_delta(
-                        vendor_part_id=None,
-                        content=text,
-                    ):
-                        yield event
-
-                # Handle function call
-                elif part.get("functionCall"):
-                    fc = part["functionCall"]
-
-                    # Check if it's a new function call
-                    if fc.get("name"):
-                        self._current_tool_name = fc["name"]
-                        self._current_tool_call_id = (
-                            fc.get("id") or generate_tool_call_id()
-                        )
-                        self._current_vendor_part_id = uuid.uuid4()
-                        self._current_args = {}
-
-                    delta_args = {}
-                    # Handle partial arguments if present
-                    if "partialArgs" in fc:
-                        for p_arg in fc["partialArgs"]:
-                            json_path = p_arg.get("jsonPath")
-                            if json_path and json_path.startswith("$."):
-                                value = _extract_partial_value(p_arg)
-                                if value is not _MISSING:
-                                    _apply_json_path(
-                                        self._current_args, json_path[2:], value
-                                    )
-                                    _apply_json_path(delta_args, json_path[2:], value)
-
-                    elif "args" in fc:
-                        delta_args = fc["args"]
-                        self._current_args.update(fc["args"])
-
-                    # Yield delta event if we have a current part ID
-                    if self._current_vendor_part_id:
-                        event = self._parts_manager.handle_tool_call_delta(
-                            vendor_part_id=self._current_vendor_part_id,
-                            tool_name=self._current_tool_name,
-                            args=delta_args,
-                            tool_call_id=self._current_tool_call_id,
-                        )
-                        if event is not None:
-                            yield event
-
-    @property
-    def model_name(self) -> str:
-        return self._model_name_str
-
-    @property
-    def provider_name(self) -> str | None:
-        return self._provider_name_str
-
-    @property
-    def provider_url(self) -> str | None:
-        return self._provider_url_str
-
-    @property
-    def timestamp(self) -> datetime:
-        return self._timestamp_val
