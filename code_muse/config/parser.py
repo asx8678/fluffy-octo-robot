@@ -140,6 +140,11 @@ def get_config_keys():
     default_keys.append("enable_universal_constructor")
     # Add hook retry limit key
     default_keys.append("max_hook_retries")
+    # Add safety/cost control keys
+    default_keys.append("max_consecutive_tool_errors")
+    default_keys.append("overall_run_timeout")
+    default_keys.append("total_tokens_limit")
+    default_keys.append("max_tool_calls")
     # Add streaming control key
     default_keys.append("enable_streaming")
     # Add cancel agent key configuration
@@ -291,6 +296,42 @@ def set_http2(enabled: bool) -> None:
         enabled: Whether to enable HTTP/2 for httpx clients
     """
     set_config_value("http2", "true" if enabled else "false")
+
+
+def get_max_consecutive_tool_errors(default: int = 3) -> int:
+    """Max consecutive tool errors before aborting the agent run."""
+    val = get_value("max_consecutive_tool_errors")
+    try:
+        return int(val) if val else default
+    except ValueError, TypeError:
+        return default
+
+
+def get_overall_run_timeout_seconds(default: int = 300) -> int:
+    """Max wall-clock time in seconds for a single agent run (0 = no limit)."""
+    val = get_value("overall_run_timeout")
+    try:
+        return int(val) if val else default
+    except ValueError, TypeError:
+        return default
+
+
+def get_total_tokens_limit(default: int = 0) -> int:
+    """Max total tokens (input+output) for a single agent run (0 = no limit)."""
+    val = get_value("total_tokens_limit")
+    try:
+        return int(val) if val else default
+    except ValueError, TypeError:
+        return default
+
+
+def get_max_tool_calls(default: int = 0) -> int:
+    """Max total tool calls for a single agent run (0 = no limit)."""
+    val = get_value("max_tool_calls")
+    try:
+        return int(val) if val else default
+    except ValueError, TypeError:
+        return default
 
 
 def get_message_limit(default: int = 1000) -> int:

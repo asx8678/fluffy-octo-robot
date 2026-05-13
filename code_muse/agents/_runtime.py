@@ -15,6 +15,7 @@ preserved verbatim:
 """
 
 import asyncio
+import contextvars
 import signal
 import threading
 import uuid
@@ -67,11 +68,16 @@ from code_muse.callbacks import (
     on_agent_run_result,
     on_agent_run_start,
     on_should_skip_fallback_render,
+    register_callback,
 )
 from code_muse.config import (
     get_enable_streaming,
+    get_max_consecutive_tool_errors,
     get_max_hook_retries,
+    get_max_tool_calls,
     get_message_limit,
+    get_overall_run_timeout_seconds,
+    get_total_tokens_limit,
 )
 from code_muse.keymap import cancel_agent_uses_signal
 from code_muse.messaging import emit_error, emit_info, emit_warning
@@ -187,6 +193,74 @@ def streaming_retry(
     return decorator
 
 
+# ---- Tool error tracking (circuit breaker) --------------------------------
+
+
+class _ToolErrorTracker:
+    """Track consecutive tool errors as a per-agent-run circuit breaker."""
+
+    def __init__(self, max_errors: int = 3):
+        self.max_errors = max_errors
+        self.consecutive_errors = 0
+
+    def record_error(self) -> bool:
+        """Increment error count. Returns True if max exceeded."""
+        self.consecutive_errors += 1
+        return self.consecutive_errors >= self.max_errors
+
+    def record_success(self) -> None:
+        """Reset error count on a successful tool call."""
+        self.consecutive_errors = 0
+
+
+_tool_error_tracker_ctx: contextvars.ContextVar[_ToolErrorTracker | None] = (
+    contextvars.ContextVar("_tool_error_tracker_ctx", default=None)
+)
+
+
+async def _track_pre_tool_call(
+    tool_name: str,
+    tool_args: dict,
+    context: Any = None,
+) -> dict | None:
+    """Block further tool calls once the consecutive-error cap is hit."""
+    tracker = _tool_error_tracker_ctx.get()
+    if tracker is None:
+        return None
+    if tracker.consecutive_errors >= tracker.max_errors:
+        return {
+            "blocked": True,
+            "reason": (
+                f"Too many consecutive tool errors ({tracker.consecutive_errors})"
+                " — aborting run."
+            ),
+        }
+    return None
+
+
+async def _track_post_tool_call(
+    tool_name: str,
+    tool_args: dict,
+    result: Any,
+    duration_ms: float,
+    context: Any = None,
+) -> None:
+    """Count consecutive tool errors via a contextvar (per-run state)."""
+    tracker = _tool_error_tracker_ctx.get()
+    if tracker is None:
+        return None
+    if isinstance(result, dict) and "error" in result:
+        tracker.record_error()
+    else:
+        tracker.record_success()
+    return None
+
+
+# Register callbacks at module load time.
+register_callback("pre_tool_call", _track_pre_tool_call)
+register_callback("post_tool_call", _track_post_tool_call)
+
+
 # ---- Small utilities --------------------------------------------------------
 
 
@@ -214,7 +288,7 @@ def _sanitize_prompt(prompt: str) -> str:
         return prompt.encode("utf-8", errors="surrogatepass").decode(
             "utf-8", errors="replace"
         )
-    except (UnicodeEncodeError, UnicodeDecodeError):
+    except UnicodeEncodeError, UnicodeDecodeError:
         return "".join(
             ch if ord(ch) < 0xD800 or ord(ch) > 0xDFFF else "\ufffd" for ch in prompt
         )
@@ -328,7 +402,15 @@ async def run(
 
     async def _do_run(prompt_to_use: Any) -> Any:
         """Run the agent once, then honour any plugin ``retry`` requests."""
-        usage_limits = UsageLimits(request_limit=get_message_limit())
+        usage_limits = UsageLimits(
+            request_limit=get_message_limit(),
+            tool_calls_limit=get_max_tool_calls() or None,
+            total_tokens_limit=get_total_tokens_limit() or None,
+        )
+
+        # Per-run tool error circuit breaker
+        tracker = _ToolErrorTracker(max_errors=get_max_consecutive_tool_errors())
+        tracker_token = _tool_error_tracker_ctx.set(tracker)
 
         # Streaming config gate (issue #295). When streaming is disabled we
         # never install the stream handler at all and always render from the
@@ -363,38 +445,60 @@ async def run(
         # the non-streaming fallback render.
         skip_fallback_render = on_should_skip_fallback_render(agent)
 
+        async def _run_agent(
+            prompt: Any,
+            history: list[Any],
+            stream_h: Any | None,
+        ) -> Any:
+            """Wrap pydantic_agent.run with an optional overall timeout."""
+            coro = pydantic_agent.run(
+                prompt,
+                message_history=history,
+                usage_limits=usage_limits,
+                event_stream_handler=stream_h,
+                **kwargs,
+            )
+            timeout = get_overall_run_timeout_seconds()
+            if timeout > 0:
+                return await asyncio.wait_for(coro, timeout=timeout)
+            return await coro
+
         @streaming_retry()
         async def _call() -> Any:
-            return await pydantic_agent.run(
-                prompt_to_use,
-                message_history=agent._message_history,
-                usage_limits=usage_limits,
-                event_stream_handler=stream_handler,
-                **kwargs,
+            return await _run_agent(
+                prompt_to_use, agent._message_history, stream_handler
             )
 
         async def _call_with_exception_recovery() -> Any:
-            """Run ``_call`` and let plugins request one exception retry."""
-            try:
-                return await _call()
-            except Exception as exc:
-                hook_results = await on_agent_exception(
-                    exc,
-                    agent=agent,
-                    agent_name=agent.name,
-                    model_name=agent.get_model_name(),
-                )
-                retry_req = next(
-                    (r for r in hook_results if isinstance(r, dict) and r.get("retry")),
-                    None,
-                )
-                if not retry_req:
-                    raise
-
-                retry_delay = retry_req.get("delay", 0.0)
-                if retry_delay:
-                    await asyncio.sleep(retry_delay)
-                return await _call()
+            """Run ``_call`` and let plugins request exception retries (capped)."""
+            max_retries = get_max_hook_retries()
+            for attempt in range(max_retries + 1):
+                try:
+                    return await _call()
+                except Exception as exc:
+                    if attempt >= max_retries:
+                        raise
+                    hook_results = await on_agent_exception(
+                        exc,
+                        agent=agent,
+                        agent_name=agent.name,
+                        model_name=agent.get_model_name(),
+                    )
+                    retry_req = next(
+                        (
+                            r
+                            for r in hook_results
+                            if isinstance(r, dict) and r.get("retry")
+                        ),
+                        None,
+                    )
+                    if not retry_req:
+                        raise
+                    retry_delay = retry_req.get("delay", 0.0)
+                    if retry_delay:
+                        await asyncio.sleep(retry_delay)
+            # Unreachable — loop always returns or raises.
+            raise RuntimeError("Exhausted exception recovery retries")
 
         try:
             result = await _call_with_exception_recovery()
@@ -420,17 +524,14 @@ async def run(
 
                 @streaming_retry()
                 async def _retry_call(prompt: str = retry_prompt) -> Any:
-                    return await pydantic_agent.run(
-                        prompt,
-                        message_history=agent._message_history,
-                        usage_limits=usage_limits,
-                        event_stream_handler=stream_handler,
-                        **kwargs,
+                    return await _run_agent(
+                        prompt, agent._message_history, stream_handler
                     )
 
                 result = await _retry_call()
 
         finally:
+            _tool_error_tracker_ctx.reset(tracker_token)
             # Restore the handler we cleared (non-streaming models).
             if handler_was_modified:
                 pydantic_agent._event_stream_handler = _saved_handler
