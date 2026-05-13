@@ -12,6 +12,8 @@ import sys
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
+from libc.stdlib cimport free, malloc
+
 if TYPE_CHECKING:
     from rich.console import Console
 
@@ -31,50 +33,68 @@ def strip_ansi(input: str) -> str:
     frames (not followed by a newline) are cleaned up by replacing the
     carriage return with a newline so each frame becomes its own line.
 
-    This implementation uses a typed single-pass byte scan for speed.
+    This implementation uses a typed single-pass byte scan for speed and
+    releases the GIL during the CPU-intensive loop for true parallelism.
     """
     if not input:
         return input
 
     cdef bytes b = input.encode("utf-8")
-    cdef Py_ssize_t i = 0
     cdef Py_ssize_t n = len(b)
-    cdef bytearray out = bytearray()
+    cdef const unsigned char* c_data = b
+    cdef unsigned char* c_out = <unsigned char*>malloc(n)
+    if c_out is NULL:
+        raise MemoryError()
+
+    cdef Py_ssize_t i = 0
+    cdef Py_ssize_t j = 0
     cdef int in_csi = 0
     cdef Py_ssize_t start_csi = 0
     cdef unsigned char ch
+    cdef Py_ssize_t tail_len
+    cdef Py_ssize_t k
 
-    while i < n:
-        ch = b[i]
-        if in_csi:
-            # CSI param bytes are 0x30-0x3F (;, digits, etc.)
-            # intermediate bytes 0x20-0x2F, final bytes 0x40-0x7E
-            # We simply wait for a final byte (0x40-0x7E).
-            if 0x40 <= ch <= 0x7E:
-                in_csi = 0
-            i += 1
-            continue
-        if ch == 0x1B and i + 1 < n and b[i + 1] == 0x5B:  # ESC [
-            in_csi = 1
-            start_csi = i
-            i += 2
-            continue
-        if ch == 0x0D:  # \r
-            if i + 1 < n and b[i + 1] == 0x0A:  # \r\n
-                out.append(0x0A)
+    with nogil:
+        while i < n:
+            ch = c_data[i]
+            if in_csi:
+                # CSI param bytes are 0x30-0x3F (;, digits, etc.)
+                # intermediate bytes 0x20-0x2F, final bytes 0x40-0x7E
+                # We simply wait for a final byte (0x40-0x7E).
+                if 0x40 <= ch <= 0x7E:
+                    in_csi = 0
+                i += 1
+                continue
+            if ch == 0x1B and i + 1 < n and c_data[i + 1] == 0x5B:  # ESC [
+                in_csi = 1
+                start_csi = i
                 i += 2
                 continue
-            out.append(0x0A)
+            if ch == 0x0D:  # \r
+                if i + 1 < n and c_data[i + 1] == 0x0A:  # \r\n
+                    c_out[j] = 0x0A
+                    j += 1
+                    i += 2
+                    continue
+                c_out[j] = 0x0A
+                j += 1
+                i += 1
+                continue
+            c_out[j] = ch
+            j += 1
             i += 1
-            continue
-        out.append(ch)
-        i += 1
 
     if in_csi:
-        # Unterminated CSI — preserve from ESC to end
-        out.extend(b[start_csi:])
+        # Unterminated CSI — preserve from ESC to end.
+        # c_data remains valid because ``b`` is still held on the Python side.
+        tail_len = n - start_csi
+        for k in range(tail_len):
+            c_out[j] = c_data[start_csi + k]
+            j += 1
 
-    return out.decode("utf-8")
+    cdef bytes result_bytes = c_out[:j]
+    free(c_out)
+    return result_bytes.decode("utf-8")
 
 
 # ---------------------------------------------------------------------------

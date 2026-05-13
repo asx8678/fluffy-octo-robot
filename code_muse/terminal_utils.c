@@ -3,6 +3,7 @@
 /* BEGIN: Cython Metadata
 {
     "distutils": {
+        "depends": [],
         "name": "code_muse.terminal_utils",
         "sources": [
             "code_muse/terminal_utils.pyx"
@@ -1129,6 +1130,8 @@ static int __Pyx_init_co_variables(void) {
 #define __PYX_HAVE__code_muse__terminal_utils
 #define __PYX_HAVE_API__code_muse__terminal_utils
 /* Early includes */
+#include <string.h>
+#include <stdlib.h>
 #ifdef _OPENMP
 #include <omp.h>
 #endif /* _OPENMP */
@@ -1514,8 +1517,20 @@ static const char* const __pyx_f[] = {
 #define __Pyx_END_CRITICAL_SECTION Py_END_CRITICAL_SECTION
 #endif
 
+/* NoFastGil.proto */
+#define __Pyx_PyGILState_Ensure PyGILState_Ensure
+#define __Pyx_PyGILState_Release PyGILState_Release
+#define __Pyx_FastGIL_Remember()
+#define __Pyx_FastGIL_Forget()
+#define __Pyx_FastGilFuncInit()
+
 /* IncludeStructmemberH.proto (used by FixUpExtensionType) */
 #include <structmember.h>
+
+/* ForceInitThreads.proto */
+#ifndef __PYX_FORCE_INIT_THREADS
+  #define __PYX_FORCE_INIT_THREADS 0
+#endif
 
 /* #### Code section: numeric_typedefs ### */
 /* #### Code section: complex_type_declarations ### */
@@ -1525,7 +1540,7 @@ static const char* const __pyx_f[] = {
 struct __pyx_obj_9code_muse_14terminal_utils___pyx_scope_struct__detect_truecolor_support;
 struct __pyx_obj_9code_muse_14terminal_utils___pyx_scope_struct_1_genexpr;
 
-/* "code_muse/terminal_utils.pyx":362
+/* "code_muse/terminal_utils.pyx":382
  * 
  * 
  * def detect_truecolor_support() -> bool:             # <<<<<<<<<<<<<<
@@ -1538,7 +1553,7 @@ struct __pyx_obj_9code_muse_14terminal_utils___pyx_scope_struct__detect_truecolo
 };
 
 
-/* "code_muse/terminal_utils.pyx":386
+/* "code_muse/terminal_utils.pyx":406
  *         "vte-256color",  # Many modern terminals set this
  *     )
  *     if any(t in term for t in truecolor_terms):             # <<<<<<<<<<<<<<
@@ -1893,40 +1908,6 @@ static int __Pyx__ArgTypeTest(PyObject *obj, PyTypeObject *type, const char *nam
     ((likely(__Pyx_IS_TYPE(obj, type) | (none_allowed && (obj == Py_None)))) ? 1 :\
         __Pyx__ArgTypeTest(obj, type, name, exact))
 
-/* SetStringIndexingError.proto (used by GetItemIntBytes) */
-static void __Pyx_SetStringIndexingError(const char* message, int has_gil);
-
-/* GetItemIntBytes.proto */
-#define __Pyx_GetItemInt_Bytes(o, i, type, is_signed, to_py_func, is_list, wraparound, boundscheck, has_gil, unsafe_shared)\
-    (__Pyx_fits_Py_ssize_t(i, type, is_signed) ?\
-    __Pyx_GetItemInt_Bytes_Fast(o, (Py_ssize_t)i, wraparound, boundscheck, has_gil) :\
-    (__Pyx_SetStringIndexingError("string index out of range", has_gil), -1))
-static CYTHON_INLINE int __Pyx_GetItemInt_Bytes_Fast(PyObject* bytes, Py_ssize_t index,
-                                                     int wraparound, int boundscheck, int has_gil);
-
-/* PyObjectCall2Args.proto (used by PyObjectCallMethod1) */
-static CYTHON_INLINE PyObject* __Pyx_PyObject_Call2Args(PyObject* function, PyObject* arg1, PyObject* arg2);
-
-/* PyObjectGetMethod.proto (used by PyObjectCallMethod1) */
-#if !(CYTHON_VECTORCALL && (__PYX_LIMITED_VERSION_HEX >= 0x030C0000 || (!CYTHON_COMPILING_IN_LIMITED_API && PY_VERSION_HEX >= 0x03090000)))
-static int __Pyx_PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
-#endif
-
-/* PyObjectCallMethod1.proto (used by ByteArrayAppend) */
-static PyObject* __Pyx_PyObject_CallMethod1(PyObject* obj, PyObject* method_name, PyObject* arg);
-
-/* ByteArrayAppend.proto */
-static CYTHON_INLINE int __Pyx_PyByteArray_Append(PyObject* bytearray, int value);
-
-/* CallUnboundCMethod1.proto */
-CYTHON_UNUSED
-static PyObject* __Pyx__CallUnboundCMethod1(__Pyx_CachedCFunction* cfunc, PyObject* self, PyObject* arg);
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_CallUnboundCMethod1(__Pyx_CachedCFunction* cfunc, PyObject* self, PyObject* arg);
-#else
-#define __Pyx_CallUnboundCMethod1(cfunc, self, arg)  __Pyx__CallUnboundCMethod1(cfunc, self, arg)
-#endif
-
 /* decode_c_string_utf16.proto (used by decode_c_bytes) */
 static CYTHON_INLINE PyObject *__Pyx_PyUnicode_DecodeUTF16(const char *s, Py_ssize_t size, const char *errors) {
     int byteorder = 0;
@@ -1941,25 +1922,26 @@ static CYTHON_INLINE PyObject *__Pyx_PyUnicode_DecodeUTF16BE(const char *s, Py_s
     return PyUnicode_DecodeUTF16(s, size, errors, &byteorder);
 }
 
-/* decode_c_bytes.proto (used by decode_bytearray) */
+/* decode_c_bytes.proto (used by decode_bytes) */
 static CYTHON_INLINE PyObject* __Pyx_decode_c_bytes(
          const char* cstring, Py_ssize_t length, Py_ssize_t start, Py_ssize_t stop,
          const char* encoding, const char* errors,
          PyObject* (*decode_func)(const char *s, Py_ssize_t size, const char *errors));
 
-/* decode_bytearray.proto */
-static CYTHON_INLINE PyObject* __Pyx_decode_bytearray(
+/* decode_bytes.proto */
+static CYTHON_INLINE PyObject* __Pyx_decode_bytes(
          PyObject* string, Py_ssize_t start, Py_ssize_t stop,
          const char* encoding, const char* errors,
          PyObject* (*decode_func)(const char *s, Py_ssize_t size, const char *errors)) {
     char* as_c_string;
     Py_ssize_t size;
 #if CYTHON_ASSUME_SAFE_MACROS && CYTHON_ASSUME_SAFE_SIZE
-    as_c_string = PyByteArray_AS_STRING(string);
-    size = PyByteArray_GET_SIZE(string);
+    as_c_string = PyBytes_AS_STRING(string);
+    size = PyBytes_GET_SIZE(string);
 #else
-    if (!(as_c_string = PyByteArray_AsString(string))) return NULL;
-    if ((size = PyByteArray_Size(string)) < 0) return NULL;
+    if (PyBytes_AsStringAndSize(string, &as_c_string, &size) < 0) {
+        return NULL;
+    }
 #endif
     return __Pyx_decode_c_bytes(
         as_c_string, size,
@@ -2183,6 +2165,11 @@ static CYTHON_INLINE int __Pyx_fix_up_extension_type_from_spec(PyType_Spec *spec
 /* PyObjectCallNoArg.proto (used by PyObjectCallMethod0) */
 static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func);
 
+/* PyObjectGetMethod.proto (used by PyObjectCallMethod0) */
+#if !(CYTHON_VECTORCALL && (__PYX_LIMITED_VERSION_HEX >= 0x030C0000 || (!CYTHON_COMPILING_IN_LIMITED_API && PY_VERSION_HEX >= 0x03090000)))
+static int __Pyx_PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
+#endif
+
 /* PyObjectCallMethod0.proto (used by PyType_Ready) */
 static PyObject* __Pyx_PyObject_CallMethod0(PyObject* obj, PyObject* method_name);
 
@@ -2359,9 +2346,6 @@ static void __Pyx_AddTraceback(const char *funcname, int c_line,
 #endif
 
 /* CIntToPy.proto */
-static CYTHON_INLINE PyObject* __Pyx_PyLong_From_unsigned_char(unsigned char value);
-
-/* CIntToPy.proto */
 static CYTHON_INLINE PyObject* __Pyx_PyLong_From_long(long value);
 
 /* FormatTypeName.proto */
@@ -2412,6 +2396,12 @@ static CYTHON_INLINE PyObject *__Pyx_PyIter_Next_Plain(PyObject *iterator);
 #if CYTHON_COMPILING_IN_LIMITED_API && __PYX_LIMITED_VERSION_HEX < 0x030A0000
 static PyObject *__Pyx_GetBuiltinNext_LimitedAPI(void);
 #endif
+
+/* PyObjectCall2Args.proto (used by PyObjectCallMethod1) */
+static CYTHON_INLINE PyObject* __Pyx_PyObject_Call2Args(PyObject* function, PyObject* arg1, PyObject* arg2);
+
+/* PyObjectCallMethod1.proto (used by CoroutineBase) */
+static PyObject* __Pyx_PyObject_CallMethod1(PyObject* obj, PyObject* method_name, PyObject* arg);
 
 /* ReturnWithStopIteration.proto (used by CoroutineBase) */
 static CYTHON_INLINE void __Pyx_ReturnWithStopIteration(PyObject* value, int async, int iternext);
@@ -2557,6 +2547,10 @@ static int __Pyx_State_RemoveModule(void*);
 #define __PYX_TYPE_MODULE_PREFIX __PYX_ABI_MODULE_NAME "."
 
 
+/* Module declarations from "libc.string" */
+
+/* Module declarations from "libc.stdlib" */
+
 /* Module declarations from "code_muse.terminal_utils" */
 /* #### Code section: typeinfo ### */
 /* #### Code section: before_global_var ### */
@@ -2613,10 +2607,9 @@ typedef struct {
   __Pyx_CachedCFunction __pyx_umethod_PyDict_Type_items;
   __Pyx_CachedCFunction __pyx_umethod_PyDict_Type_pop;
   __Pyx_CachedCFunction __pyx_umethod_PyDict_Type_values;
-  __Pyx_CachedCFunction __pyx_umethod_PyByteArray_Type__extend;
   PyObject *__pyx_tuple[4];
   PyObject *__pyx_codeobj_tab[14];
-  PyObject *__pyx_string_tab[179];
+  PyObject *__pyx_string_tab[182];
 /* #### Code section: module_state_contents ### */
 
 #if CYTHON_USE_FREELISTS
@@ -2744,30 +2737,30 @@ static __pyx_mstatetype * const __pyx_mstate_global = &__pyx_mstate_global_stati
 #define __pyx_n_u_TYPE_CHECKING __pyx_string_tab[66]
 #define __pyx_n_u_WT_SESSION __pyx_string_tab[67]
 #define __pyx_n_u_Windows __pyx_string_tab[68]
-#define __pyx_n_u_append __pyx_string_tab[69]
-#define __pyx_n_u_asyncio_coroutines __pyx_string_tab[70]
-#define __pyx_n_u_b __pyx_string_tab[71]
-#define __pyx_n_u_bool __pyx_string_tab[72]
-#define __pyx_n_u_byref __pyx_string_tab[73]
-#define __pyx_n_u_c_ulong __pyx_string_tab[74]
-#define __pyx_n_u_capture_output __pyx_string_tab[75]
-#define __pyx_n_u_ch __pyx_string_tab[76]
-#define __pyx_n_u_check __pyx_string_tab[77]
-#define __pyx_n_u_cline_in_traceback __pyx_string_tab[78]
-#define __pyx_n_u_close __pyx_string_tab[79]
-#define __pyx_n_u_code_muse_terminal_utils __pyx_string_tab[80]
-#define __pyx_n_u_collections_abc __pyx_string_tab[81]
-#define __pyx_n_u_color_system __pyx_string_tab[82]
-#define __pyx_n_u_colorterm __pyx_string_tab[83]
-#define __pyx_n_u_console __pyx_string_tab[84]
-#define __pyx_n_u_ctypes __pyx_string_tab[85]
-#define __pyx_n_u_detect_truecolor_support __pyx_string_tab[86]
-#define __pyx_n_u_detect_truecolor_support_locals __pyx_string_tab[87]
-#define __pyx_n_u_disable_windows_ctrl_c __pyx_string_tab[88]
-#define __pyx_n_u_enable_windows_ctrl_c __pyx_string_tab[89]
-#define __pyx_n_u_ensure_ctrl_c_disabled __pyx_string_tab[90]
-#define __pyx_n_u_environ __pyx_string_tab[91]
-#define __pyx_n_u_extend __pyx_string_tab[92]
+#define __pyx_n_u_asyncio_coroutines __pyx_string_tab[69]
+#define __pyx_n_u_b __pyx_string_tab[70]
+#define __pyx_n_u_bool __pyx_string_tab[71]
+#define __pyx_n_u_byref __pyx_string_tab[72]
+#define __pyx_n_u_c_data __pyx_string_tab[73]
+#define __pyx_n_u_c_out __pyx_string_tab[74]
+#define __pyx_n_u_c_ulong __pyx_string_tab[75]
+#define __pyx_n_u_capture_output __pyx_string_tab[76]
+#define __pyx_n_u_ch __pyx_string_tab[77]
+#define __pyx_n_u_check __pyx_string_tab[78]
+#define __pyx_n_u_cline_in_traceback __pyx_string_tab[79]
+#define __pyx_n_u_close __pyx_string_tab[80]
+#define __pyx_n_u_code_muse_terminal_utils __pyx_string_tab[81]
+#define __pyx_n_u_collections_abc __pyx_string_tab[82]
+#define __pyx_n_u_color_system __pyx_string_tab[83]
+#define __pyx_n_u_colorterm __pyx_string_tab[84]
+#define __pyx_n_u_console __pyx_string_tab[85]
+#define __pyx_n_u_ctypes __pyx_string_tab[86]
+#define __pyx_n_u_detect_truecolor_support __pyx_string_tab[87]
+#define __pyx_n_u_detect_truecolor_support_locals __pyx_string_tab[88]
+#define __pyx_n_u_disable_windows_ctrl_c __pyx_string_tab[89]
+#define __pyx_n_u_enable_windows_ctrl_c __pyx_string_tab[90]
+#define __pyx_n_u_ensure_ctrl_c_disabled __pyx_string_tab[91]
+#define __pyx_n_u_environ __pyx_string_tab[92]
 #define __pyx_n_u_flush __pyx_string_tab[93]
 #define __pyx_n_u_flush_windows_keyboard_buffer __pyx_string_tab[94]
 #define __pyx_n_u_force_terminal __pyx_string_tab[95]
@@ -2782,78 +2775,81 @@ static __pyx_mstatetype * const __pyx_mstate_global = &__pyx_mstate_global_stati
 #define __pyx_n_u_is_coroutine __pyx_string_tab[104]
 #define __pyx_n_u_items __pyx_string_tab[105]
 #define __pyx_n_u_iterm2 __pyx_string_tab[106]
-#define __pyx_n_u_kbhit __pyx_string_tab[107]
-#define __pyx_n_u_keep_ctrl_c_disabled __pyx_string_tab[108]
-#define __pyx_n_u_kernel32 __pyx_string_tab[109]
-#define __pyx_n_u_line __pyx_string_tab[110]
-#define __pyx_n_u_lower __pyx_string_tab[111]
-#define __pyx_n_u_main __pyx_string_tab[112]
-#define __pyx_n_u_mode __pyx_string_tab[113]
-#define __pyx_n_u_module __pyx_string_tab[114]
-#define __pyx_n_u_msvcrt __pyx_string_tab[115]
-#define __pyx_n_u_n __pyx_string_tab[116]
-#define __pyx_n_u_name __pyx_string_tab[117]
-#define __pyx_n_u_new_mode __pyx_string_tab[118]
-#define __pyx_n_u_new_stdin_mode __pyx_string_tab[119]
-#define __pyx_n_u_next __pyx_string_tab[120]
-#define __pyx_n_u_original_ctrl_handler __pyx_string_tab[121]
-#define __pyx_n_u_os __pyx_string_tab[122]
-#define __pyx_n_u_out __pyx_string_tab[123]
-#define __pyx_n_u_platform __pyx_string_tab[124]
-#define __pyx_n_u_pop __pyx_string_tab[125]
-#define __pyx_n_u_print __pyx_string_tab[126]
-#define __pyx_n_u_print_truecolor_warning __pyx_string_tab[127]
-#define __pyx_n_u_qualname __pyx_string_tab[128]
-#define __pyx_n_u_reset __pyx_string_tab[129]
-#define __pyx_n_u_reset_terminal __pyx_string_tab[130]
-#define __pyx_n_u_reset_unix_terminal __pyx_string_tab[131]
-#define __pyx_n_u_reset_windows_console_mode __pyx_string_tab[132]
-#define __pyx_n_u_reset_windows_terminal_ansi __pyx_string_tab[133]
-#define __pyx_n_u_reset_windows_terminal_full __pyx_string_tab[134]
-#define __pyx_n_u_return __pyx_string_tab[135]
-#define __pyx_n_u_rich_console __pyx_string_tab[136]
-#define __pyx_n_u_run __pyx_string_tab[137]
-#define __pyx_n_u_send __pyx_string_tab[138]
-#define __pyx_n_u_set_keep_ctrl_c_disabled __pyx_string_tab[139]
-#define __pyx_n_u_set_name __pyx_string_tab[140]
-#define __pyx_n_u_setdefault __pyx_string_tab[141]
-#define __pyx_n_u_start_csi __pyx_string_tab[142]
-#define __pyx_n_u_stderr __pyx_string_tab[143]
-#define __pyx_n_u_stdin_handle __pyx_string_tab[144]
-#define __pyx_n_u_stdin_mode __pyx_string_tab[145]
-#define __pyx_n_u_stdout __pyx_string_tab[146]
-#define __pyx_n_u_str __pyx_string_tab[147]
-#define __pyx_n_u_strip_ansi __pyx_string_tab[148]
-#define __pyx_n_u_subprocess __pyx_string_tab[149]
-#define __pyx_n_u_sys __pyx_string_tab[150]
-#define __pyx_n_u_system __pyx_string_tab[151]
-#define __pyx_n_u_t __pyx_string_tab[152]
-#define __pyx_n_u_term __pyx_string_tab[153]
-#define __pyx_n_u_test __pyx_string_tab[154]
-#define __pyx_n_u_throw __pyx_string_tab[155]
-#define __pyx_n_u_truecolor __pyx_string_tab[156]
-#define __pyx_n_u_truecolor_terms __pyx_string_tab[157]
-#define __pyx_n_u_typing __pyx_string_tab[158]
-#define __pyx_n_u_unknown __pyx_string_tab[159]
-#define __pyx_n_u_value __pyx_string_tab[160]
-#define __pyx_n_u_values __pyx_string_tab[161]
-#define __pyx_n_u_warning_lines __pyx_string_tab[162]
-#define __pyx_n_u_windll __pyx_string_tab[163]
-#define __pyx_n_u_write __pyx_string_tab[164]
-#define __pyx_kp_b_iso88591_A_xwc_A_6_Q_aq_vXQ_q_fAQ_A_Q_a __pyx_string_tab[165]
-#define __pyx_kp_b_iso88591_IQ_A __pyx_string_tab[166]
-#define __pyx_kp_b_iso88591_I_q_q_xs_Q_gQ_7_1_A_2_1_vQa __pyx_string_tab[167]
-#define __pyx_kp_b_iso88591_Q __pyx_string_tab[168]
-#define __pyx_kp_b_iso88591_Q_xwc_A_7_7_7_7 __pyx_string_tab[169]
-#define __pyx_kp_b_iso88591_Q_xwc_A_aq_oQ_1 __pyx_string_tab[170]
-#define __pyx_kp_b_iso88591_Q_xwc_A_q_a __pyx_string_tab[171]
-#define __pyx_kp_b_iso88591_a_CvQ_z_q_2XT_V1_Q_q_r_Qa_q_r_Q __pyx_string_tab[172]
-#define __pyx_kp_b_iso88591_ha_t1_q_5_q_1A_a_Ba_Qaq_1_uCvQ __pyx_string_tab[173]
-#define __pyx_kp_b_iso88591_q_xwc_A_fF __pyx_string_tab[174]
-#define __pyx_kp_b_iso88591_q_xwc_A_q_c_q_6_A_x_AQ_8_Q_1_q __pyx_string_tab[175]
-#define __pyx_kp_b_iso88591_t1_q_xwc_A_q_6_A_x_AQ_vXQ_4x_a __pyx_string_tab[176]
-#define __pyx_kp_b_iso88591_xwc_A_1_1 __pyx_string_tab[177]
-#define __pyx_kp_b_iso88591_xwc_A_q_6_A_x_AQ_vXQ_4x_a_V6_1 __pyx_string_tab[178]
+#define __pyx_n_u_j __pyx_string_tab[107]
+#define __pyx_n_u_k __pyx_string_tab[108]
+#define __pyx_n_u_kbhit __pyx_string_tab[109]
+#define __pyx_n_u_keep_ctrl_c_disabled __pyx_string_tab[110]
+#define __pyx_n_u_kernel32 __pyx_string_tab[111]
+#define __pyx_n_u_line __pyx_string_tab[112]
+#define __pyx_n_u_lower __pyx_string_tab[113]
+#define __pyx_n_u_main __pyx_string_tab[114]
+#define __pyx_n_u_mode __pyx_string_tab[115]
+#define __pyx_n_u_module __pyx_string_tab[116]
+#define __pyx_n_u_msvcrt __pyx_string_tab[117]
+#define __pyx_n_u_n __pyx_string_tab[118]
+#define __pyx_n_u_name __pyx_string_tab[119]
+#define __pyx_n_u_new_mode __pyx_string_tab[120]
+#define __pyx_n_u_new_stdin_mode __pyx_string_tab[121]
+#define __pyx_n_u_next __pyx_string_tab[122]
+#define __pyx_n_u_original_ctrl_handler __pyx_string_tab[123]
+#define __pyx_n_u_os __pyx_string_tab[124]
+#define __pyx_n_u_platform __pyx_string_tab[125]
+#define __pyx_n_u_pop __pyx_string_tab[126]
+#define __pyx_n_u_print __pyx_string_tab[127]
+#define __pyx_n_u_print_truecolor_warning __pyx_string_tab[128]
+#define __pyx_n_u_qualname __pyx_string_tab[129]
+#define __pyx_n_u_reset __pyx_string_tab[130]
+#define __pyx_n_u_reset_terminal __pyx_string_tab[131]
+#define __pyx_n_u_reset_unix_terminal __pyx_string_tab[132]
+#define __pyx_n_u_reset_windows_console_mode __pyx_string_tab[133]
+#define __pyx_n_u_reset_windows_terminal_ansi __pyx_string_tab[134]
+#define __pyx_n_u_reset_windows_terminal_full __pyx_string_tab[135]
+#define __pyx_n_u_result_bytes __pyx_string_tab[136]
+#define __pyx_n_u_return __pyx_string_tab[137]
+#define __pyx_n_u_rich_console __pyx_string_tab[138]
+#define __pyx_n_u_run __pyx_string_tab[139]
+#define __pyx_n_u_send __pyx_string_tab[140]
+#define __pyx_n_u_set_keep_ctrl_c_disabled __pyx_string_tab[141]
+#define __pyx_n_u_set_name __pyx_string_tab[142]
+#define __pyx_n_u_setdefault __pyx_string_tab[143]
+#define __pyx_n_u_start_csi __pyx_string_tab[144]
+#define __pyx_n_u_stderr __pyx_string_tab[145]
+#define __pyx_n_u_stdin_handle __pyx_string_tab[146]
+#define __pyx_n_u_stdin_mode __pyx_string_tab[147]
+#define __pyx_n_u_stdout __pyx_string_tab[148]
+#define __pyx_n_u_str __pyx_string_tab[149]
+#define __pyx_n_u_strip_ansi __pyx_string_tab[150]
+#define __pyx_n_u_subprocess __pyx_string_tab[151]
+#define __pyx_n_u_sys __pyx_string_tab[152]
+#define __pyx_n_u_system __pyx_string_tab[153]
+#define __pyx_n_u_t __pyx_string_tab[154]
+#define __pyx_n_u_tail_len __pyx_string_tab[155]
+#define __pyx_n_u_term __pyx_string_tab[156]
+#define __pyx_n_u_test __pyx_string_tab[157]
+#define __pyx_n_u_throw __pyx_string_tab[158]
+#define __pyx_n_u_truecolor __pyx_string_tab[159]
+#define __pyx_n_u_truecolor_terms __pyx_string_tab[160]
+#define __pyx_n_u_typing __pyx_string_tab[161]
+#define __pyx_n_u_unknown __pyx_string_tab[162]
+#define __pyx_n_u_value __pyx_string_tab[163]
+#define __pyx_n_u_values __pyx_string_tab[164]
+#define __pyx_n_u_warning_lines __pyx_string_tab[165]
+#define __pyx_n_u_windll __pyx_string_tab[166]
+#define __pyx_n_u_write __pyx_string_tab[167]
+#define __pyx_kp_b_iso88591_A_xwc_A_6_Q_aq_vXQ_q_fAQ_A_Q_a __pyx_string_tab[168]
+#define __pyx_kp_b_iso88591_IQ_A __pyx_string_tab[169]
+#define __pyx_kp_b_iso88591_I_q_q_xs_Q_gQ_7_1_A_2_1_vQa __pyx_string_tab[170]
+#define __pyx_kp_b_iso88591_Q __pyx_string_tab[171]
+#define __pyx_kp_b_iso88591_Q_xwc_A_7_7_7_7 __pyx_string_tab[172]
+#define __pyx_kp_b_iso88591_Q_xwc_A_aq_oQ_1 __pyx_string_tab[173]
+#define __pyx_kp_b_iso88591_Q_xwc_A_q_a __pyx_string_tab[174]
+#define __pyx_kp_b_iso88591_a_CvQ_z_q_2XT_V1_Q_q_r_Qa_q_r_Q __pyx_string_tab[175]
+#define __pyx_kp_b_iso88591_ha_t1_q_5_q_1A_q_0_aq_vS_a_b_q __pyx_string_tab[176]
+#define __pyx_kp_b_iso88591_q_xwc_A_fF __pyx_string_tab[177]
+#define __pyx_kp_b_iso88591_q_xwc_A_q_c_q_6_A_x_AQ_8_Q_1_q __pyx_string_tab[178]
+#define __pyx_kp_b_iso88591_t1_q_xwc_A_q_6_A_x_AQ_vXQ_4x_a __pyx_string_tab[179]
+#define __pyx_kp_b_iso88591_xwc_A_1_1 __pyx_string_tab[180]
+#define __pyx_kp_b_iso88591_xwc_A_q_6_A_x_AQ_vXQ_4x_a_V6_1 __pyx_string_tab[181]
 /* #### Code section: module_state_clear ### */
 #if CYTHON_USE_MODULE_STATE
 static CYTHON_SMALL_CODE int __pyx_m_clear(PyObject *m) {
@@ -2874,7 +2870,7 @@ static CYTHON_SMALL_CODE int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_type_9code_muse_14terminal_utils___pyx_scope_struct_1_genexpr);
   for (int i=0; i<4; ++i) { Py_CLEAR(clear_module_state->__pyx_tuple[i]); }
   for (int i=0; i<14; ++i) { Py_CLEAR(clear_module_state->__pyx_codeobj_tab[i]); }
-  for (int i=0; i<179; ++i) { Py_CLEAR(clear_module_state->__pyx_string_tab[i]); }
+  for (int i=0; i<182; ++i) { Py_CLEAR(clear_module_state->__pyx_string_tab[i]); }
 /* #### Code section: module_state_clear_contents ### */
 /* CommonTypesMetaclass.module_state_clear */
 Py_CLEAR(clear_module_state->__pyx_CommonTypesMetaclassType);
@@ -2906,7 +2902,7 @@ static CYTHON_SMALL_CODE int __pyx_m_traverse(PyObject *m, visitproc visit, void
   Py_VISIT(traverse_module_state->__pyx_type_9code_muse_14terminal_utils___pyx_scope_struct_1_genexpr);
   for (int i=0; i<4; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_tuple[i]); }
   for (int i=0; i<14; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_codeobj_tab[i]); }
-  for (int i=0; i<179; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_string_tab[i]); }
+  for (int i=0; i<182; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_string_tab[i]); }
 /* #### Code section: module_state_traverse_contents ### */
 /* CommonTypesMetaclass.module_state_traverse */
 Py_VISIT(traverse_module_state->__pyx_CommonTypesMetaclassType);
@@ -2923,7 +2919,7 @@ return 0;
 #endif
 /* #### Code section: module_code ### */
 
-/* "code_muse/terminal_utils.pyx":26
+/* "code_muse/terminal_utils.pyx":28
  * # ---------------------------------------------------------------------------
  * 
  * def strip_ansi(input: str) -> str:             # <<<<<<<<<<<<<<
@@ -2939,7 +2935,7 @@ PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-PyDoc_STRVAR(__pyx_doc_9code_muse_14terminal_utils_strip_ansi, "Remove ANSI CSI escape sequences and bare carriage-return frames.\n\n    CSI sequences like ``\\x1b[0m``, ``\\x1b[32;1m``, and cursor movement\n    sequences are stripped.  Lines that use ``\\r`` for progress / spinner\n    frames (not followed by a newline) are cleaned up by replacing the\n    carriage return with a newline so each frame becomes its own line.\n\n    This implementation uses a typed single-pass byte scan for speed.\n    ");
+PyDoc_STRVAR(__pyx_doc_9code_muse_14terminal_utils_strip_ansi, "Remove ANSI CSI escape sequences and bare carriage-return frames.\n\n    CSI sequences like ``\\x1b[0m``, ``\\x1b[32;1m``, and cursor movement\n    sequences are stripped.  Lines that use ``\\r`` for progress / spinner\n    frames (not followed by a newline) are cleaned up by replacing the\n    carriage return with a newline so each frame becomes its own line.\n\n    This implementation uses a typed single-pass byte scan for speed and\n    releases the GIL during the CPU-intensive loop for true parallelism.\n    ");
 static PyMethodDef __pyx_mdef_9code_muse_14terminal_utils_1strip_ansi = {"strip_ansi", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_9code_muse_14terminal_utils_1strip_ansi, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_9code_muse_14terminal_utils_strip_ansi};
 static PyObject *__pyx_pw_9code_muse_14terminal_utils_1strip_ansi(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
@@ -2971,32 +2967,32 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_input,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 26, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 28, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 26, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 28, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "strip_ansi", 0) < (0)) __PYX_ERR(0, 26, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "strip_ansi", 0) < (0)) __PYX_ERR(0, 28, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("strip_ansi", 1, 1, 1, i); __PYX_ERR(0, 26, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("strip_ansi", 1, 1, 1, i); __PYX_ERR(0, 28, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 26, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 28, __pyx_L3_error)
     }
     __pyx_v_input = ((PyObject*)values[0]);
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("strip_ansi", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 26, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("strip_ansi", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 28, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -3007,7 +3003,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_input), (&PyUnicode_Type), 0, "input", 2))) __PYX_ERR(0, 26, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_input), (&PyUnicode_Type), 0, "input", 2))) __PYX_ERR(0, 28, __pyx_L1_error)
   __pyx_r = __pyx_pf_9code_muse_14terminal_utils_strip_ansi(__pyx_self, __pyx_v_input);
 
   /* function exit code */
@@ -3029,29 +3025,33 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_9code_muse_14terminal_utils_strip_ansi(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_input) {
   PyObject *__pyx_v_b = 0;
-  Py_ssize_t __pyx_v_i;
   Py_ssize_t __pyx_v_n;
-  PyObject *__pyx_v_out = 0;
+  unsigned char const *__pyx_v_c_data;
+  unsigned char *__pyx_v_c_out;
+  Py_ssize_t __pyx_v_i;
+  Py_ssize_t __pyx_v_j;
   int __pyx_v_in_csi;
   Py_ssize_t __pyx_v_start_csi;
   unsigned char __pyx_v_ch;
+  Py_ssize_t __pyx_v_tail_len;
+  Py_ssize_t __pyx_v_k;
+  PyObject *__pyx_v_result_bytes = 0;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   int __pyx_t_2;
   PyObject *__pyx_t_3 = NULL;
   Py_ssize_t __pyx_t_4;
-  PyObject *__pyx_t_5 = NULL;
-  size_t __pyx_t_6;
-  int __pyx_t_7;
-  int __pyx_t_8;
+  unsigned char const *__pyx_t_5;
+  Py_ssize_t __pyx_t_6;
+  Py_ssize_t __pyx_t_7;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("strip_ansi", 0);
 
-  /* "code_muse/terminal_utils.pyx":36
- *     This implementation uses a typed single-pass byte scan for speed.
+  /* "code_muse/terminal_utils.pyx":39
+ *     releases the GIL during the CPU-intensive loop for true parallelism.
  *     """
  *     if not input:             # <<<<<<<<<<<<<<
  *         return input
@@ -3059,14 +3059,14 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_strip_ansi(CYTHON_UNUSED P
 */
   {
     Py_ssize_t __pyx_temp = __Pyx_PyUnicode_IS_TRUE(__pyx_v_input);
-    if (unlikely(((!CYTHON_ASSUME_SAFE_SIZE) && __pyx_temp < 0))) __PYX_ERR(0, 36, __pyx_L1_error)
+    if (unlikely(((!CYTHON_ASSUME_SAFE_SIZE) && __pyx_temp < 0))) __PYX_ERR(0, 39, __pyx_L1_error)
     __pyx_t_1 = (__pyx_temp != 0);
   }
 
   __pyx_t_2 = (!__pyx_t_1);
   if (__pyx_t_2) {
 
-    /* "code_muse/terminal_utils.pyx":37
+    /* "code_muse/terminal_utils.pyx":40
  *     """
  *     if not input:
  *         return input             # <<<<<<<<<<<<<<
@@ -3078,8 +3078,8 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_strip_ansi(CYTHON_UNUSED P
     __pyx_r = __pyx_v_input;
     goto __pyx_L0;
 
-    /* "code_muse/terminal_utils.pyx":36
- *     This implementation uses a typed single-pass byte scan for speed.
+    /* "code_muse/terminal_utils.pyx":39
+ *     releases the GIL during the CPU-intensive loop for true parallelism.
  *     """
  *     if not input:             # <<<<<<<<<<<<<<
  *         return input
@@ -3087,404 +3087,541 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_strip_ansi(CYTHON_UNUSED P
 */
   }
 
-  /* "code_muse/terminal_utils.pyx":39
+  /* "code_muse/terminal_utils.pyx":42
  *         return input
  * 
  *     cdef bytes b = input.encode("utf-8")             # <<<<<<<<<<<<<<
- *     cdef Py_ssize_t i = 0
  *     cdef Py_ssize_t n = len(b)
+ *     cdef const unsigned char* c_data = b
 */
-  __pyx_t_3 = PyUnicode_AsUTF8String(__pyx_v_input); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 39, __pyx_L1_error)
+  __pyx_t_3 = PyUnicode_AsUTF8String(__pyx_v_input); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 42, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_v_b = ((PyObject*)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "code_muse/terminal_utils.pyx":40
+  /* "code_muse/terminal_utils.pyx":43
  * 
  *     cdef bytes b = input.encode("utf-8")
- *     cdef Py_ssize_t i = 0             # <<<<<<<<<<<<<<
+ *     cdef Py_ssize_t n = len(b)             # <<<<<<<<<<<<<<
+ *     cdef const unsigned char* c_data = b
+ *     cdef unsigned char* c_out = <unsigned char*>malloc(n)
+*/
+  __pyx_t_4 = __Pyx_PyBytes_GET_SIZE(__pyx_v_b); if (unlikely(__pyx_t_4 == ((Py_ssize_t)-1))) __PYX_ERR(0, 43, __pyx_L1_error)
+  __pyx_v_n = __pyx_t_4;
+
+  /* "code_muse/terminal_utils.pyx":44
+ *     cdef bytes b = input.encode("utf-8")
  *     cdef Py_ssize_t n = len(b)
- *     cdef bytearray out = bytearray()
+ *     cdef const unsigned char* c_data = b             # <<<<<<<<<<<<<<
+ *     cdef unsigned char* c_out = <unsigned char*>malloc(n)
+ *     if c_out is NULL:
+*/
+  __pyx_t_5 = __Pyx_PyBytes_AsUString(__pyx_v_b); if (unlikely((!__pyx_t_5) && PyErr_Occurred())) __PYX_ERR(0, 44, __pyx_L1_error)
+  __pyx_v_c_data = __pyx_t_5;
+
+  /* "code_muse/terminal_utils.pyx":45
+ *     cdef Py_ssize_t n = len(b)
+ *     cdef const unsigned char* c_data = b
+ *     cdef unsigned char* c_out = <unsigned char*>malloc(n)             # <<<<<<<<<<<<<<
+ *     if c_out is NULL:
+ *         raise MemoryError()
+*/
+  __pyx_v_c_out = ((unsigned char *)malloc(__pyx_v_n));
+
+  /* "code_muse/terminal_utils.pyx":46
+ *     cdef const unsigned char* c_data = b
+ *     cdef unsigned char* c_out = <unsigned char*>malloc(n)
+ *     if c_out is NULL:             # <<<<<<<<<<<<<<
+ *         raise MemoryError()
+ * 
+*/
+  __pyx_t_2 = (__pyx_v_c_out == NULL);
+  if (unlikely(__pyx_t_2)) {
+
+    /* "code_muse/terminal_utils.pyx":47
+ *     cdef unsigned char* c_out = <unsigned char*>malloc(n)
+ *     if c_out is NULL:
+ *         raise MemoryError()             # <<<<<<<<<<<<<<
+ * 
+ *     cdef Py_ssize_t i = 0
+*/
+    PyErr_NoMemory(); __PYX_ERR(0, 47, __pyx_L1_error)
+
+    /* "code_muse/terminal_utils.pyx":46
+ *     cdef const unsigned char* c_data = b
+ *     cdef unsigned char* c_out = <unsigned char*>malloc(n)
+ *     if c_out is NULL:             # <<<<<<<<<<<<<<
+ *         raise MemoryError()
+ * 
+*/
+  }
+
+  /* "code_muse/terminal_utils.pyx":49
+ *         raise MemoryError()
+ * 
+ *     cdef Py_ssize_t i = 0             # <<<<<<<<<<<<<<
+ *     cdef Py_ssize_t j = 0
+ *     cdef int in_csi = 0
 */
   __pyx_v_i = 0;
 
-  /* "code_muse/terminal_utils.pyx":41
- *     cdef bytes b = input.encode("utf-8")
+  /* "code_muse/terminal_utils.pyx":50
+ * 
  *     cdef Py_ssize_t i = 0
- *     cdef Py_ssize_t n = len(b)             # <<<<<<<<<<<<<<
- *     cdef bytearray out = bytearray()
- *     cdef int in_csi = 0
-*/
-  __pyx_t_4 = __Pyx_PyBytes_GET_SIZE(__pyx_v_b); if (unlikely(__pyx_t_4 == ((Py_ssize_t)-1))) __PYX_ERR(0, 41, __pyx_L1_error)
-  __pyx_v_n = __pyx_t_4;
-
-  /* "code_muse/terminal_utils.pyx":42
- *     cdef Py_ssize_t i = 0
- *     cdef Py_ssize_t n = len(b)
- *     cdef bytearray out = bytearray()             # <<<<<<<<<<<<<<
+ *     cdef Py_ssize_t j = 0             # <<<<<<<<<<<<<<
  *     cdef int in_csi = 0
  *     cdef Py_ssize_t start_csi = 0
 */
-  __pyx_t_5 = NULL;
-  __pyx_t_6 = 1;
-  {
-    PyObject *__pyx_callargs[2] = {__pyx_t_5, NULL};
-    __pyx_t_3 = __Pyx_PyObject_FastCall((PyObject*)(&PyByteArray_Type), __pyx_callargs+__pyx_t_6, (1-__pyx_t_6) | (__pyx_t_6*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 42, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-  }
-  __pyx_v_out = ((PyObject*)__pyx_t_3);
-  __pyx_t_3 = 0;
+  __pyx_v_j = 0;
 
-  /* "code_muse/terminal_utils.pyx":43
- *     cdef Py_ssize_t n = len(b)
- *     cdef bytearray out = bytearray()
+  /* "code_muse/terminal_utils.pyx":51
+ *     cdef Py_ssize_t i = 0
+ *     cdef Py_ssize_t j = 0
  *     cdef int in_csi = 0             # <<<<<<<<<<<<<<
  *     cdef Py_ssize_t start_csi = 0
  *     cdef unsigned char ch
 */
   __pyx_v_in_csi = 0;
 
-  /* "code_muse/terminal_utils.pyx":44
- *     cdef bytearray out = bytearray()
+  /* "code_muse/terminal_utils.pyx":52
+ *     cdef Py_ssize_t j = 0
  *     cdef int in_csi = 0
  *     cdef Py_ssize_t start_csi = 0             # <<<<<<<<<<<<<<
  *     cdef unsigned char ch
- * 
+ *     cdef Py_ssize_t tail_len
 */
   __pyx_v_start_csi = 0;
 
-  /* "code_muse/terminal_utils.pyx":47
- *     cdef unsigned char ch
+  /* "code_muse/terminal_utils.pyx":57
+ *     cdef Py_ssize_t k
  * 
- *     while i < n:             # <<<<<<<<<<<<<<
- *         ch = b[i]
- *         if in_csi:
+ *     with nogil:             # <<<<<<<<<<<<<<
+ *         while i < n:
+ *             ch = c_data[i]
 */
-  while (1) {
-    __pyx_t_2 = (__pyx_v_i < __pyx_v_n);
-    if (!__pyx_t_2) break;
+  {
+      PyThreadState * _save;
+      _save = PyEval_SaveThread();
+      __Pyx_FastGIL_Remember();
+      /*try:*/ {
 
-    /* "code_muse/terminal_utils.pyx":48
+        /* "code_muse/terminal_utils.pyx":58
  * 
- *     while i < n:
- *         ch = b[i]             # <<<<<<<<<<<<<<
- *         if in_csi:
- *             # CSI param bytes are 0x30-0x3F (;, digits, etc.)
+ *     with nogil:
+ *         while i < n:             # <<<<<<<<<<<<<<
+ *             ch = c_data[i]
+ *             if in_csi:
 */
-    __pyx_t_7 = __Pyx_GetItemInt_Bytes(__pyx_v_b, __pyx_v_i, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 1, 1, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(__pyx_t_7 == -1)) __PYX_ERR(0, 48, __pyx_L1_error)
-    __pyx_v_ch = __pyx_t_7;
+        while (1) {
+          __pyx_t_2 = (__pyx_v_i < __pyx_v_n);
+          if (!__pyx_t_2) break;
 
-    /* "code_muse/terminal_utils.pyx":49
- *     while i < n:
- *         ch = b[i]
- *         if in_csi:             # <<<<<<<<<<<<<<
- *             # CSI param bytes are 0x30-0x3F (;, digits, etc.)
- *             # intermediate bytes 0x20-0x2F, final bytes 0x40-0x7E
+          /* "code_muse/terminal_utils.pyx":59
+ *     with nogil:
+ *         while i < n:
+ *             ch = c_data[i]             # <<<<<<<<<<<<<<
+ *             if in_csi:
+ *                 # CSI param bytes are 0x30-0x3F (;, digits, etc.)
 */
-    __pyx_t_2 = (__pyx_v_in_csi != 0);
-    if (__pyx_t_2) {
+          __pyx_v_ch = (__pyx_v_c_data[__pyx_v_i]);
 
-      /* "code_muse/terminal_utils.pyx":53
- *             # intermediate bytes 0x20-0x2F, final bytes 0x40-0x7E
- *             # We simply wait for a final byte (0x40-0x7E).
- *             if 0x40 <= ch <= 0x7E:             # <<<<<<<<<<<<<<
- *                 in_csi = 0
- *             i += 1
+          /* "code_muse/terminal_utils.pyx":60
+ *         while i < n:
+ *             ch = c_data[i]
+ *             if in_csi:             # <<<<<<<<<<<<<<
+ *                 # CSI param bytes are 0x30-0x3F (;, digits, etc.)
+ *                 # intermediate bytes 0x20-0x2F, final bytes 0x40-0x7E
 */
-      __pyx_t_2 = (0x40 <= __pyx_v_ch);
-      if (__pyx_t_2) {
-        __pyx_t_2 = (__pyx_v_ch <= 0x7E);
-      }
-      if (__pyx_t_2) {
+          __pyx_t_2 = (__pyx_v_in_csi != 0);
+          if (__pyx_t_2) {
 
-        /* "code_muse/terminal_utils.pyx":54
- *             # We simply wait for a final byte (0x40-0x7E).
- *             if 0x40 <= ch <= 0x7E:
- *                 in_csi = 0             # <<<<<<<<<<<<<<
- *             i += 1
- *             continue
+            /* "code_muse/terminal_utils.pyx":64
+ *                 # intermediate bytes 0x20-0x2F, final bytes 0x40-0x7E
+ *                 # We simply wait for a final byte (0x40-0x7E).
+ *                 if 0x40 <= ch <= 0x7E:             # <<<<<<<<<<<<<<
+ *                     in_csi = 0
+ *                 i += 1
 */
-        __pyx_v_in_csi = 0;
+            __pyx_t_2 = (0x40 <= __pyx_v_ch);
+            if (__pyx_t_2) {
+              __pyx_t_2 = (__pyx_v_ch <= 0x7E);
+            }
+            if (__pyx_t_2) {
 
-        /* "code_muse/terminal_utils.pyx":53
- *             # intermediate bytes 0x20-0x2F, final bytes 0x40-0x7E
- *             # We simply wait for a final byte (0x40-0x7E).
- *             if 0x40 <= ch <= 0x7E:             # <<<<<<<<<<<<<<
- *                 in_csi = 0
- *             i += 1
+              /* "code_muse/terminal_utils.pyx":65
+ *                 # We simply wait for a final byte (0x40-0x7E).
+ *                 if 0x40 <= ch <= 0x7E:
+ *                     in_csi = 0             # <<<<<<<<<<<<<<
+ *                 i += 1
+ *                 continue
 */
-      }
+              __pyx_v_in_csi = 0;
 
-      /* "code_muse/terminal_utils.pyx":55
- *             if 0x40 <= ch <= 0x7E:
- *                 in_csi = 0
- *             i += 1             # <<<<<<<<<<<<<<
- *             continue
- *         if ch == 0x1B and i + 1 < n and b[i + 1] == 0x5B:  # ESC [
+              /* "code_muse/terminal_utils.pyx":64
+ *                 # intermediate bytes 0x20-0x2F, final bytes 0x40-0x7E
+ *                 # We simply wait for a final byte (0x40-0x7E).
+ *                 if 0x40 <= ch <= 0x7E:             # <<<<<<<<<<<<<<
+ *                     in_csi = 0
+ *                 i += 1
 */
-      __pyx_v_i = (__pyx_v_i + 1);
+            }
 
-      /* "code_muse/terminal_utils.pyx":56
- *                 in_csi = 0
- *             i += 1
- *             continue             # <<<<<<<<<<<<<<
- *         if ch == 0x1B and i + 1 < n and b[i + 1] == 0x5B:  # ESC [
- *             in_csi = 1
+            /* "code_muse/terminal_utils.pyx":66
+ *                 if 0x40 <= ch <= 0x7E:
+ *                     in_csi = 0
+ *                 i += 1             # <<<<<<<<<<<<<<
+ *                 continue
+ *             if ch == 0x1B and i + 1 < n and c_data[i + 1] == 0x5B:  # ESC [
 */
-      goto __pyx_L4_continue;
+            __pyx_v_i = (__pyx_v_i + 1);
 
-      /* "code_muse/terminal_utils.pyx":49
- *     while i < n:
- *         ch = b[i]
- *         if in_csi:             # <<<<<<<<<<<<<<
- *             # CSI param bytes are 0x30-0x3F (;, digits, etc.)
- *             # intermediate bytes 0x20-0x2F, final bytes 0x40-0x7E
+            /* "code_muse/terminal_utils.pyx":67
+ *                     in_csi = 0
+ *                 i += 1
+ *                 continue             # <<<<<<<<<<<<<<
+ *             if ch == 0x1B and i + 1 < n and c_data[i + 1] == 0x5B:  # ESC [
+ *                 in_csi = 1
 */
-    }
+            goto __pyx_L8_continue;
 
-    /* "code_muse/terminal_utils.pyx":57
- *             i += 1
- *             continue
- *         if ch == 0x1B and i + 1 < n and b[i + 1] == 0x5B:  # ESC [             # <<<<<<<<<<<<<<
- *             in_csi = 1
- *             start_csi = i
+            /* "code_muse/terminal_utils.pyx":60
+ *         while i < n:
+ *             ch = c_data[i]
+ *             if in_csi:             # <<<<<<<<<<<<<<
+ *                 # CSI param bytes are 0x30-0x3F (;, digits, etc.)
+ *                 # intermediate bytes 0x20-0x2F, final bytes 0x40-0x7E
 */
-    __pyx_t_1 = (__pyx_v_ch == 0x1B);
-    if (__pyx_t_1) {
-    } else {
-      __pyx_t_2 = __pyx_t_1;
-      goto __pyx_L9_bool_binop_done;
-    }
-    __pyx_t_1 = ((__pyx_v_i + 1) < __pyx_v_n);
-    if (__pyx_t_1) {
-    } else {
-      __pyx_t_2 = __pyx_t_1;
-      goto __pyx_L9_bool_binop_done;
-    }
-    __pyx_t_4 = (__pyx_v_i + 1);
-    __pyx_t_7 = __Pyx_GetItemInt_Bytes(__pyx_v_b, __pyx_t_4, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 1, 1, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(__pyx_t_7 == -1)) __PYX_ERR(0, 57, __pyx_L1_error)
-    __pyx_t_1 = (__pyx_t_7 == 0x5B);
-    __pyx_t_2 = __pyx_t_1;
-    __pyx_L9_bool_binop_done:;
-    if (__pyx_t_2) {
+          }
 
-      /* "code_muse/terminal_utils.pyx":58
- *             continue
- *         if ch == 0x1B and i + 1 < n and b[i + 1] == 0x5B:  # ESC [
- *             in_csi = 1             # <<<<<<<<<<<<<<
- *             start_csi = i
- *             i += 2
+          /* "code_muse/terminal_utils.pyx":68
+ *                 i += 1
+ *                 continue
+ *             if ch == 0x1B and i + 1 < n and c_data[i + 1] == 0x5B:  # ESC [             # <<<<<<<<<<<<<<
+ *                 in_csi = 1
+ *                 start_csi = i
 */
-      __pyx_v_in_csi = 1;
+          __pyx_t_1 = (__pyx_v_ch == 0x1B);
+          if (__pyx_t_1) {
+          } else {
+            __pyx_t_2 = __pyx_t_1;
+            goto __pyx_L13_bool_binop_done;
+          }
+          __pyx_t_1 = ((__pyx_v_i + 1) < __pyx_v_n);
+          if (__pyx_t_1) {
+          } else {
+            __pyx_t_2 = __pyx_t_1;
+            goto __pyx_L13_bool_binop_done;
+          }
+          __pyx_t_1 = ((__pyx_v_c_data[(__pyx_v_i + 1)]) == 0x5B);
+          __pyx_t_2 = __pyx_t_1;
+          __pyx_L13_bool_binop_done:;
+          if (__pyx_t_2) {
 
-      /* "code_muse/terminal_utils.pyx":59
- *         if ch == 0x1B and i + 1 < n and b[i + 1] == 0x5B:  # ESC [
- *             in_csi = 1
- *             start_csi = i             # <<<<<<<<<<<<<<
- *             i += 2
- *             continue
-*/
-      __pyx_v_start_csi = __pyx_v_i;
-
-      /* "code_muse/terminal_utils.pyx":60
- *             in_csi = 1
- *             start_csi = i
- *             i += 2             # <<<<<<<<<<<<<<
- *             continue
- *         if ch == 0x0D:  # \r
-*/
-      __pyx_v_i = (__pyx_v_i + 2);
-
-      /* "code_muse/terminal_utils.pyx":61
- *             start_csi = i
- *             i += 2
- *             continue             # <<<<<<<<<<<<<<
- *         if ch == 0x0D:  # \r
- *             if i + 1 < n and b[i + 1] == 0x0A:  # \r\n
-*/
-      goto __pyx_L4_continue;
-
-      /* "code_muse/terminal_utils.pyx":57
- *             i += 1
- *             continue
- *         if ch == 0x1B and i + 1 < n and b[i + 1] == 0x5B:  # ESC [             # <<<<<<<<<<<<<<
- *             in_csi = 1
- *             start_csi = i
-*/
-    }
-
-    /* "code_muse/terminal_utils.pyx":62
- *             i += 2
- *             continue
- *         if ch == 0x0D:  # \r             # <<<<<<<<<<<<<<
- *             if i + 1 < n and b[i + 1] == 0x0A:  # \r\n
- *                 out.append(0x0A)
-*/
-    __pyx_t_2 = (__pyx_v_ch == 0x0D);
-    if (__pyx_t_2) {
-
-      /* "code_muse/terminal_utils.pyx":63
- *             continue
- *         if ch == 0x0D:  # \r
- *             if i + 1 < n and b[i + 1] == 0x0A:  # \r\n             # <<<<<<<<<<<<<<
- *                 out.append(0x0A)
+            /* "code_muse/terminal_utils.pyx":69
+ *                 continue
+ *             if ch == 0x1B and i + 1 < n and c_data[i + 1] == 0x5B:  # ESC [
+ *                 in_csi = 1             # <<<<<<<<<<<<<<
+ *                 start_csi = i
  *                 i += 2
 */
-      __pyx_t_1 = ((__pyx_v_i + 1) < __pyx_v_n);
-      if (__pyx_t_1) {
-      } else {
-        __pyx_t_2 = __pyx_t_1;
-        goto __pyx_L14_bool_binop_done;
-      }
-      __pyx_t_4 = (__pyx_v_i + 1);
-      __pyx_t_7 = __Pyx_GetItemInt_Bytes(__pyx_v_b, __pyx_t_4, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 1, 1, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(__pyx_t_7 == -1)) __PYX_ERR(0, 63, __pyx_L1_error)
-      __pyx_t_1 = (__pyx_t_7 == 0x0A);
-      __pyx_t_2 = __pyx_t_1;
-      __pyx_L14_bool_binop_done:;
-      if (__pyx_t_2) {
+            __pyx_v_in_csi = 1;
 
-        /* "code_muse/terminal_utils.pyx":64
- *         if ch == 0x0D:  # \r
- *             if i + 1 < n and b[i + 1] == 0x0A:  # \r\n
- *                 out.append(0x0A)             # <<<<<<<<<<<<<<
+            /* "code_muse/terminal_utils.pyx":70
+ *             if ch == 0x1B and i + 1 < n and c_data[i + 1] == 0x5B:  # ESC [
+ *                 in_csi = 1
+ *                 start_csi = i             # <<<<<<<<<<<<<<
  *                 i += 2
  *                 continue
 */
-        __pyx_t_8 = __Pyx_PyByteArray_Append(__pyx_v_out, 0x0A); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 64, __pyx_L1_error)
+            __pyx_v_start_csi = __pyx_v_i;
 
-        /* "code_muse/terminal_utils.pyx":65
- *             if i + 1 < n and b[i + 1] == 0x0A:  # \r\n
- *                 out.append(0x0A)
+            /* "code_muse/terminal_utils.pyx":71
+ *                 in_csi = 1
+ *                 start_csi = i
  *                 i += 2             # <<<<<<<<<<<<<<
  *                 continue
- *             out.append(0x0A)
+ *             if ch == 0x0D:  # \r
 */
-        __pyx_v_i = (__pyx_v_i + 2);
+            __pyx_v_i = (__pyx_v_i + 2);
 
-        /* "code_muse/terminal_utils.pyx":66
- *                 out.append(0x0A)
+            /* "code_muse/terminal_utils.pyx":72
+ *                 start_csi = i
  *                 i += 2
  *                 continue             # <<<<<<<<<<<<<<
- *             out.append(0x0A)
- *             i += 1
+ *             if ch == 0x0D:  # \r
+ *                 if i + 1 < n and c_data[i + 1] == 0x0A:  # \r\n
 */
-        goto __pyx_L4_continue;
+            goto __pyx_L8_continue;
 
-        /* "code_muse/terminal_utils.pyx":63
- *             continue
- *         if ch == 0x0D:  # \r
- *             if i + 1 < n and b[i + 1] == 0x0A:  # \r\n             # <<<<<<<<<<<<<<
- *                 out.append(0x0A)
- *                 i += 2
+            /* "code_muse/terminal_utils.pyx":68
+ *                 i += 1
+ *                 continue
+ *             if ch == 0x1B and i + 1 < n and c_data[i + 1] == 0x5B:  # ESC [             # <<<<<<<<<<<<<<
+ *                 in_csi = 1
+ *                 start_csi = i
 */
-      }
+          }
 
-      /* "code_muse/terminal_utils.pyx":67
+          /* "code_muse/terminal_utils.pyx":73
  *                 i += 2
  *                 continue
- *             out.append(0x0A)             # <<<<<<<<<<<<<<
- *             i += 1
- *             continue
+ *             if ch == 0x0D:  # \r             # <<<<<<<<<<<<<<
+ *                 if i + 1 < n and c_data[i + 1] == 0x0A:  # \r\n
+ *                     c_out[j] = 0x0A
 */
-      __pyx_t_8 = __Pyx_PyByteArray_Append(__pyx_v_out, 0x0A); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 67, __pyx_L1_error)
+          __pyx_t_2 = (__pyx_v_ch == 0x0D);
+          if (__pyx_t_2) {
 
-      /* "code_muse/terminal_utils.pyx":68
+            /* "code_muse/terminal_utils.pyx":74
  *                 continue
- *             out.append(0x0A)
- *             i += 1             # <<<<<<<<<<<<<<
- *             continue
- *         out.append(ch)
+ *             if ch == 0x0D:  # \r
+ *                 if i + 1 < n and c_data[i + 1] == 0x0A:  # \r\n             # <<<<<<<<<<<<<<
+ *                     c_out[j] = 0x0A
+ *                     j += 1
 */
-      __pyx_v_i = (__pyx_v_i + 1);
+            __pyx_t_1 = ((__pyx_v_i + 1) < __pyx_v_n);
+            if (__pyx_t_1) {
+            } else {
+              __pyx_t_2 = __pyx_t_1;
+              goto __pyx_L18_bool_binop_done;
+            }
+            __pyx_t_1 = ((__pyx_v_c_data[(__pyx_v_i + 1)]) == 0x0A);
+            __pyx_t_2 = __pyx_t_1;
+            __pyx_L18_bool_binop_done:;
+            if (__pyx_t_2) {
 
-      /* "code_muse/terminal_utils.pyx":69
- *             out.append(0x0A)
+              /* "code_muse/terminal_utils.pyx":75
+ *             if ch == 0x0D:  # \r
+ *                 if i + 1 < n and c_data[i + 1] == 0x0A:  # \r\n
+ *                     c_out[j] = 0x0A             # <<<<<<<<<<<<<<
+ *                     j += 1
+ *                     i += 2
+*/
+              (__pyx_v_c_out[__pyx_v_j]) = 0x0A;
+
+              /* "code_muse/terminal_utils.pyx":76
+ *                 if i + 1 < n and c_data[i + 1] == 0x0A:  # \r\n
+ *                     c_out[j] = 0x0A
+ *                     j += 1             # <<<<<<<<<<<<<<
+ *                     i += 2
+ *                     continue
+*/
+              __pyx_v_j = (__pyx_v_j + 1);
+
+              /* "code_muse/terminal_utils.pyx":77
+ *                     c_out[j] = 0x0A
+ *                     j += 1
+ *                     i += 2             # <<<<<<<<<<<<<<
+ *                     continue
+ *                 c_out[j] = 0x0A
+*/
+              __pyx_v_i = (__pyx_v_i + 2);
+
+              /* "code_muse/terminal_utils.pyx":78
+ *                     j += 1
+ *                     i += 2
+ *                     continue             # <<<<<<<<<<<<<<
+ *                 c_out[j] = 0x0A
+ *                 j += 1
+*/
+              goto __pyx_L8_continue;
+
+              /* "code_muse/terminal_utils.pyx":74
+ *                 continue
+ *             if ch == 0x0D:  # \r
+ *                 if i + 1 < n and c_data[i + 1] == 0x0A:  # \r\n             # <<<<<<<<<<<<<<
+ *                     c_out[j] = 0x0A
+ *                     j += 1
+*/
+            }
+
+            /* "code_muse/terminal_utils.pyx":79
+ *                     i += 2
+ *                     continue
+ *                 c_out[j] = 0x0A             # <<<<<<<<<<<<<<
+ *                 j += 1
+ *                 i += 1
+*/
+            (__pyx_v_c_out[__pyx_v_j]) = 0x0A;
+
+            /* "code_muse/terminal_utils.pyx":80
+ *                     continue
+ *                 c_out[j] = 0x0A
+ *                 j += 1             # <<<<<<<<<<<<<<
+ *                 i += 1
+ *                 continue
+*/
+            __pyx_v_j = (__pyx_v_j + 1);
+
+            /* "code_muse/terminal_utils.pyx":81
+ *                 c_out[j] = 0x0A
+ *                 j += 1
+ *                 i += 1             # <<<<<<<<<<<<<<
+ *                 continue
+ *             c_out[j] = ch
+*/
+            __pyx_v_i = (__pyx_v_i + 1);
+
+            /* "code_muse/terminal_utils.pyx":82
+ *                 j += 1
+ *                 i += 1
+ *                 continue             # <<<<<<<<<<<<<<
+ *             c_out[j] = ch
+ *             j += 1
+*/
+            goto __pyx_L8_continue;
+
+            /* "code_muse/terminal_utils.pyx":73
+ *                 i += 2
+ *                 continue
+ *             if ch == 0x0D:  # \r             # <<<<<<<<<<<<<<
+ *                 if i + 1 < n and c_data[i + 1] == 0x0A:  # \r\n
+ *                     c_out[j] = 0x0A
+*/
+          }
+
+          /* "code_muse/terminal_utils.pyx":83
+ *                 i += 1
+ *                 continue
+ *             c_out[j] = ch             # <<<<<<<<<<<<<<
+ *             j += 1
  *             i += 1
- *             continue             # <<<<<<<<<<<<<<
- *         out.append(ch)
- *         i += 1
 */
-      goto __pyx_L4_continue;
+          (__pyx_v_c_out[__pyx_v_j]) = __pyx_v_ch;
 
-      /* "code_muse/terminal_utils.pyx":62
- *             i += 2
- *             continue
- *         if ch == 0x0D:  # \r             # <<<<<<<<<<<<<<
- *             if i + 1 < n and b[i + 1] == 0x0A:  # \r\n
- *                 out.append(0x0A)
-*/
-    }
-
-    /* "code_muse/terminal_utils.pyx":70
+          /* "code_muse/terminal_utils.pyx":84
+ *                 continue
+ *             c_out[j] = ch
+ *             j += 1             # <<<<<<<<<<<<<<
  *             i += 1
- *             continue
- *         out.append(ch)             # <<<<<<<<<<<<<<
- *         i += 1
  * 
 */
-    __pyx_t_8 = __Pyx_PyByteArray_Append(__pyx_v_out, __pyx_v_ch); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 70, __pyx_L1_error)
+          __pyx_v_j = (__pyx_v_j + 1);
 
-    /* "code_muse/terminal_utils.pyx":71
- *             continue
- *         out.append(ch)
- *         i += 1             # <<<<<<<<<<<<<<
+          /* "code_muse/terminal_utils.pyx":85
+ *             c_out[j] = ch
+ *             j += 1
+ *             i += 1             # <<<<<<<<<<<<<<
  * 
  *     if in_csi:
 */
-    __pyx_v_i = (__pyx_v_i + 1);
-    __pyx_L4_continue:;
+          __pyx_v_i = (__pyx_v_i + 1);
+          __pyx_L8_continue:;
+        }
+      }
+
+      /* "code_muse/terminal_utils.pyx":57
+ *     cdef Py_ssize_t k
+ * 
+ *     with nogil:             # <<<<<<<<<<<<<<
+ *         while i < n:
+ *             ch = c_data[i]
+*/
+      /*finally:*/ {
+        /*normal exit:*/{
+          __Pyx_FastGIL_Forget();
+          PyEval_RestoreThread(_save);
+          goto __pyx_L7;
+        }
+        __pyx_L7:;
+      }
   }
 
-  /* "code_muse/terminal_utils.pyx":73
- *         i += 1
+  /* "code_muse/terminal_utils.pyx":87
+ *             i += 1
  * 
  *     if in_csi:             # <<<<<<<<<<<<<<
- *         # Unterminated CSI  preserve from ESC to end
- *         out.extend(b[start_csi:])
+ *         # Unterminated CSI  preserve from ESC to end.
+ *         # c_data remains valid because ``b`` is still held on the Python side.
 */
   __pyx_t_2 = (__pyx_v_in_csi != 0);
   if (__pyx_t_2) {
 
-    /* "code_muse/terminal_utils.pyx":75
- *     if in_csi:
- *         # Unterminated CSI  preserve from ESC to end
- *         out.extend(b[start_csi:])             # <<<<<<<<<<<<<<
- * 
- *     return out.decode("utf-8")
+    /* "code_muse/terminal_utils.pyx":90
+ *         # Unterminated CSI  preserve from ESC to end.
+ *         # c_data remains valid because ``b`` is still held on the Python side.
+ *         tail_len = n - start_csi             # <<<<<<<<<<<<<<
+ *         for k in range(tail_len):
+ *             c_out[j] = c_data[start_csi + k]
 */
-    __pyx_t_3 = PySequence_GetSlice(__pyx_v_b, __pyx_v_start_csi, PY_SSIZE_T_MAX); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 75, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_5 = __Pyx_CallUnboundCMethod1(&__pyx_mstate_global->__pyx_umethod_PyByteArray_Type__extend, __pyx_v_out, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 75, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __pyx_v_tail_len = (__pyx_v_n - __pyx_v_start_csi);
 
-    /* "code_muse/terminal_utils.pyx":73
- *         i += 1
+    /* "code_muse/terminal_utils.pyx":91
+ *         # c_data remains valid because ``b`` is still held on the Python side.
+ *         tail_len = n - start_csi
+ *         for k in range(tail_len):             # <<<<<<<<<<<<<<
+ *             c_out[j] = c_data[start_csi + k]
+ *             j += 1
+*/
+    __pyx_t_4 = __pyx_v_tail_len;
+    __pyx_t_6 = __pyx_t_4;
+    for (__pyx_t_7 = 0; __pyx_t_7 < __pyx_t_6; __pyx_t_7+=1) {
+      __pyx_v_k = __pyx_t_7;
+
+      /* "code_muse/terminal_utils.pyx":92
+ *         tail_len = n - start_csi
+ *         for k in range(tail_len):
+ *             c_out[j] = c_data[start_csi + k]             # <<<<<<<<<<<<<<
+ *             j += 1
+ * 
+*/
+      (__pyx_v_c_out[__pyx_v_j]) = (__pyx_v_c_data[(__pyx_v_start_csi + __pyx_v_k)]);
+
+      /* "code_muse/terminal_utils.pyx":93
+ *         for k in range(tail_len):
+ *             c_out[j] = c_data[start_csi + k]
+ *             j += 1             # <<<<<<<<<<<<<<
+ * 
+ *     cdef bytes result_bytes = c_out[:j]
+*/
+      __pyx_v_j = (__pyx_v_j + 1);
+    }
+
+    /* "code_muse/terminal_utils.pyx":87
+ *             i += 1
  * 
  *     if in_csi:             # <<<<<<<<<<<<<<
- *         # Unterminated CSI  preserve from ESC to end
- *         out.extend(b[start_csi:])
+ *         # Unterminated CSI  preserve from ESC to end.
+ *         # c_data remains valid because ``b`` is still held on the Python side.
 */
   }
 
-  /* "code_muse/terminal_utils.pyx":77
- *         out.extend(b[start_csi:])
+  /* "code_muse/terminal_utils.pyx":95
+ *             j += 1
  * 
- *     return out.decode("utf-8")             # <<<<<<<<<<<<<<
+ *     cdef bytes result_bytes = c_out[:j]             # <<<<<<<<<<<<<<
+ *     free(c_out)
+ *     return result_bytes.decode("utf-8")
+*/
+  __pyx_t_3 = __Pyx_PyBytes_FromStringAndSize(((char const *)__pyx_v_c_out) + 0, __pyx_v_j - 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 95, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_v_result_bytes = ((PyObject*)__pyx_t_3);
+  __pyx_t_3 = 0;
+
+  /* "code_muse/terminal_utils.pyx":96
+ * 
+ *     cdef bytes result_bytes = c_out[:j]
+ *     free(c_out)             # <<<<<<<<<<<<<<
+ *     return result_bytes.decode("utf-8")
+ * 
+*/
+  free(__pyx_v_c_out);
+
+  /* "code_muse/terminal_utils.pyx":97
+ *     cdef bytes result_bytes = c_out[:j]
+ *     free(c_out)
+ *     return result_bytes.decode("utf-8")             # <<<<<<<<<<<<<<
  * 
  * 
 */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_5 = __Pyx_decode_bytearray(__pyx_v_out, 0, PY_SSIZE_T_MAX, NULL, NULL, PyUnicode_DecodeUTF8); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 77, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_r = ((PyObject*)__pyx_t_5);
-  __pyx_t_5 = 0;
+  __pyx_t_3 = __Pyx_decode_bytes(__pyx_v_result_bytes, 0, PY_SSIZE_T_MAX, NULL, NULL, PyUnicode_DecodeUTF8); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 97, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_r = ((PyObject*)__pyx_t_3);
+  __pyx_t_3 = 0;
   goto __pyx_L0;
 
-  /* "code_muse/terminal_utils.pyx":26
+  /* "code_muse/terminal_utils.pyx":28
  * # ---------------------------------------------------------------------------
  * 
  * def strip_ansi(input: str) -> str:             # <<<<<<<<<<<<<<
@@ -3495,18 +3632,17 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_strip_ansi(CYTHON_UNUSED P
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_XDECREF(__pyx_t_5);
   __Pyx_AddTraceback("code_muse.terminal_utils.strip_ansi", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_b);
-  __Pyx_XDECREF(__pyx_v_out);
+  __Pyx_XDECREF(__pyx_v_result_bytes);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "code_muse/terminal_utils.pyx":85
+/* "code_muse/terminal_utils.pyx":105
  * 
  * 
  * def reset_windows_terminal_ansi() -> None:             # <<<<<<<<<<<<<<
@@ -3549,7 +3685,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_2reset_windows_terminal_an
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("reset_windows_terminal_ansi", 0);
 
-  /* "code_muse/terminal_utils.pyx":91
+  /* "code_muse/terminal_utils.pyx":111
  *     Use this for quick resets after output operations.
  *     """
  *     if platform.system() != "Windows":             # <<<<<<<<<<<<<<
@@ -3557,9 +3693,9 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_2reset_windows_terminal_an
  * 
 */
   __pyx_t_2 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_platform); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 91, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_platform); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 111, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_system); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 91, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_system); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 111, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_5 = 1;
@@ -3579,14 +3715,14 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_2reset_windows_terminal_an
     __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_4, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 91, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 111, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
-  __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Windows, Py_NE)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 91, __pyx_L1_error)
+  __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Windows, Py_NE)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 111, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_6) {
 
-    /* "code_muse/terminal_utils.pyx":92
+    /* "code_muse/terminal_utils.pyx":112
  *     """
  *     if platform.system() != "Windows":
  *         return             # <<<<<<<<<<<<<<
@@ -3597,7 +3733,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_2reset_windows_terminal_an
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "code_muse/terminal_utils.pyx":91
+    /* "code_muse/terminal_utils.pyx":111
  *     Use this for quick resets after output operations.
  *     """
  *     if platform.system() != "Windows":             # <<<<<<<<<<<<<<
@@ -3606,7 +3742,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_2reset_windows_terminal_an
 */
   }
 
-  /* "code_muse/terminal_utils.pyx":94
+  /* "code_muse/terminal_utils.pyx":114
  *         return
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -3622,16 +3758,16 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_2reset_windows_terminal_an
     __Pyx_XGOTREF(__pyx_t_9);
     /*try:*/ {
 
-      /* "code_muse/terminal_utils.pyx":95
+      /* "code_muse/terminal_utils.pyx":115
  * 
  *     try:
  *         sys.stdout.write("\x1b[0m")  # Reset ANSI formatting             # <<<<<<<<<<<<<<
  *         sys.stdout.flush()
  *         sys.stderr.write("\x1b[0m")
 */
-      __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_sys); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 95, __pyx_L4_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_sys); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 115, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_stdout); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 95, __pyx_L4_error)
+      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_stdout); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 115, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __pyx_t_4 = __pyx_t_3;
@@ -3642,21 +3778,21 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_2reset_windows_terminal_an
         __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_write, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 95, __pyx_L4_error)
+        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 115, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_1);
       }
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "code_muse/terminal_utils.pyx":96
+      /* "code_muse/terminal_utils.pyx":116
  *     try:
  *         sys.stdout.write("\x1b[0m")  # Reset ANSI formatting
  *         sys.stdout.flush()             # <<<<<<<<<<<<<<
  *         sys.stderr.write("\x1b[0m")
  *         sys.stderr.flush()
 */
-      __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_sys); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 96, __pyx_L4_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_sys); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 116, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_stdout); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 96, __pyx_L4_error)
+      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_stdout); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 116, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __pyx_t_3 = __pyx_t_2;
@@ -3667,21 +3803,21 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_2reset_windows_terminal_an
         __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_flush, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 96, __pyx_L4_error)
+        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 116, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_1);
       }
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "code_muse/terminal_utils.pyx":97
+      /* "code_muse/terminal_utils.pyx":117
  *         sys.stdout.write("\x1b[0m")  # Reset ANSI formatting
  *         sys.stdout.flush()
  *         sys.stderr.write("\x1b[0m")             # <<<<<<<<<<<<<<
  *         sys.stderr.flush()
  *     except Exception:
 */
-      __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_sys); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 97, __pyx_L4_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_sys); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 117, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_stderr); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 97, __pyx_L4_error)
+      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_stderr); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 117, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __pyx_t_2 = __pyx_t_4;
@@ -3692,21 +3828,21 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_2reset_windows_terminal_an
         __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_write, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 97, __pyx_L4_error)
+        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 117, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_1);
       }
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "code_muse/terminal_utils.pyx":98
+      /* "code_muse/terminal_utils.pyx":118
  *         sys.stdout.flush()
  *         sys.stderr.write("\x1b[0m")
  *         sys.stderr.flush()             # <<<<<<<<<<<<<<
  *     except Exception:
  *         pass  # Silently ignore errors - best effort reset
 */
-      __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_sys); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 98, __pyx_L4_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_sys); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 118, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_stderr); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 98, __pyx_L4_error)
+      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_stderr); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 118, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __pyx_t_4 = __pyx_t_3;
@@ -3717,12 +3853,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_2reset_windows_terminal_an
         __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_flush, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 98, __pyx_L4_error)
+        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 118, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_1);
       }
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "code_muse/terminal_utils.pyx":94
+      /* "code_muse/terminal_utils.pyx":114
  *         return
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -3740,7 +3876,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_2reset_windows_terminal_an
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "code_muse/terminal_utils.pyx":99
+    /* "code_muse/terminal_utils.pyx":119
  *         sys.stderr.write("\x1b[0m")
  *         sys.stderr.flush()
  *     except Exception:             # <<<<<<<<<<<<<<
@@ -3754,7 +3890,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_2reset_windows_terminal_an
     }
     goto __pyx_L6_except_error;
 
-    /* "code_muse/terminal_utils.pyx":94
+    /* "code_muse/terminal_utils.pyx":114
  *         return
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -3775,7 +3911,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_2reset_windows_terminal_an
     __pyx_L9_try_end:;
   }
 
-  /* "code_muse/terminal_utils.pyx":85
+  /* "code_muse/terminal_utils.pyx":105
  * 
  * 
  * def reset_windows_terminal_ansi() -> None:             # <<<<<<<<<<<<<<
@@ -3799,7 +3935,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_2reset_windows_terminal_an
   return __pyx_r;
 }
 
-/* "code_muse/terminal_utils.pyx":103
+/* "code_muse/terminal_utils.pyx":123
  * 
  * 
  * def reset_windows_console_mode() -> None:             # <<<<<<<<<<<<<<
@@ -3859,7 +3995,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("reset_windows_console_mode", 0);
 
-  /* "code_muse/terminal_utils.pyx":110
+  /* "code_muse/terminal_utils.pyx":130
  *     the terminal can become unresponsive (can't type characters).
  *     """
  *     if platform.system() != "Windows":             # <<<<<<<<<<<<<<
@@ -3867,9 +4003,9 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
  * 
 */
   __pyx_t_2 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_platform); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 110, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_platform); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 130, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_system); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_system); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 130, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_5 = 1;
@@ -3889,14 +4025,14 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
     __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_4, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 110, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 130, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
-  __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Windows, Py_NE)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Windows, Py_NE)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 130, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_6) {
 
-    /* "code_muse/terminal_utils.pyx":111
+    /* "code_muse/terminal_utils.pyx":131
  *     """
  *     if platform.system() != "Windows":
  *         return             # <<<<<<<<<<<<<<
@@ -3907,7 +4043,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "code_muse/terminal_utils.pyx":110
+    /* "code_muse/terminal_utils.pyx":130
  *     the terminal can become unresponsive (can't type characters).
  *     """
  *     if platform.system() != "Windows":             # <<<<<<<<<<<<<<
@@ -3916,7 +4052,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
 */
   }
 
-  /* "code_muse/terminal_utils.pyx":113
+  /* "code_muse/terminal_utils.pyx":133
  *         return
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -3932,35 +4068,35 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
     __Pyx_XGOTREF(__pyx_t_9);
     /*try:*/ {
 
-      /* "code_muse/terminal_utils.pyx":114
+      /* "code_muse/terminal_utils.pyx":134
  * 
  *     try:
  *         import ctypes             # <<<<<<<<<<<<<<
  * 
  *         kernel32 = ctypes.windll.kernel32
 */
-      __pyx_t_10 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_ctypes, 0, 0, NULL, 0); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 114, __pyx_L4_error)
+      __pyx_t_10 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_ctypes, 0, 0, NULL, 0); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 134, __pyx_L4_error)
       __pyx_t_1 = __pyx_t_10;
       __Pyx_GOTREF(__pyx_t_1);
       __pyx_v_ctypes = __pyx_t_1;
       __pyx_t_1 = 0;
 
-      /* "code_muse/terminal_utils.pyx":116
+      /* "code_muse/terminal_utils.pyx":136
  *         import ctypes
  * 
  *         kernel32 = ctypes.windll.kernel32             # <<<<<<<<<<<<<<
  * 
  *         # Reset stdout
 */
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_ctypes, __pyx_mstate_global->__pyx_n_u_windll); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 116, __pyx_L4_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_ctypes, __pyx_mstate_global->__pyx_n_u_windll); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 136, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_kernel32); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 116, __pyx_L4_error)
+      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_kernel32); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 136, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __pyx_v_kernel32 = __pyx_t_4;
       __pyx_t_4 = 0;
 
-      /* "code_muse/terminal_utils.pyx":119
+      /* "code_muse/terminal_utils.pyx":139
  * 
  *         # Reset stdout
  *         STD_OUTPUT_HANDLE = -11             # <<<<<<<<<<<<<<
@@ -3969,7 +4105,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
 */
       __pyx_v_STD_OUTPUT_HANDLE = -11L;
 
-      /* "code_muse/terminal_utils.pyx":120
+      /* "code_muse/terminal_utils.pyx":140
  *         # Reset stdout
  *         STD_OUTPUT_HANDLE = -11
  *         handle = kernel32.GetStdHandle(STD_OUTPUT_HANDLE)             # <<<<<<<<<<<<<<
@@ -3978,7 +4114,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
 */
       __pyx_t_1 = __pyx_v_kernel32;
       __Pyx_INCREF(__pyx_t_1);
-      __pyx_t_2 = __Pyx_PyLong_From_long(__pyx_v_STD_OUTPUT_HANDLE); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 120, __pyx_L4_error)
+      __pyx_t_2 = __Pyx_PyLong_From_long(__pyx_v_STD_OUTPUT_HANDLE); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 140, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_2);
       __pyx_t_5 = 0;
       {
@@ -3986,13 +4122,13 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
         __pyx_t_4 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_GetStdHandle, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 120, __pyx_L4_error)
+        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 140, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_4);
       }
       __pyx_v_handle = __pyx_t_4;
       __pyx_t_4 = 0;
 
-      /* "code_muse/terminal_utils.pyx":123
+      /* "code_muse/terminal_utils.pyx":143
  * 
  *         # Enable virtual terminal processing and line input
  *         mode = ctypes.c_ulong()             # <<<<<<<<<<<<<<
@@ -4006,13 +4142,13 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
         PyObject *__pyx_callargs[2] = {__pyx_t_2, NULL};
         __pyx_t_4 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_c_ulong, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 123, __pyx_L4_error)
+        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 143, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_4);
       }
       __pyx_v_mode = __pyx_t_4;
       __pyx_t_4 = 0;
 
-      /* "code_muse/terminal_utils.pyx":124
+      /* "code_muse/terminal_utils.pyx":144
  *         # Enable virtual terminal processing and line input
  *         mode = ctypes.c_ulong()
  *         kernel32.GetConsoleMode(handle, ctypes.byref(mode))             # <<<<<<<<<<<<<<
@@ -4028,7 +4164,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
         PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_v_mode};
         __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_byref, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 124, __pyx_L4_error)
+        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 144, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_1);
       }
       __pyx_t_5 = 0;
@@ -4037,12 +4173,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
         __pyx_t_4 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_GetConsoleMode, __pyx_callargs+__pyx_t_5, (3-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 124, __pyx_L4_error)
+        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 144, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_4);
       }
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-      /* "code_muse/terminal_utils.pyx":127
+      /* "code_muse/terminal_utils.pyx":147
  * 
  *         # Console mode flags for stdout
  *         ENABLE_PROCESSED_OUTPUT = 0x0001             # <<<<<<<<<<<<<<
@@ -4051,7 +4187,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
 */
       __pyx_v_ENABLE_PROCESSED_OUTPUT = 0x0001;
 
-      /* "code_muse/terminal_utils.pyx":128
+      /* "code_muse/terminal_utils.pyx":148
  *         # Console mode flags for stdout
  *         ENABLE_PROCESSED_OUTPUT = 0x0001
  *         ENABLE_WRAP_AT_EOL_OUTPUT = 0x0002             # <<<<<<<<<<<<<<
@@ -4060,7 +4196,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
 */
       __pyx_v_ENABLE_WRAP_AT_EOL_OUTPUT = 0x0002;
 
-      /* "code_muse/terminal_utils.pyx":129
+      /* "code_muse/terminal_utils.pyx":149
  *         ENABLE_PROCESSED_OUTPUT = 0x0001
  *         ENABLE_WRAP_AT_EOL_OUTPUT = 0x0002
  *         ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004             # <<<<<<<<<<<<<<
@@ -4069,61 +4205,61 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
 */
       __pyx_v_ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004;
 
-      /* "code_muse/terminal_utils.pyx":132
+      /* "code_muse/terminal_utils.pyx":152
  * 
  *         new_mode = (
  *             mode.value             # <<<<<<<<<<<<<<
  *             | ENABLE_PROCESSED_OUTPUT
  *             | ENABLE_WRAP_AT_EOL_OUTPUT
 */
-      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_mode, __pyx_mstate_global->__pyx_n_u_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 132, __pyx_L4_error)
+      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_mode, __pyx_mstate_global->__pyx_n_u_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 152, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_4);
 
-      /* "code_muse/terminal_utils.pyx":133
+      /* "code_muse/terminal_utils.pyx":153
  *         new_mode = (
  *             mode.value
  *             | ENABLE_PROCESSED_OUTPUT             # <<<<<<<<<<<<<<
  *             | ENABLE_WRAP_AT_EOL_OUTPUT
  *             | ENABLE_VIRTUAL_TERMINAL_PROCESSING
 */
-      __pyx_t_1 = __Pyx_PyLong_From_long(__pyx_v_ENABLE_PROCESSED_OUTPUT); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 133, __pyx_L4_error)
+      __pyx_t_1 = __Pyx_PyLong_From_long(__pyx_v_ENABLE_PROCESSED_OUTPUT); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 153, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_2 = PyNumber_Or(__pyx_t_4, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 133, __pyx_L4_error)
+      __pyx_t_2 = PyNumber_Or(__pyx_t_4, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 153, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "code_muse/terminal_utils.pyx":134
+      /* "code_muse/terminal_utils.pyx":154
  *             mode.value
  *             | ENABLE_PROCESSED_OUTPUT
  *             | ENABLE_WRAP_AT_EOL_OUTPUT             # <<<<<<<<<<<<<<
  *             | ENABLE_VIRTUAL_TERMINAL_PROCESSING
  *         )
 */
-      __pyx_t_1 = __Pyx_PyLong_From_long(__pyx_v_ENABLE_WRAP_AT_EOL_OUTPUT); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 134, __pyx_L4_error)
+      __pyx_t_1 = __Pyx_PyLong_From_long(__pyx_v_ENABLE_WRAP_AT_EOL_OUTPUT); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 154, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_4 = PyNumber_Or(__pyx_t_2, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 134, __pyx_L4_error)
+      __pyx_t_4 = PyNumber_Or(__pyx_t_2, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 154, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "code_muse/terminal_utils.pyx":135
+      /* "code_muse/terminal_utils.pyx":155
  *             | ENABLE_PROCESSED_OUTPUT
  *             | ENABLE_WRAP_AT_EOL_OUTPUT
  *             | ENABLE_VIRTUAL_TERMINAL_PROCESSING             # <<<<<<<<<<<<<<
  *         )
  *         kernel32.SetConsoleMode(handle, new_mode)
 */
-      __pyx_t_1 = __Pyx_PyLong_From_long(__pyx_v_ENABLE_VIRTUAL_TERMINAL_PROCESSING); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 135, __pyx_L4_error)
+      __pyx_t_1 = __Pyx_PyLong_From_long(__pyx_v_ENABLE_VIRTUAL_TERMINAL_PROCESSING); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 155, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_2 = PyNumber_Or(__pyx_t_4, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 135, __pyx_L4_error)
+      __pyx_t_2 = PyNumber_Or(__pyx_t_4, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 155, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __pyx_v_new_mode = __pyx_t_2;
       __pyx_t_2 = 0;
 
-      /* "code_muse/terminal_utils.pyx":137
+      /* "code_muse/terminal_utils.pyx":157
  *             | ENABLE_VIRTUAL_TERMINAL_PROCESSING
  *         )
  *         kernel32.SetConsoleMode(handle, new_mode)             # <<<<<<<<<<<<<<
@@ -4137,12 +4273,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
         PyObject *__pyx_callargs[3] = {__pyx_t_1, __pyx_v_handle, __pyx_v_new_mode};
         __pyx_t_2 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_SetConsoleMode, __pyx_callargs+__pyx_t_5, (3-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 137, __pyx_L4_error)
+        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 157, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_2);
       }
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-      /* "code_muse/terminal_utils.pyx":140
+      /* "code_muse/terminal_utils.pyx":160
  * 
  *         # Reset stdin
  *         STD_INPUT_HANDLE = -10             # <<<<<<<<<<<<<<
@@ -4151,7 +4287,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
 */
       __pyx_v_STD_INPUT_HANDLE = -10L;
 
-      /* "code_muse/terminal_utils.pyx":141
+      /* "code_muse/terminal_utils.pyx":161
  *         # Reset stdin
  *         STD_INPUT_HANDLE = -10
  *         stdin_handle = kernel32.GetStdHandle(STD_INPUT_HANDLE)             # <<<<<<<<<<<<<<
@@ -4160,7 +4296,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
 */
       __pyx_t_1 = __pyx_v_kernel32;
       __Pyx_INCREF(__pyx_t_1);
-      __pyx_t_4 = __Pyx_PyLong_From_long(__pyx_v_STD_INPUT_HANDLE); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 141, __pyx_L4_error)
+      __pyx_t_4 = __Pyx_PyLong_From_long(__pyx_v_STD_INPUT_HANDLE); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 161, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_4);
       __pyx_t_5 = 0;
       {
@@ -4168,13 +4304,13 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
         __pyx_t_2 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_GetStdHandle, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 141, __pyx_L4_error)
+        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 161, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_2);
       }
       __pyx_v_stdin_handle = __pyx_t_2;
       __pyx_t_2 = 0;
 
-      /* "code_muse/terminal_utils.pyx":144
+      /* "code_muse/terminal_utils.pyx":164
  * 
  *         # Console mode flags for stdin
  *         ENABLE_LINE_INPUT = 0x0002             # <<<<<<<<<<<<<<
@@ -4183,7 +4319,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
 */
       __pyx_v_ENABLE_LINE_INPUT = 0x0002;
 
-      /* "code_muse/terminal_utils.pyx":145
+      /* "code_muse/terminal_utils.pyx":165
  *         # Console mode flags for stdin
  *         ENABLE_LINE_INPUT = 0x0002
  *         ENABLE_ECHO_INPUT = 0x0004             # <<<<<<<<<<<<<<
@@ -4192,7 +4328,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
 */
       __pyx_v_ENABLE_ECHO_INPUT = 0x0004;
 
-      /* "code_muse/terminal_utils.pyx":146
+      /* "code_muse/terminal_utils.pyx":166
  *         ENABLE_LINE_INPUT = 0x0002
  *         ENABLE_ECHO_INPUT = 0x0004
  *         ENABLE_PROCESSED_INPUT = 0x0001             # <<<<<<<<<<<<<<
@@ -4201,7 +4337,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
 */
       __pyx_v_ENABLE_PROCESSED_INPUT = 0x0001;
 
-      /* "code_muse/terminal_utils.pyx":148
+      /* "code_muse/terminal_utils.pyx":168
  *         ENABLE_PROCESSED_INPUT = 0x0001
  * 
  *         stdin_mode = ctypes.c_ulong()             # <<<<<<<<<<<<<<
@@ -4215,13 +4351,13 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
         PyObject *__pyx_callargs[2] = {__pyx_t_4, NULL};
         __pyx_t_2 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_c_ulong, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 148, __pyx_L4_error)
+        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 168, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_2);
       }
       __pyx_v_stdin_mode = __pyx_t_2;
       __pyx_t_2 = 0;
 
-      /* "code_muse/terminal_utils.pyx":149
+      /* "code_muse/terminal_utils.pyx":169
  * 
  *         stdin_mode = ctypes.c_ulong()
  *         kernel32.GetConsoleMode(stdin_handle, ctypes.byref(stdin_mode))             # <<<<<<<<<<<<<<
@@ -4237,7 +4373,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
         PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_v_stdin_mode};
         __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_byref, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 149, __pyx_L4_error)
+        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 169, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_1);
       }
       __pyx_t_5 = 0;
@@ -4246,66 +4382,66 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
         __pyx_t_2 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_GetConsoleMode, __pyx_callargs+__pyx_t_5, (3-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 149, __pyx_L4_error)
+        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 169, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_2);
       }
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-      /* "code_muse/terminal_utils.pyx":152
+      /* "code_muse/terminal_utils.pyx":172
  * 
  *         new_stdin_mode = (
  *             stdin_mode.value             # <<<<<<<<<<<<<<
  *             | ENABLE_LINE_INPUT
  *             | ENABLE_ECHO_INPUT
 */
-      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_stdin_mode, __pyx_mstate_global->__pyx_n_u_value); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 152, __pyx_L4_error)
+      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_stdin_mode, __pyx_mstate_global->__pyx_n_u_value); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 172, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_2);
 
-      /* "code_muse/terminal_utils.pyx":153
+      /* "code_muse/terminal_utils.pyx":173
  *         new_stdin_mode = (
  *             stdin_mode.value
  *             | ENABLE_LINE_INPUT             # <<<<<<<<<<<<<<
  *             | ENABLE_ECHO_INPUT
  *             | ENABLE_PROCESSED_INPUT
 */
-      __pyx_t_1 = __Pyx_PyLong_From_long(__pyx_v_ENABLE_LINE_INPUT); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 153, __pyx_L4_error)
+      __pyx_t_1 = __Pyx_PyLong_From_long(__pyx_v_ENABLE_LINE_INPUT); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 173, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_4 = PyNumber_Or(__pyx_t_2, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 153, __pyx_L4_error)
+      __pyx_t_4 = PyNumber_Or(__pyx_t_2, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 173, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "code_muse/terminal_utils.pyx":154
+      /* "code_muse/terminal_utils.pyx":174
  *             stdin_mode.value
  *             | ENABLE_LINE_INPUT
  *             | ENABLE_ECHO_INPUT             # <<<<<<<<<<<<<<
  *             | ENABLE_PROCESSED_INPUT
  *         )
 */
-      __pyx_t_1 = __Pyx_PyLong_From_long(__pyx_v_ENABLE_ECHO_INPUT); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 154, __pyx_L4_error)
+      __pyx_t_1 = __Pyx_PyLong_From_long(__pyx_v_ENABLE_ECHO_INPUT); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 174, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_2 = PyNumber_Or(__pyx_t_4, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 154, __pyx_L4_error)
+      __pyx_t_2 = PyNumber_Or(__pyx_t_4, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 174, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "code_muse/terminal_utils.pyx":155
+      /* "code_muse/terminal_utils.pyx":175
  *             | ENABLE_LINE_INPUT
  *             | ENABLE_ECHO_INPUT
  *             | ENABLE_PROCESSED_INPUT             # <<<<<<<<<<<<<<
  *         )
  *         kernel32.SetConsoleMode(stdin_handle, new_stdin_mode)
 */
-      __pyx_t_1 = __Pyx_PyLong_From_long(__pyx_v_ENABLE_PROCESSED_INPUT); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 155, __pyx_L4_error)
+      __pyx_t_1 = __Pyx_PyLong_From_long(__pyx_v_ENABLE_PROCESSED_INPUT); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 175, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_4 = PyNumber_Or(__pyx_t_2, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 155, __pyx_L4_error)
+      __pyx_t_4 = PyNumber_Or(__pyx_t_2, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 175, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __pyx_v_new_stdin_mode = __pyx_t_4;
       __pyx_t_4 = 0;
 
-      /* "code_muse/terminal_utils.pyx":157
+      /* "code_muse/terminal_utils.pyx":177
  *             | ENABLE_PROCESSED_INPUT
  *         )
  *         kernel32.SetConsoleMode(stdin_handle, new_stdin_mode)             # <<<<<<<<<<<<<<
@@ -4319,12 +4455,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
         PyObject *__pyx_callargs[3] = {__pyx_t_1, __pyx_v_stdin_handle, __pyx_v_new_stdin_mode};
         __pyx_t_4 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_SetConsoleMode, __pyx_callargs+__pyx_t_5, (3-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 157, __pyx_L4_error)
+        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 177, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_4);
       }
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-      /* "code_muse/terminal_utils.pyx":113
+      /* "code_muse/terminal_utils.pyx":133
  *         return
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -4342,7 +4478,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "code_muse/terminal_utils.pyx":159
+    /* "code_muse/terminal_utils.pyx":179
  *         kernel32.SetConsoleMode(stdin_handle, new_stdin_mode)
  * 
  *     except Exception:             # <<<<<<<<<<<<<<
@@ -4356,7 +4492,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
     }
     goto __pyx_L6_except_error;
 
-    /* "code_muse/terminal_utils.pyx":113
+    /* "code_muse/terminal_utils.pyx":133
  *         return
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -4377,7 +4513,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
     __pyx_L9_try_end:;
   }
 
-  /* "code_muse/terminal_utils.pyx":103
+  /* "code_muse/terminal_utils.pyx":123
  * 
  * 
  * def reset_windows_console_mode() -> None:             # <<<<<<<<<<<<<<
@@ -4409,7 +4545,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_4reset_windows_console_mod
   return __pyx_r;
 }
 
-/* "code_muse/terminal_utils.pyx":163
+/* "code_muse/terminal_utils.pyx":183
  * 
  * 
  * def flush_windows_keyboard_buffer() -> None:             # <<<<<<<<<<<<<<
@@ -4454,7 +4590,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_6flush_windows_keyboard_bu
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("flush_windows_keyboard_buffer", 0);
 
-  /* "code_muse/terminal_utils.pyx":169
+  /* "code_muse/terminal_utils.pyx":189
  *     subsequent input operations after an interrupt.
  *     """
  *     if platform.system() != "Windows":             # <<<<<<<<<<<<<<
@@ -4462,9 +4598,9 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_6flush_windows_keyboard_bu
  * 
 */
   __pyx_t_2 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_platform); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 169, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_platform); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 189, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_system); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 169, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_system); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 189, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_5 = 1;
@@ -4484,14 +4620,14 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_6flush_windows_keyboard_bu
     __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_4, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 169, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 189, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
-  __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Windows, Py_NE)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 169, __pyx_L1_error)
+  __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Windows, Py_NE)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 189, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_6) {
 
-    /* "code_muse/terminal_utils.pyx":170
+    /* "code_muse/terminal_utils.pyx":190
  *     """
  *     if platform.system() != "Windows":
  *         return             # <<<<<<<<<<<<<<
@@ -4502,7 +4638,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_6flush_windows_keyboard_bu
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "code_muse/terminal_utils.pyx":169
+    /* "code_muse/terminal_utils.pyx":189
  *     subsequent input operations after an interrupt.
  *     """
  *     if platform.system() != "Windows":             # <<<<<<<<<<<<<<
@@ -4511,7 +4647,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_6flush_windows_keyboard_bu
 */
   }
 
-  /* "code_muse/terminal_utils.pyx":172
+  /* "code_muse/terminal_utils.pyx":192
  *         return
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -4527,20 +4663,20 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_6flush_windows_keyboard_bu
     __Pyx_XGOTREF(__pyx_t_9);
     /*try:*/ {
 
-      /* "code_muse/terminal_utils.pyx":173
+      /* "code_muse/terminal_utils.pyx":193
  * 
  *     try:
  *         import msvcrt             # <<<<<<<<<<<<<<
  * 
  *         while msvcrt.kbhit():
 */
-      __pyx_t_10 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_msvcrt, 0, 0, NULL, 0); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 173, __pyx_L4_error)
+      __pyx_t_10 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_msvcrt, 0, 0, NULL, 0); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 193, __pyx_L4_error)
       __pyx_t_1 = __pyx_t_10;
       __Pyx_GOTREF(__pyx_t_1);
       __pyx_v_msvcrt = __pyx_t_1;
       __pyx_t_1 = 0;
 
-      /* "code_muse/terminal_utils.pyx":175
+      /* "code_muse/terminal_utils.pyx":195
  *         import msvcrt
  * 
  *         while msvcrt.kbhit():             # <<<<<<<<<<<<<<
@@ -4555,14 +4691,14 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_6flush_windows_keyboard_bu
           PyObject *__pyx_callargs[2] = {__pyx_t_4, NULL};
           __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_kbhit, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 175, __pyx_L4_error)
+          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 195, __pyx_L4_error)
           __Pyx_GOTREF(__pyx_t_1);
         }
-        __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 175, __pyx_L4_error)
+        __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 195, __pyx_L4_error)
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
         if (!__pyx_t_6) break;
 
-        /* "code_muse/terminal_utils.pyx":176
+        /* "code_muse/terminal_utils.pyx":196
  * 
  *         while msvcrt.kbhit():
  *             msvcrt.getch()             # <<<<<<<<<<<<<<
@@ -4576,13 +4712,13 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_6flush_windows_keyboard_bu
           PyObject *__pyx_callargs[2] = {__pyx_t_4, NULL};
           __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_getch, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 176, __pyx_L4_error)
+          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 196, __pyx_L4_error)
           __Pyx_GOTREF(__pyx_t_1);
         }
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       }
 
-      /* "code_muse/terminal_utils.pyx":172
+      /* "code_muse/terminal_utils.pyx":192
  *         return
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -4600,7 +4736,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_6flush_windows_keyboard_bu
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "code_muse/terminal_utils.pyx":177
+    /* "code_muse/terminal_utils.pyx":197
  *         while msvcrt.kbhit():
  *             msvcrt.getch()
  *     except Exception:             # <<<<<<<<<<<<<<
@@ -4614,7 +4750,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_6flush_windows_keyboard_bu
     }
     goto __pyx_L6_except_error;
 
-    /* "code_muse/terminal_utils.pyx":172
+    /* "code_muse/terminal_utils.pyx":192
  *         return
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -4635,7 +4771,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_6flush_windows_keyboard_bu
     __pyx_L9_try_end:;
   }
 
-  /* "code_muse/terminal_utils.pyx":163
+  /* "code_muse/terminal_utils.pyx":183
  * 
  * 
  * def flush_windows_keyboard_buffer() -> None:             # <<<<<<<<<<<<<<
@@ -4660,7 +4796,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_6flush_windows_keyboard_bu
   return __pyx_r;
 }
 
-/* "code_muse/terminal_utils.pyx":181
+/* "code_muse/terminal_utils.pyx":201
  * 
  * 
  * def reset_windows_terminal_full() -> None:             # <<<<<<<<<<<<<<
@@ -4699,7 +4835,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_8reset_windows_terminal_fu
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("reset_windows_terminal_full", 0);
 
-  /* "code_muse/terminal_utils.pyx":187
+  /* "code_muse/terminal_utils.pyx":207
  *     for complete terminal state restoration after interrupts.
  *     """
  *     if platform.system() != "Windows":             # <<<<<<<<<<<<<<
@@ -4707,9 +4843,9 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_8reset_windows_terminal_fu
  * 
 */
   __pyx_t_2 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_platform); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 187, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_platform); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 207, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_system); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 187, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_system); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 207, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_5 = 1;
@@ -4729,14 +4865,14 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_8reset_windows_terminal_fu
     __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_4, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 187, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 207, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
-  __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Windows, Py_NE)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 187, __pyx_L1_error)
+  __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Windows, Py_NE)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 207, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_6) {
 
-    /* "code_muse/terminal_utils.pyx":188
+    /* "code_muse/terminal_utils.pyx":208
  *     """
  *     if platform.system() != "Windows":
  *         return             # <<<<<<<<<<<<<<
@@ -4747,7 +4883,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_8reset_windows_terminal_fu
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "code_muse/terminal_utils.pyx":187
+    /* "code_muse/terminal_utils.pyx":207
  *     for complete terminal state restoration after interrupts.
  *     """
  *     if platform.system() != "Windows":             # <<<<<<<<<<<<<<
@@ -4756,7 +4892,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_8reset_windows_terminal_fu
 */
   }
 
-  /* "code_muse/terminal_utils.pyx":190
+  /* "code_muse/terminal_utils.pyx":210
  *         return
  * 
  *     reset_windows_terminal_ansi()             # <<<<<<<<<<<<<<
@@ -4764,7 +4900,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_8reset_windows_terminal_fu
  *     flush_windows_keyboard_buffer()
 */
   __pyx_t_4 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_reset_windows_terminal_ansi); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 190, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_reset_windows_terminal_ansi); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 210, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_5 = 1;
   #if CYTHON_UNPACK_METHODS
@@ -4783,12 +4919,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_8reset_windows_terminal_fu
     __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_2, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 190, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 210, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "code_muse/terminal_utils.pyx":191
+  /* "code_muse/terminal_utils.pyx":211
  * 
  *     reset_windows_terminal_ansi()
  *     reset_windows_console_mode()             # <<<<<<<<<<<<<<
@@ -4796,7 +4932,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_8reset_windows_terminal_fu
  * 
 */
   __pyx_t_2 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_reset_windows_console_mode); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 191, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_reset_windows_console_mode); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_5 = 1;
   #if CYTHON_UNPACK_METHODS
@@ -4815,12 +4951,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_8reset_windows_terminal_fu
     __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_4, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 191, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 211, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "code_muse/terminal_utils.pyx":192
+  /* "code_muse/terminal_utils.pyx":212
  *     reset_windows_terminal_ansi()
  *     reset_windows_console_mode()
  *     flush_windows_keyboard_buffer()             # <<<<<<<<<<<<<<
@@ -4828,7 +4964,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_8reset_windows_terminal_fu
  * 
 */
   __pyx_t_4 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_flush_windows_keyboard_buffer); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 192, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_flush_windows_keyboard_buffer); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 212, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_5 = 1;
   #if CYTHON_UNPACK_METHODS
@@ -4847,12 +4983,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_8reset_windows_terminal_fu
     __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_2, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 192, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 212, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "code_muse/terminal_utils.pyx":181
+  /* "code_muse/terminal_utils.pyx":201
  * 
  * 
  * def reset_windows_terminal_full() -> None:             # <<<<<<<<<<<<<<
@@ -4876,7 +5012,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_8reset_windows_terminal_fu
   return __pyx_r;
 }
 
-/* "code_muse/terminal_utils.pyx":195
+/* "code_muse/terminal_utils.pyx":215
  * 
  * 
  * def reset_unix_terminal() -> None:             # <<<<<<<<<<<<<<
@@ -4920,7 +5056,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_10reset_unix_terminal(CYTH
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("reset_unix_terminal", 0);
 
-  /* "code_muse/terminal_utils.pyx":201
+  /* "code_muse/terminal_utils.pyx":221
  *     Silently fails if the command isn't available.
  *     """
  *     if platform.system() == "Windows":             # <<<<<<<<<<<<<<
@@ -4928,9 +5064,9 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_10reset_unix_terminal(CYTH
  * 
 */
   __pyx_t_2 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_platform); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 201, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_platform); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 221, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_system); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 201, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_system); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 221, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_5 = 1;
@@ -4950,14 +5086,14 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_10reset_unix_terminal(CYTH
     __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_4, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 201, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 221, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
-  __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Windows, Py_EQ)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 201, __pyx_L1_error)
+  __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Windows, Py_EQ)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 221, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_6) {
 
-    /* "code_muse/terminal_utils.pyx":202
+    /* "code_muse/terminal_utils.pyx":222
  *     """
  *     if platform.system() == "Windows":
  *         return             # <<<<<<<<<<<<<<
@@ -4968,7 +5104,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_10reset_unix_terminal(CYTH
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "code_muse/terminal_utils.pyx":201
+    /* "code_muse/terminal_utils.pyx":221
  *     Silently fails if the command isn't available.
  *     """
  *     if platform.system() == "Windows":             # <<<<<<<<<<<<<<
@@ -4977,7 +5113,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_10reset_unix_terminal(CYTH
 */
   }
 
-  /* "code_muse/terminal_utils.pyx":204
+  /* "code_muse/terminal_utils.pyx":224
  *         return
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -4993,7 +5129,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_10reset_unix_terminal(CYTH
     __Pyx_XGOTREF(__pyx_t_9);
     /*try:*/ {
 
-      /* "code_muse/terminal_utils.pyx":205
+      /* "code_muse/terminal_utils.pyx":225
  * 
  *     try:
  *         subprocess.run(["reset"], check=True, capture_output=True)             # <<<<<<<<<<<<<<
@@ -5001,16 +5137,16 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_10reset_unix_terminal(CYTH
  *         pass  # Silently fail if reset command isn't available
 */
       __pyx_t_4 = NULL;
-      __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_subprocess); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 205, __pyx_L4_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_subprocess); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 225, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_run); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 205, __pyx_L4_error)
+      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_run); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 225, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __pyx_t_2 = PyList_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 205, __pyx_L4_error)
+      __pyx_t_2 = PyList_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 225, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_INCREF(__pyx_mstate_global->__pyx_n_u_reset);
       __Pyx_GIVEREF(__pyx_mstate_global->__pyx_n_u_reset);
-      if (__Pyx_PyList_SET_ITEM(__pyx_t_2, 0, __pyx_mstate_global->__pyx_n_u_reset) != (0)) __PYX_ERR(0, 205, __pyx_L4_error);
+      if (__Pyx_PyList_SET_ITEM(__pyx_t_2, 0, __pyx_mstate_global->__pyx_n_u_reset) != (0)) __PYX_ERR(0, 225, __pyx_L4_error);
       __pyx_t_5 = 1;
       #if CYTHON_UNPACK_METHODS
       if (unlikely(PyMethod_Check(__pyx_t_3))) {
@@ -5025,21 +5161,21 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_10reset_unix_terminal(CYTH
       #endif
       {
         PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 2 : 0)] = {__pyx_t_4, __pyx_t_2};
-        __pyx_t_10 = __Pyx_MakeVectorcallBuilderKwds(2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 205, __pyx_L4_error)
+        __pyx_t_10 = __Pyx_MakeVectorcallBuilderKwds(2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 225, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_10);
-        if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_check, Py_True, __pyx_t_10, __pyx_callargs+2, 0) < (0)) __PYX_ERR(0, 205, __pyx_L4_error)
-        if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_capture_output, Py_True, __pyx_t_10, __pyx_callargs+2, 1) < (0)) __PYX_ERR(0, 205, __pyx_L4_error)
+        if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_check, Py_True, __pyx_t_10, __pyx_callargs+2, 0) < (0)) __PYX_ERR(0, 225, __pyx_L4_error)
+        if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_capture_output, Py_True, __pyx_t_10, __pyx_callargs+2, 1) < (0)) __PYX_ERR(0, 225, __pyx_L4_error)
         __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder((PyObject*)__pyx_t_3, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_10);
         __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 205, __pyx_L4_error)
+        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 225, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_1);
       }
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "code_muse/terminal_utils.pyx":204
+      /* "code_muse/terminal_utils.pyx":224
  *         return
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -5058,7 +5194,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_10reset_unix_terminal(CYTH
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "code_muse/terminal_utils.pyx":206
+    /* "code_muse/terminal_utils.pyx":226
  *     try:
  *         subprocess.run(["reset"], check=True, capture_output=True)
  *     except (subprocess.CalledProcessError, FileNotFoundError):             # <<<<<<<<<<<<<<
@@ -5066,9 +5202,9 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_10reset_unix_terminal(CYTH
  * 
 */
     __Pyx_ErrFetch(&__pyx_t_1, &__pyx_t_3, &__pyx_t_10);
-    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_subprocess); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 206, __pyx_L6_except_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_subprocess); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 226, __pyx_L6_except_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_CalledProcessError); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 206, __pyx_L6_except_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_CalledProcessError); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 226, __pyx_L6_except_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_t_11 = __Pyx_PyErr_GivenExceptionMatches2(__pyx_t_1, __pyx_t_4, ((PyObject *)(((PyTypeObject*)PyExc_FileNotFoundError))));
@@ -5081,7 +5217,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_10reset_unix_terminal(CYTH
     }
     goto __pyx_L6_except_error;
 
-    /* "code_muse/terminal_utils.pyx":204
+    /* "code_muse/terminal_utils.pyx":224
  *         return
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -5102,7 +5238,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_10reset_unix_terminal(CYTH
     __pyx_L9_try_end:;
   }
 
-  /* "code_muse/terminal_utils.pyx":195
+  /* "code_muse/terminal_utils.pyx":215
  * 
  * 
  * def reset_unix_terminal() -> None:             # <<<<<<<<<<<<<<
@@ -5127,7 +5263,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_10reset_unix_terminal(CYTH
   return __pyx_r;
 }
 
-/* "code_muse/terminal_utils.pyx":210
+/* "code_muse/terminal_utils.pyx":230
  * 
  * 
  * def reset_terminal() -> None:             # <<<<<<<<<<<<<<
@@ -5166,7 +5302,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_12reset_terminal(CYTHON_UN
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("reset_terminal", 0);
 
-  /* "code_muse/terminal_utils.pyx":216
+  /* "code_muse/terminal_utils.pyx":236
  *     terminal reset operation.
  *     """
  *     if platform.system() == "Windows":             # <<<<<<<<<<<<<<
@@ -5174,9 +5310,9 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_12reset_terminal(CYTHON_UN
  *     else:
 */
   __pyx_t_2 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_platform); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 216, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_platform); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 236, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_system); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 216, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_system); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 236, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_5 = 1;
@@ -5196,14 +5332,14 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_12reset_terminal(CYTHON_UN
     __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_4, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 216, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 236, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
-  __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Windows, Py_EQ)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 216, __pyx_L1_error)
+  __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Windows, Py_EQ)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 236, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_6) {
 
-    /* "code_muse/terminal_utils.pyx":217
+    /* "code_muse/terminal_utils.pyx":237
  *     """
  *     if platform.system() == "Windows":
  *         reset_windows_terminal_full()             # <<<<<<<<<<<<<<
@@ -5211,7 +5347,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_12reset_terminal(CYTHON_UN
  *         reset_unix_terminal()
 */
     __pyx_t_4 = NULL;
-    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_reset_windows_terminal_full); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 217, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_reset_windows_terminal_full); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 237, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_t_5 = 1;
     #if CYTHON_UNPACK_METHODS
@@ -5230,12 +5366,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_12reset_terminal(CYTHON_UN
       __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_2, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 217, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 237, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     }
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "code_muse/terminal_utils.pyx":216
+    /* "code_muse/terminal_utils.pyx":236
  *     terminal reset operation.
  *     """
  *     if platform.system() == "Windows":             # <<<<<<<<<<<<<<
@@ -5245,7 +5381,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_12reset_terminal(CYTHON_UN
     goto __pyx_L3;
   }
 
-  /* "code_muse/terminal_utils.pyx":219
+  /* "code_muse/terminal_utils.pyx":239
  *         reset_windows_terminal_full()
  *     else:
  *         reset_unix_terminal()             # <<<<<<<<<<<<<<
@@ -5254,7 +5390,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_12reset_terminal(CYTHON_UN
 */
   /*else*/ {
     __pyx_t_2 = NULL;
-    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_reset_unix_terminal); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 219, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_reset_unix_terminal); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 239, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_t_5 = 1;
     #if CYTHON_UNPACK_METHODS
@@ -5273,14 +5409,14 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_12reset_terminal(CYTHON_UN
       __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_4, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 219, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 239, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     }
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
   __pyx_L3:;
 
-  /* "code_muse/terminal_utils.pyx":210
+  /* "code_muse/terminal_utils.pyx":230
  * 
  * 
  * def reset_terminal() -> None:             # <<<<<<<<<<<<<<
@@ -5304,7 +5440,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_12reset_terminal(CYTHON_UN
   return __pyx_r;
 }
 
-/* "code_muse/terminal_utils.pyx":222
+/* "code_muse/terminal_utils.pyx":242
  * 
  * 
  * def disable_windows_ctrl_c() -> bool:             # <<<<<<<<<<<<<<
@@ -5356,7 +5492,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_14disable_windows_ctrl_c(C
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("disable_windows_ctrl_c", 0);
 
-  /* "code_muse/terminal_utils.pyx":237
+  /* "code_muse/terminal_utils.pyx":257
  *     global _original_ctrl_handler
  * 
  *     if platform.system() != "Windows":             # <<<<<<<<<<<<<<
@@ -5364,9 +5500,9 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_14disable_windows_ctrl_c(C
  * 
 */
   __pyx_t_2 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_platform); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 237, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_platform); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 257, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_system); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 237, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_system); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 257, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_5 = 1;
@@ -5386,14 +5522,14 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_14disable_windows_ctrl_c(C
     __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_4, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 237, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 257, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
-  __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Windows, Py_NE)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 237, __pyx_L1_error)
+  __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Windows, Py_NE)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 257, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_6) {
 
-    /* "code_muse/terminal_utils.pyx":238
+    /* "code_muse/terminal_utils.pyx":258
  * 
  *     if platform.system() != "Windows":
  *         return False             # <<<<<<<<<<<<<<
@@ -5405,7 +5541,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_14disable_windows_ctrl_c(C
     __pyx_r = Py_False;
     goto __pyx_L0;
 
-    /* "code_muse/terminal_utils.pyx":237
+    /* "code_muse/terminal_utils.pyx":257
  *     global _original_ctrl_handler
  * 
  *     if platform.system() != "Windows":             # <<<<<<<<<<<<<<
@@ -5414,7 +5550,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_14disable_windows_ctrl_c(C
 */
   }
 
-  /* "code_muse/terminal_utils.pyx":240
+  /* "code_muse/terminal_utils.pyx":260
  *         return False
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -5430,35 +5566,35 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_14disable_windows_ctrl_c(C
     __Pyx_XGOTREF(__pyx_t_9);
     /*try:*/ {
 
-      /* "code_muse/terminal_utils.pyx":241
+      /* "code_muse/terminal_utils.pyx":261
  * 
  *     try:
  *         import ctypes             # <<<<<<<<<<<<<<
  * 
  *         kernel32 = ctypes.windll.kernel32
 */
-      __pyx_t_10 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_ctypes, 0, 0, NULL, 0); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 241, __pyx_L4_error)
+      __pyx_t_10 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_ctypes, 0, 0, NULL, 0); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 261, __pyx_L4_error)
       __pyx_t_1 = __pyx_t_10;
       __Pyx_GOTREF(__pyx_t_1);
       __pyx_v_ctypes = __pyx_t_1;
       __pyx_t_1 = 0;
 
-      /* "code_muse/terminal_utils.pyx":243
+      /* "code_muse/terminal_utils.pyx":263
  *         import ctypes
  * 
  *         kernel32 = ctypes.windll.kernel32             # <<<<<<<<<<<<<<
  * 
  *         # Get stdin handle
 */
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_ctypes, __pyx_mstate_global->__pyx_n_u_windll); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 243, __pyx_L4_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_ctypes, __pyx_mstate_global->__pyx_n_u_windll); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 263, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_kernel32); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 243, __pyx_L4_error)
+      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_kernel32); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 263, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __pyx_v_kernel32 = __pyx_t_4;
       __pyx_t_4 = 0;
 
-      /* "code_muse/terminal_utils.pyx":246
+      /* "code_muse/terminal_utils.pyx":266
  * 
  *         # Get stdin handle
  *         STD_INPUT_HANDLE = -10             # <<<<<<<<<<<<<<
@@ -5467,7 +5603,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_14disable_windows_ctrl_c(C
 */
       __pyx_v_STD_INPUT_HANDLE = -10L;
 
-      /* "code_muse/terminal_utils.pyx":247
+      /* "code_muse/terminal_utils.pyx":267
  *         # Get stdin handle
  *         STD_INPUT_HANDLE = -10
  *         stdin_handle = kernel32.GetStdHandle(STD_INPUT_HANDLE)             # <<<<<<<<<<<<<<
@@ -5476,7 +5612,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_14disable_windows_ctrl_c(C
 */
       __pyx_t_1 = __pyx_v_kernel32;
       __Pyx_INCREF(__pyx_t_1);
-      __pyx_t_2 = __Pyx_PyLong_From_long(__pyx_v_STD_INPUT_HANDLE); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 247, __pyx_L4_error)
+      __pyx_t_2 = __Pyx_PyLong_From_long(__pyx_v_STD_INPUT_HANDLE); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 267, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_2);
       __pyx_t_5 = 0;
       {
@@ -5484,13 +5620,13 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_14disable_windows_ctrl_c(C
         __pyx_t_4 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_GetStdHandle, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 247, __pyx_L4_error)
+        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 267, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_4);
       }
       __pyx_v_stdin_handle = __pyx_t_4;
       __pyx_t_4 = 0;
 
-      /* "code_muse/terminal_utils.pyx":250
+      /* "code_muse/terminal_utils.pyx":270
  * 
  *         # Get current console mode
  *         mode = ctypes.c_ulong()             # <<<<<<<<<<<<<<
@@ -5504,13 +5640,13 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_14disable_windows_ctrl_c(C
         PyObject *__pyx_callargs[2] = {__pyx_t_2, NULL};
         __pyx_t_4 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_c_ulong, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 250, __pyx_L4_error)
+        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 270, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_4);
       }
       __pyx_v_mode = __pyx_t_4;
       __pyx_t_4 = 0;
 
-      /* "code_muse/terminal_utils.pyx":251
+      /* "code_muse/terminal_utils.pyx":271
  *         # Get current console mode
  *         mode = ctypes.c_ulong()
  *         if not kernel32.GetConsoleMode(stdin_handle, ctypes.byref(mode)):             # <<<<<<<<<<<<<<
@@ -5526,7 +5662,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_14disable_windows_ctrl_c(C
         PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_v_mode};
         __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_byref, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 251, __pyx_L4_error)
+        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 271, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_1);
       }
       __pyx_t_5 = 0;
@@ -5535,15 +5671,15 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_14disable_windows_ctrl_c(C
         __pyx_t_4 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_GetConsoleMode, __pyx_callargs+__pyx_t_5, (3-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 251, __pyx_L4_error)
+        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 271, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_4);
       }
-      __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 251, __pyx_L4_error)
+      __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 271, __pyx_L4_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __pyx_t_11 = (!__pyx_t_6);
       if (__pyx_t_11) {
 
-        /* "code_muse/terminal_utils.pyx":252
+        /* "code_muse/terminal_utils.pyx":272
  *         mode = ctypes.c_ulong()
  *         if not kernel32.GetConsoleMode(stdin_handle, ctypes.byref(mode)):
  *             return False             # <<<<<<<<<<<<<<
@@ -5555,7 +5691,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_14disable_windows_ctrl_c(C
         __pyx_r = Py_False;
         goto __pyx_L8_try_return;
 
-        /* "code_muse/terminal_utils.pyx":251
+        /* "code_muse/terminal_utils.pyx":271
  *         # Get current console mode
  *         mode = ctypes.c_ulong()
  *         if not kernel32.GetConsoleMode(stdin_handle, ctypes.byref(mode)):             # <<<<<<<<<<<<<<
@@ -5564,19 +5700,19 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_14disable_windows_ctrl_c(C
 */
       }
 
-      /* "code_muse/terminal_utils.pyx":255
+      /* "code_muse/terminal_utils.pyx":275
  * 
  *         # Save original mode for potential restoration
  *         _original_ctrl_handler = mode.value             # <<<<<<<<<<<<<<
  * 
  *         # Console mode flags
 */
-      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_mode, __pyx_mstate_global->__pyx_n_u_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 255, __pyx_L4_error)
+      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_mode, __pyx_mstate_global->__pyx_n_u_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 275, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_4);
-      if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_original_ctrl_handler, __pyx_t_4) < (0)) __PYX_ERR(0, 255, __pyx_L4_error)
+      if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_original_ctrl_handler, __pyx_t_4) < (0)) __PYX_ERR(0, 275, __pyx_L4_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-      /* "code_muse/terminal_utils.pyx":258
+      /* "code_muse/terminal_utils.pyx":278
  * 
  *         # Console mode flags
  *         ENABLE_PROCESSED_INPUT = 0x0001  # This makes Ctrl+C generate signals             # <<<<<<<<<<<<<<
@@ -5585,25 +5721,25 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_14disable_windows_ctrl_c(C
 */
       __pyx_v_ENABLE_PROCESSED_INPUT = 0x0001;
 
-      /* "code_muse/terminal_utils.pyx":261
+      /* "code_muse/terminal_utils.pyx":281
  * 
  *         # Remove ENABLE_PROCESSED_INPUT to disable Ctrl+C signal generation
  *         new_mode = mode.value & ~ENABLE_PROCESSED_INPUT             # <<<<<<<<<<<<<<
  * 
  *         return bool(kernel32.SetConsoleMode(stdin_handle, new_mode))
 */
-      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_mode, __pyx_mstate_global->__pyx_n_u_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 261, __pyx_L4_error)
+      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_mode, __pyx_mstate_global->__pyx_n_u_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 281, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_1 = __Pyx_PyLong_From_long((~__pyx_v_ENABLE_PROCESSED_INPUT)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 261, __pyx_L4_error)
+      __pyx_t_1 = __Pyx_PyLong_From_long((~__pyx_v_ENABLE_PROCESSED_INPUT)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 281, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_2 = PyNumber_And(__pyx_t_4, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 261, __pyx_L4_error)
+      __pyx_t_2 = PyNumber_And(__pyx_t_4, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 281, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __pyx_v_new_mode = __pyx_t_2;
       __pyx_t_2 = 0;
 
-      /* "code_muse/terminal_utils.pyx":263
+      /* "code_muse/terminal_utils.pyx":283
  *         new_mode = mode.value & ~ENABLE_PROCESSED_INPUT
  * 
  *         return bool(kernel32.SetConsoleMode(stdin_handle, new_mode))             # <<<<<<<<<<<<<<
@@ -5618,18 +5754,18 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_14disable_windows_ctrl_c(C
         PyObject *__pyx_callargs[3] = {__pyx_t_1, __pyx_v_stdin_handle, __pyx_v_new_mode};
         __pyx_t_2 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_SetConsoleMode, __pyx_callargs+__pyx_t_5, (3-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 263, __pyx_L4_error)
+        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 283, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_2);
       }
-      __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_11 < 0))) __PYX_ERR(0, 263, __pyx_L4_error)
+      __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_11 < 0))) __PYX_ERR(0, 283, __pyx_L4_error)
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __pyx_t_2 = __Pyx_PyBool_FromLong((!(!__pyx_t_11))); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 263, __pyx_L4_error)
+      __pyx_t_2 = __Pyx_PyBool_FromLong((!(!__pyx_t_11))); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 283, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_2);
       __pyx_r = __pyx_t_2;
       __pyx_t_2 = 0;
       goto __pyx_L8_try_return;
 
-      /* "code_muse/terminal_utils.pyx":240
+      /* "code_muse/terminal_utils.pyx":260
  *         return False
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -5643,7 +5779,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_14disable_windows_ctrl_c(C
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "code_muse/terminal_utils.pyx":265
+    /* "code_muse/terminal_utils.pyx":285
  *         return bool(kernel32.SetConsoleMode(stdin_handle, new_mode))
  * 
  *     except Exception:             # <<<<<<<<<<<<<<
@@ -5654,7 +5790,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_14disable_windows_ctrl_c(C
     if (__pyx_t_12) {
       __Pyx_ErrRestore(0,0,0);
 
-      /* "code_muse/terminal_utils.pyx":266
+      /* "code_muse/terminal_utils.pyx":286
  * 
  *     except Exception:
  *         return False             # <<<<<<<<<<<<<<
@@ -5668,7 +5804,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_14disable_windows_ctrl_c(C
     }
     goto __pyx_L6_except_error;
 
-    /* "code_muse/terminal_utils.pyx":240
+    /* "code_muse/terminal_utils.pyx":260
  *         return False
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -5695,7 +5831,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_14disable_windows_ctrl_c(C
     goto __pyx_L0;
   }
 
-  /* "code_muse/terminal_utils.pyx":222
+  /* "code_muse/terminal_utils.pyx":242
  * 
  * 
  * def disable_windows_ctrl_c() -> bool:             # <<<<<<<<<<<<<<
@@ -5722,7 +5858,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_14disable_windows_ctrl_c(C
   return __pyx_r;
 }
 
-/* "code_muse/terminal_utils.pyx":269
+/* "code_muse/terminal_utils.pyx":289
  * 
  * 
  * def enable_windows_ctrl_c() -> bool:             # <<<<<<<<<<<<<<
@@ -5770,7 +5906,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_16enable_windows_ctrl_c(CY
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("enable_windows_ctrl_c", 0);
 
-  /* "code_muse/terminal_utils.pyx":279
+  /* "code_muse/terminal_utils.pyx":299
  *     global _original_ctrl_handler
  * 
  *     if platform.system() != "Windows":             # <<<<<<<<<<<<<<
@@ -5778,9 +5914,9 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_16enable_windows_ctrl_c(CY
  * 
 */
   __pyx_t_2 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_platform); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 279, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_platform); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 299, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_system); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 279, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_system); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 299, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_5 = 1;
@@ -5800,14 +5936,14 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_16enable_windows_ctrl_c(CY
     __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_4, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 279, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 299, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
-  __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Windows, Py_NE)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 279, __pyx_L1_error)
+  __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Windows, Py_NE)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 299, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_6) {
 
-    /* "code_muse/terminal_utils.pyx":280
+    /* "code_muse/terminal_utils.pyx":300
  * 
  *     if platform.system() != "Windows":
  *         return False             # <<<<<<<<<<<<<<
@@ -5819,7 +5955,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_16enable_windows_ctrl_c(CY
     __pyx_r = Py_False;
     goto __pyx_L0;
 
-    /* "code_muse/terminal_utils.pyx":279
+    /* "code_muse/terminal_utils.pyx":299
  *     global _original_ctrl_handler
  * 
  *     if platform.system() != "Windows":             # <<<<<<<<<<<<<<
@@ -5828,20 +5964,20 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_16enable_windows_ctrl_c(CY
 */
   }
 
-  /* "code_muse/terminal_utils.pyx":282
+  /* "code_muse/terminal_utils.pyx":302
  *         return False
  * 
  *     if _original_ctrl_handler is None:             # <<<<<<<<<<<<<<
  *         return True  # Nothing to restore
  * 
 */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_original_ctrl_handler); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 282, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_original_ctrl_handler); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 302, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_6 = (__pyx_t_1 == Py_None);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_6) {
 
-    /* "code_muse/terminal_utils.pyx":283
+    /* "code_muse/terminal_utils.pyx":303
  * 
  *     if _original_ctrl_handler is None:
  *         return True  # Nothing to restore             # <<<<<<<<<<<<<<
@@ -5853,7 +5989,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_16enable_windows_ctrl_c(CY
     __pyx_r = Py_True;
     goto __pyx_L0;
 
-    /* "code_muse/terminal_utils.pyx":282
+    /* "code_muse/terminal_utils.pyx":302
  *         return False
  * 
  *     if _original_ctrl_handler is None:             # <<<<<<<<<<<<<<
@@ -5862,7 +5998,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_16enable_windows_ctrl_c(CY
 */
   }
 
-  /* "code_muse/terminal_utils.pyx":285
+  /* "code_muse/terminal_utils.pyx":305
  *         return True  # Nothing to restore
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -5878,35 +6014,35 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_16enable_windows_ctrl_c(CY
     __Pyx_XGOTREF(__pyx_t_9);
     /*try:*/ {
 
-      /* "code_muse/terminal_utils.pyx":286
+      /* "code_muse/terminal_utils.pyx":306
  * 
  *     try:
  *         import ctypes             # <<<<<<<<<<<<<<
  * 
  *         kernel32 = ctypes.windll.kernel32
 */
-      __pyx_t_10 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_ctypes, 0, 0, NULL, 0); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 286, __pyx_L5_error)
+      __pyx_t_10 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_ctypes, 0, 0, NULL, 0); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 306, __pyx_L5_error)
       __pyx_t_1 = __pyx_t_10;
       __Pyx_GOTREF(__pyx_t_1);
       __pyx_v_ctypes = __pyx_t_1;
       __pyx_t_1 = 0;
 
-      /* "code_muse/terminal_utils.pyx":288
+      /* "code_muse/terminal_utils.pyx":308
  *         import ctypes
  * 
  *         kernel32 = ctypes.windll.kernel32             # <<<<<<<<<<<<<<
  * 
  *         # Get stdin handle
 */
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_ctypes, __pyx_mstate_global->__pyx_n_u_windll); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 288, __pyx_L5_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_ctypes, __pyx_mstate_global->__pyx_n_u_windll); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 308, __pyx_L5_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_kernel32); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 288, __pyx_L5_error)
+      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_kernel32); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 308, __pyx_L5_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __pyx_v_kernel32 = __pyx_t_4;
       __pyx_t_4 = 0;
 
-      /* "code_muse/terminal_utils.pyx":291
+      /* "code_muse/terminal_utils.pyx":311
  * 
  *         # Get stdin handle
  *         STD_INPUT_HANDLE = -10             # <<<<<<<<<<<<<<
@@ -5915,7 +6051,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_16enable_windows_ctrl_c(CY
 */
       __pyx_v_STD_INPUT_HANDLE = -10L;
 
-      /* "code_muse/terminal_utils.pyx":292
+      /* "code_muse/terminal_utils.pyx":312
  *         # Get stdin handle
  *         STD_INPUT_HANDLE = -10
  *         stdin_handle = kernel32.GetStdHandle(STD_INPUT_HANDLE)             # <<<<<<<<<<<<<<
@@ -5924,7 +6060,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_16enable_windows_ctrl_c(CY
 */
       __pyx_t_1 = __pyx_v_kernel32;
       __Pyx_INCREF(__pyx_t_1);
-      __pyx_t_2 = __Pyx_PyLong_From_long(__pyx_v_STD_INPUT_HANDLE); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 292, __pyx_L5_error)
+      __pyx_t_2 = __Pyx_PyLong_From_long(__pyx_v_STD_INPUT_HANDLE); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 312, __pyx_L5_error)
       __Pyx_GOTREF(__pyx_t_2);
       __pyx_t_5 = 0;
       {
@@ -5932,13 +6068,13 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_16enable_windows_ctrl_c(CY
         __pyx_t_4 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_GetStdHandle, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 292, __pyx_L5_error)
+        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 312, __pyx_L5_error)
         __Pyx_GOTREF(__pyx_t_4);
       }
       __pyx_v_stdin_handle = __pyx_t_4;
       __pyx_t_4 = 0;
 
-      /* "code_muse/terminal_utils.pyx":295
+      /* "code_muse/terminal_utils.pyx":315
  * 
  *         # Restore original mode
  *         if kernel32.SetConsoleMode(stdin_handle, _original_ctrl_handler):             # <<<<<<<<<<<<<<
@@ -5947,7 +6083,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_16enable_windows_ctrl_c(CY
 */
       __pyx_t_2 = __pyx_v_kernel32;
       __Pyx_INCREF(__pyx_t_2);
-      __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_original_ctrl_handler); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 295, __pyx_L5_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_original_ctrl_handler); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 315, __pyx_L5_error)
       __Pyx_GOTREF(__pyx_t_1);
       __pyx_t_5 = 0;
       {
@@ -5955,23 +6091,23 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_16enable_windows_ctrl_c(CY
         __pyx_t_4 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_SetConsoleMode, __pyx_callargs+__pyx_t_5, (3-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 295, __pyx_L5_error)
+        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 315, __pyx_L5_error)
         __Pyx_GOTREF(__pyx_t_4);
       }
-      __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 295, __pyx_L5_error)
+      __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 315, __pyx_L5_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       if (__pyx_t_6) {
 
-        /* "code_muse/terminal_utils.pyx":296
+        /* "code_muse/terminal_utils.pyx":316
  *         # Restore original mode
  *         if kernel32.SetConsoleMode(stdin_handle, _original_ctrl_handler):
  *             _original_ctrl_handler = None             # <<<<<<<<<<<<<<
  *             return True
  *         return False
 */
-        if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_original_ctrl_handler, Py_None) < (0)) __PYX_ERR(0, 296, __pyx_L5_error)
+        if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_original_ctrl_handler, Py_None) < (0)) __PYX_ERR(0, 316, __pyx_L5_error)
 
-        /* "code_muse/terminal_utils.pyx":297
+        /* "code_muse/terminal_utils.pyx":317
  *         if kernel32.SetConsoleMode(stdin_handle, _original_ctrl_handler):
  *             _original_ctrl_handler = None
  *             return True             # <<<<<<<<<<<<<<
@@ -5983,7 +6119,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_16enable_windows_ctrl_c(CY
         __pyx_r = Py_True;
         goto __pyx_L9_try_return;
 
-        /* "code_muse/terminal_utils.pyx":295
+        /* "code_muse/terminal_utils.pyx":315
  * 
  *         # Restore original mode
  *         if kernel32.SetConsoleMode(stdin_handle, _original_ctrl_handler):             # <<<<<<<<<<<<<<
@@ -5992,7 +6128,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_16enable_windows_ctrl_c(CY
 */
       }
 
-      /* "code_muse/terminal_utils.pyx":298
+      /* "code_muse/terminal_utils.pyx":318
  *             _original_ctrl_handler = None
  *             return True
  *         return False             # <<<<<<<<<<<<<<
@@ -6004,7 +6140,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_16enable_windows_ctrl_c(CY
       __pyx_r = Py_False;
       goto __pyx_L9_try_return;
 
-      /* "code_muse/terminal_utils.pyx":285
+      /* "code_muse/terminal_utils.pyx":305
  *         return True  # Nothing to restore
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -6018,7 +6154,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_16enable_windows_ctrl_c(CY
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "code_muse/terminal_utils.pyx":300
+    /* "code_muse/terminal_utils.pyx":320
  *         return False
  * 
  *     except Exception:             # <<<<<<<<<<<<<<
@@ -6029,7 +6165,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_16enable_windows_ctrl_c(CY
     if (__pyx_t_11) {
       __Pyx_ErrRestore(0,0,0);
 
-      /* "code_muse/terminal_utils.pyx":301
+      /* "code_muse/terminal_utils.pyx":321
  * 
  *     except Exception:
  *         return False             # <<<<<<<<<<<<<<
@@ -6043,7 +6179,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_16enable_windows_ctrl_c(CY
     }
     goto __pyx_L7_except_error;
 
-    /* "code_muse/terminal_utils.pyx":285
+    /* "code_muse/terminal_utils.pyx":305
  *         return True  # Nothing to restore
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -6070,7 +6206,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_16enable_windows_ctrl_c(CY
     goto __pyx_L0;
   }
 
-  /* "code_muse/terminal_utils.pyx":269
+  /* "code_muse/terminal_utils.pyx":289
  * 
  * 
  * def enable_windows_ctrl_c() -> bool:             # <<<<<<<<<<<<<<
@@ -6095,7 +6231,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_16enable_windows_ctrl_c(CY
   return __pyx_r;
 }
 
-/* "code_muse/terminal_utils.pyx":308
+/* "code_muse/terminal_utils.pyx":328
  * 
  * 
  * def set_keep_ctrl_c_disabled(value: bool) -> None:             # <<<<<<<<<<<<<<
@@ -6143,32 +6279,32 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_value,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 308, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 328, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 308, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 328, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "set_keep_ctrl_c_disabled", 0) < (0)) __PYX_ERR(0, 308, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "set_keep_ctrl_c_disabled", 0) < (0)) __PYX_ERR(0, 328, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("set_keep_ctrl_c_disabled", 1, 1, 1, i); __PYX_ERR(0, 308, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("set_keep_ctrl_c_disabled", 1, 1, 1, i); __PYX_ERR(0, 328, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 308, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 328, __pyx_L3_error)
     }
-    __pyx_v_value = __Pyx_PyObject_IsTrue(values[0]); if (unlikely((__pyx_v_value == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 308, __pyx_L3_error)
+    __pyx_v_value = __Pyx_PyObject_IsTrue(values[0]); if (unlikely((__pyx_v_value == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 328, __pyx_L3_error)
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_keep_ctrl_c_disabled", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 308, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_keep_ctrl_c_disabled", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 328, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -6198,19 +6334,19 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_18set_keep_ctrl_c_disabled
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_keep_ctrl_c_disabled", 0);
 
-  /* "code_muse/terminal_utils.pyx":315
+  /* "code_muse/terminal_utils.pyx":335
  *     """
  *     global _keep_ctrl_c_disabled
  *     _keep_ctrl_c_disabled = value             # <<<<<<<<<<<<<<
  * 
  * 
 */
-  __pyx_t_1 = __Pyx_PyBool_FromLong(__pyx_v_value); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 315, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyBool_FromLong(__pyx_v_value); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 335, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_keep_ctrl_c_disabled, __pyx_t_1) < (0)) __PYX_ERR(0, 315, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_keep_ctrl_c_disabled, __pyx_t_1) < (0)) __PYX_ERR(0, 335, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "code_muse/terminal_utils.pyx":308
+  /* "code_muse/terminal_utils.pyx":328
  * 
  * 
  * def set_keep_ctrl_c_disabled(value: bool) -> None:             # <<<<<<<<<<<<<<
@@ -6231,7 +6367,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_18set_keep_ctrl_c_disabled
   return __pyx_r;
 }
 
-/* "code_muse/terminal_utils.pyx":318
+/* "code_muse/terminal_utils.pyx":338
  * 
  * 
  * def ensure_ctrl_c_disabled() -> bool:             # <<<<<<<<<<<<<<
@@ -6283,21 +6419,21 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("ensure_ctrl_c_disabled", 0);
 
-  /* "code_muse/terminal_utils.pyx":327
+  /* "code_muse/terminal_utils.pyx":347
  *         True if Ctrl+C is now disabled (or wasn't needed), False on error.
  *     """
  *     if not _keep_ctrl_c_disabled:             # <<<<<<<<<<<<<<
  *         return True
  * 
 */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_keep_ctrl_c_disabled); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 327, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_keep_ctrl_c_disabled); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 347, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 327, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 347, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_3 = (!__pyx_t_2);
   if (__pyx_t_3) {
 
-    /* "code_muse/terminal_utils.pyx":328
+    /* "code_muse/terminal_utils.pyx":348
  *     """
  *     if not _keep_ctrl_c_disabled:
  *         return True             # <<<<<<<<<<<<<<
@@ -6309,7 +6445,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
     __pyx_r = Py_True;
     goto __pyx_L0;
 
-    /* "code_muse/terminal_utils.pyx":327
+    /* "code_muse/terminal_utils.pyx":347
  *         True if Ctrl+C is now disabled (or wasn't needed), False on error.
  *     """
  *     if not _keep_ctrl_c_disabled:             # <<<<<<<<<<<<<<
@@ -6318,7 +6454,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
 */
   }
 
-  /* "code_muse/terminal_utils.pyx":330
+  /* "code_muse/terminal_utils.pyx":350
  *         return True
  * 
  *     if platform.system() != "Windows":             # <<<<<<<<<<<<<<
@@ -6326,9 +6462,9 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
  * 
 */
   __pyx_t_4 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_platform); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 330, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_platform); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 350, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_system); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 330, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_system); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 350, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_7 = 1;
@@ -6348,14 +6484,14 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
     __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_6, __pyx_callargs+__pyx_t_7, (1-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 330, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 350, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
-  __pyx_t_3 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Windows, Py_NE)); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 330, __pyx_L1_error)
+  __pyx_t_3 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Windows, Py_NE)); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 350, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_3) {
 
-    /* "code_muse/terminal_utils.pyx":331
+    /* "code_muse/terminal_utils.pyx":351
  * 
  *     if platform.system() != "Windows":
  *         return True             # <<<<<<<<<<<<<<
@@ -6367,7 +6503,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
     __pyx_r = Py_True;
     goto __pyx_L0;
 
-    /* "code_muse/terminal_utils.pyx":330
+    /* "code_muse/terminal_utils.pyx":350
  *         return True
  * 
  *     if platform.system() != "Windows":             # <<<<<<<<<<<<<<
@@ -6376,7 +6512,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
 */
   }
 
-  /* "code_muse/terminal_utils.pyx":333
+  /* "code_muse/terminal_utils.pyx":353
  *         return True
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -6392,35 +6528,35 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
     __Pyx_XGOTREF(__pyx_t_10);
     /*try:*/ {
 
-      /* "code_muse/terminal_utils.pyx":334
+      /* "code_muse/terminal_utils.pyx":354
  * 
  *     try:
  *         import ctypes             # <<<<<<<<<<<<<<
  * 
  *         kernel32 = ctypes.windll.kernel32
 */
-      __pyx_t_11 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_ctypes, 0, 0, NULL, 0); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 334, __pyx_L5_error)
+      __pyx_t_11 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_ctypes, 0, 0, NULL, 0); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 354, __pyx_L5_error)
       __pyx_t_1 = __pyx_t_11;
       __Pyx_GOTREF(__pyx_t_1);
       __pyx_v_ctypes = __pyx_t_1;
       __pyx_t_1 = 0;
 
-      /* "code_muse/terminal_utils.pyx":336
+      /* "code_muse/terminal_utils.pyx":356
  *         import ctypes
  * 
  *         kernel32 = ctypes.windll.kernel32             # <<<<<<<<<<<<<<
  * 
  *         # Get stdin handle
 */
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_ctypes, __pyx_mstate_global->__pyx_n_u_windll); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 336, __pyx_L5_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_ctypes, __pyx_mstate_global->__pyx_n_u_windll); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 356, __pyx_L5_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_kernel32); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 336, __pyx_L5_error)
+      __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_kernel32); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 356, __pyx_L5_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __pyx_v_kernel32 = __pyx_t_6;
       __pyx_t_6 = 0;
 
-      /* "code_muse/terminal_utils.pyx":339
+      /* "code_muse/terminal_utils.pyx":359
  * 
  *         # Get stdin handle
  *         STD_INPUT_HANDLE = -10             # <<<<<<<<<<<<<<
@@ -6429,7 +6565,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
 */
       __pyx_v_STD_INPUT_HANDLE = -10L;
 
-      /* "code_muse/terminal_utils.pyx":340
+      /* "code_muse/terminal_utils.pyx":360
  *         # Get stdin handle
  *         STD_INPUT_HANDLE = -10
  *         stdin_handle = kernel32.GetStdHandle(STD_INPUT_HANDLE)             # <<<<<<<<<<<<<<
@@ -6438,7 +6574,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
 */
       __pyx_t_1 = __pyx_v_kernel32;
       __Pyx_INCREF(__pyx_t_1);
-      __pyx_t_4 = __Pyx_PyLong_From_long(__pyx_v_STD_INPUT_HANDLE); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 340, __pyx_L5_error)
+      __pyx_t_4 = __Pyx_PyLong_From_long(__pyx_v_STD_INPUT_HANDLE); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 360, __pyx_L5_error)
       __Pyx_GOTREF(__pyx_t_4);
       __pyx_t_7 = 0;
       {
@@ -6446,13 +6582,13 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
         __pyx_t_6 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_GetStdHandle, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-        if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 340, __pyx_L5_error)
+        if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 360, __pyx_L5_error)
         __Pyx_GOTREF(__pyx_t_6);
       }
       __pyx_v_stdin_handle = __pyx_t_6;
       __pyx_t_6 = 0;
 
-      /* "code_muse/terminal_utils.pyx":343
+      /* "code_muse/terminal_utils.pyx":363
  * 
  *         # Get current console mode
  *         mode = ctypes.c_ulong()             # <<<<<<<<<<<<<<
@@ -6466,13 +6602,13 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
         PyObject *__pyx_callargs[2] = {__pyx_t_4, NULL};
         __pyx_t_6 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_c_ulong, __pyx_callargs+__pyx_t_7, (1-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-        if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 343, __pyx_L5_error)
+        if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 363, __pyx_L5_error)
         __Pyx_GOTREF(__pyx_t_6);
       }
       __pyx_v_mode = __pyx_t_6;
       __pyx_t_6 = 0;
 
-      /* "code_muse/terminal_utils.pyx":344
+      /* "code_muse/terminal_utils.pyx":364
  *         # Get current console mode
  *         mode = ctypes.c_ulong()
  *         if not kernel32.GetConsoleMode(stdin_handle, ctypes.byref(mode)):             # <<<<<<<<<<<<<<
@@ -6488,7 +6624,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
         PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_v_mode};
         __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_byref, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 344, __pyx_L5_error)
+        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 364, __pyx_L5_error)
         __Pyx_GOTREF(__pyx_t_1);
       }
       __pyx_t_7 = 0;
@@ -6497,15 +6633,15 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
         __pyx_t_6 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_GetConsoleMode, __pyx_callargs+__pyx_t_7, (3-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-        if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 344, __pyx_L5_error)
+        if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 364, __pyx_L5_error)
         __Pyx_GOTREF(__pyx_t_6);
       }
-      __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 344, __pyx_L5_error)
+      __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 364, __pyx_L5_error)
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __pyx_t_2 = (!__pyx_t_3);
       if (__pyx_t_2) {
 
-        /* "code_muse/terminal_utils.pyx":345
+        /* "code_muse/terminal_utils.pyx":365
  *         mode = ctypes.c_ulong()
  *         if not kernel32.GetConsoleMode(stdin_handle, ctypes.byref(mode)):
  *             return False             # <<<<<<<<<<<<<<
@@ -6517,7 +6653,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
         __pyx_r = Py_False;
         goto __pyx_L9_try_return;
 
-        /* "code_muse/terminal_utils.pyx":344
+        /* "code_muse/terminal_utils.pyx":364
  *         # Get current console mode
  *         mode = ctypes.c_ulong()
  *         if not kernel32.GetConsoleMode(stdin_handle, ctypes.byref(mode)):             # <<<<<<<<<<<<<<
@@ -6526,7 +6662,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
 */
       }
 
-      /* "code_muse/terminal_utils.pyx":348
+      /* "code_muse/terminal_utils.pyx":368
  * 
  *         # Console mode flags
  *         ENABLE_PROCESSED_INPUT = 0x0001             # <<<<<<<<<<<<<<
@@ -6535,44 +6671,44 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
 */
       __pyx_v_ENABLE_PROCESSED_INPUT = 0x0001;
 
-      /* "code_muse/terminal_utils.pyx":351
+      /* "code_muse/terminal_utils.pyx":371
  * 
  *         # Check if Ctrl+C processing is enabled
  *         if mode.value & ENABLE_PROCESSED_INPUT:             # <<<<<<<<<<<<<<
  *             # Disable it
  *             new_mode = mode.value & ~ENABLE_PROCESSED_INPUT
 */
-      __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_mode, __pyx_mstate_global->__pyx_n_u_value); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 351, __pyx_L5_error)
+      __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_mode, __pyx_mstate_global->__pyx_n_u_value); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 371, __pyx_L5_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_1 = __Pyx_PyLong_From_long(__pyx_v_ENABLE_PROCESSED_INPUT); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 351, __pyx_L5_error)
+      __pyx_t_1 = __Pyx_PyLong_From_long(__pyx_v_ENABLE_PROCESSED_INPUT); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 371, __pyx_L5_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_4 = PyNumber_And(__pyx_t_6, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 351, __pyx_L5_error)
+      __pyx_t_4 = PyNumber_And(__pyx_t_6, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 371, __pyx_L5_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 351, __pyx_L5_error)
+      __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 371, __pyx_L5_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       if (__pyx_t_2) {
 
-        /* "code_muse/terminal_utils.pyx":353
+        /* "code_muse/terminal_utils.pyx":373
  *         if mode.value & ENABLE_PROCESSED_INPUT:
  *             # Disable it
  *             new_mode = mode.value & ~ENABLE_PROCESSED_INPUT             # <<<<<<<<<<<<<<
  *             return bool(kernel32.SetConsoleMode(stdin_handle, new_mode))
  * 
 */
-        __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_mode, __pyx_mstate_global->__pyx_n_u_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 353, __pyx_L5_error)
+        __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_mode, __pyx_mstate_global->__pyx_n_u_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 373, __pyx_L5_error)
         __Pyx_GOTREF(__pyx_t_4);
-        __pyx_t_1 = __Pyx_PyLong_From_long((~__pyx_v_ENABLE_PROCESSED_INPUT)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 353, __pyx_L5_error)
+        __pyx_t_1 = __Pyx_PyLong_From_long((~__pyx_v_ENABLE_PROCESSED_INPUT)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 373, __pyx_L5_error)
         __Pyx_GOTREF(__pyx_t_1);
-        __pyx_t_6 = PyNumber_And(__pyx_t_4, __pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 353, __pyx_L5_error)
+        __pyx_t_6 = PyNumber_And(__pyx_t_4, __pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 373, __pyx_L5_error)
         __Pyx_GOTREF(__pyx_t_6);
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
         __pyx_v_new_mode = __pyx_t_6;
         __pyx_t_6 = 0;
 
-        /* "code_muse/terminal_utils.pyx":354
+        /* "code_muse/terminal_utils.pyx":374
  *             # Disable it
  *             new_mode = mode.value & ~ENABLE_PROCESSED_INPUT
  *             return bool(kernel32.SetConsoleMode(stdin_handle, new_mode))             # <<<<<<<<<<<<<<
@@ -6587,18 +6723,18 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
           PyObject *__pyx_callargs[3] = {__pyx_t_1, __pyx_v_stdin_handle, __pyx_v_new_mode};
           __pyx_t_6 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_SetConsoleMode, __pyx_callargs+__pyx_t_7, (3-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-          if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 354, __pyx_L5_error)
+          if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 374, __pyx_L5_error)
           __Pyx_GOTREF(__pyx_t_6);
         }
-        __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 354, __pyx_L5_error)
+        __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 374, __pyx_L5_error)
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-        __pyx_t_6 = __Pyx_PyBool_FromLong((!(!__pyx_t_2))); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 354, __pyx_L5_error)
+        __pyx_t_6 = __Pyx_PyBool_FromLong((!(!__pyx_t_2))); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 374, __pyx_L5_error)
         __Pyx_GOTREF(__pyx_t_6);
         __pyx_r = __pyx_t_6;
         __pyx_t_6 = 0;
         goto __pyx_L9_try_return;
 
-        /* "code_muse/terminal_utils.pyx":351
+        /* "code_muse/terminal_utils.pyx":371
  * 
  *         # Check if Ctrl+C processing is enabled
  *         if mode.value & ENABLE_PROCESSED_INPUT:             # <<<<<<<<<<<<<<
@@ -6607,7 +6743,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
 */
       }
 
-      /* "code_muse/terminal_utils.pyx":356
+      /* "code_muse/terminal_utils.pyx":376
  *             return bool(kernel32.SetConsoleMode(stdin_handle, new_mode))
  * 
  *         return True  # Already disabled             # <<<<<<<<<<<<<<
@@ -6619,7 +6755,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
       __pyx_r = Py_True;
       goto __pyx_L9_try_return;
 
-      /* "code_muse/terminal_utils.pyx":333
+      /* "code_muse/terminal_utils.pyx":353
  *         return True
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -6633,7 +6769,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-    /* "code_muse/terminal_utils.pyx":358
+    /* "code_muse/terminal_utils.pyx":378
  *         return True  # Already disabled
  * 
  *     except Exception:             # <<<<<<<<<<<<<<
@@ -6644,7 +6780,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
     if (__pyx_t_12) {
       __Pyx_ErrRestore(0,0,0);
 
-      /* "code_muse/terminal_utils.pyx":359
+      /* "code_muse/terminal_utils.pyx":379
  * 
  *     except Exception:
  *         return False             # <<<<<<<<<<<<<<
@@ -6658,7 +6794,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
     }
     goto __pyx_L7_except_error;
 
-    /* "code_muse/terminal_utils.pyx":333
+    /* "code_muse/terminal_utils.pyx":353
  *         return True
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -6685,7 +6821,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
     goto __pyx_L0;
   }
 
-  /* "code_muse/terminal_utils.pyx":318
+  /* "code_muse/terminal_utils.pyx":338
  * 
  * 
  * def ensure_ctrl_c_disabled() -> bool:             # <<<<<<<<<<<<<<
@@ -6712,7 +6848,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_20ensure_ctrl_c_disabled(C
   return __pyx_r;
 }
 
-/* "code_muse/terminal_utils.pyx":362
+/* "code_muse/terminal_utils.pyx":382
  * 
  * 
  * def detect_truecolor_support() -> bool:             # <<<<<<<<<<<<<<
@@ -6738,7 +6874,7 @@ static PyObject *__pyx_pw_9code_muse_14terminal_utils_23detect_truecolor_support
 }
 static PyObject *__pyx_gb_9code_muse_14terminal_utils_24detect_truecolor_support_2generator(__pyx_CoroutineObject *__pyx_generator, CYTHON_UNUSED PyThreadState *__pyx_tstate, PyObject *__pyx_sent_value); /* proto */
 
-/* "code_muse/terminal_utils.pyx":386
+/* "code_muse/terminal_utils.pyx":406
  *         "vte-256color",  # Many modern terminals set this
  *     )
  *     if any(t in term for t in truecolor_terms):             # <<<<<<<<<<<<<<
@@ -6758,7 +6894,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24detect_truecolor_support
   if (unlikely(!__pyx_cur_scope)) {
     __pyx_cur_scope = ((struct __pyx_obj_9code_muse_14terminal_utils___pyx_scope_struct_1_genexpr *)Py_None);
     __Pyx_INCREF(Py_None);
-    __PYX_ERR(0, 386, __pyx_L1_error)
+    __PYX_ERR(0, 406, __pyx_L1_error)
   } else {
     __Pyx_GOTREF((PyObject *)__pyx_cur_scope);
   }
@@ -6769,7 +6905,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24detect_truecolor_support
   __Pyx_INCREF(__pyx_cur_scope->__pyx_genexpr_arg_0);
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_genexpr_arg_0);
   {
-    __pyx_CoroutineObject *gen = __Pyx_Generator_New((__pyx_coroutine_body_t) __pyx_gb_9code_muse_14terminal_utils_24detect_truecolor_support_2generator, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[0]), (PyObject *) __pyx_cur_scope, __pyx_mstate_global->__pyx_n_u_genexpr, __pyx_mstate_global->__pyx_n_u_detect_truecolor_support_locals, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils); if (unlikely(!gen)) __PYX_ERR(0, 386, __pyx_L1_error)
+    __pyx_CoroutineObject *gen = __Pyx_Generator_New((__pyx_coroutine_body_t) __pyx_gb_9code_muse_14terminal_utils_24detect_truecolor_support_2generator, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[0]), (PyObject *) __pyx_cur_scope, __pyx_mstate_global->__pyx_n_u_genexpr, __pyx_mstate_global->__pyx_n_u_detect_truecolor_support_locals, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils); if (unlikely(!gen)) __PYX_ERR(0, 406, __pyx_L1_error)
     __Pyx_DECREF(__pyx_cur_scope);
     __Pyx_RefNannyFinishContext();
     return (PyObject *) gen;
@@ -6805,15 +6941,15 @@ static PyObject *__pyx_gb_9code_muse_14terminal_utils_24detect_truecolor_support
     return NULL;
   }
   __pyx_L3_first_run:;
-  if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 386, __pyx_L1_error)
-  if (unlikely(!__pyx_cur_scope->__pyx_genexpr_arg_0)) { __Pyx_RaiseUnboundLocalError(".0"); __PYX_ERR(0, 386, __pyx_L1_error) }
+  if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 406, __pyx_L1_error)
+  if (unlikely(!__pyx_cur_scope->__pyx_genexpr_arg_0)) { __Pyx_RaiseUnboundLocalError(".0"); __PYX_ERR(0, 406, __pyx_L1_error) }
   __pyx_t_1 = __pyx_cur_scope->__pyx_genexpr_arg_0; __Pyx_INCREF(__pyx_t_1);
   __pyx_t_2 = 0;
   for (;;) {
     {
       Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_1);
       #if !CYTHON_ASSUME_SAFE_SIZE
-      if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 386, __pyx_L1_error)
+      if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 406, __pyx_L1_error)
       #endif
       if (__pyx_t_2 >= __pyx_temp) break;
     }
@@ -6823,14 +6959,14 @@ static PyObject *__pyx_gb_9code_muse_14terminal_utils_24detect_truecolor_support
     __pyx_t_3 = __Pyx_PySequence_ITEM(__pyx_t_1, __pyx_t_2);
     #endif
     ++__pyx_t_2;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 386, __pyx_L1_error)
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 406, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_XGOTREF(__pyx_cur_scope->__pyx_v_t);
     __Pyx_XDECREF_SET(__pyx_cur_scope->__pyx_v_t, ((PyObject*)__pyx_t_3));
     __Pyx_GIVEREF(__pyx_t_3);
     __pyx_t_3 = 0;
-    if (unlikely(!__pyx_cur_scope->__pyx_outer_scope->__pyx_v_term)) { __Pyx_RaiseClosureNameError("term"); __PYX_ERR(0, 386, __pyx_L1_error) }
-    __pyx_t_4 = (__Pyx_PySequence_ContainsTF(__pyx_cur_scope->__pyx_v_t, __pyx_cur_scope->__pyx_outer_scope->__pyx_v_term, Py_EQ)); if (unlikely((__pyx_t_4 < 0))) __PYX_ERR(0, 386, __pyx_L1_error)
+    if (unlikely(!__pyx_cur_scope->__pyx_outer_scope->__pyx_v_term)) { __Pyx_RaiseClosureNameError("term"); __PYX_ERR(0, 406, __pyx_L1_error) }
+    __pyx_t_4 = (__Pyx_PySequence_ContainsTF(__pyx_cur_scope->__pyx_v_t, __pyx_cur_scope->__pyx_outer_scope->__pyx_v_term, Py_EQ)); if (unlikely((__pyx_t_4 < 0))) __PYX_ERR(0, 406, __pyx_L1_error)
     if (__pyx_t_4) {
       __Pyx_XDECREF(__pyx_r);
       __Pyx_INCREF(Py_True);
@@ -6868,7 +7004,7 @@ static PyObject *__pyx_gb_9code_muse_14terminal_utils_24detect_truecolor_support
   return __pyx_r;
 }
 
-/* "code_muse/terminal_utils.pyx":362
+/* "code_muse/terminal_utils.pyx":382
  * 
  * 
  * def detect_truecolor_support() -> bool:             # <<<<<<<<<<<<<<
@@ -6907,27 +7043,27 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
   if (unlikely(!__pyx_cur_scope)) {
     __pyx_cur_scope = ((struct __pyx_obj_9code_muse_14terminal_utils___pyx_scope_struct__detect_truecolor_support *)Py_None);
     __Pyx_INCREF(Py_None);
-    __PYX_ERR(0, 362, __pyx_L1_error)
+    __PYX_ERR(0, 382, __pyx_L1_error)
   } else {
     __Pyx_GOTREF((PyObject *)__pyx_cur_scope);
   }
 
-  /* "code_muse/terminal_utils.pyx":374
+  /* "code_muse/terminal_utils.pyx":394
  *     """
  *     # Check COLORTERM - this is the most reliable indicator
  *     colorterm = os.environ.get("COLORTERM", "").lower()             # <<<<<<<<<<<<<<
  *     if colorterm in ("truecolor", "24bit"):
  *         return True
 */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_os); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 374, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_os); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 394, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_environ); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 374, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_environ); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 394, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_get); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 374, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_get); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 394, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_mstate_global->__pyx_tuple[0], NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 374, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_mstate_global->__pyx_tuple[0], NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 394, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_2 = __pyx_t_4;
@@ -6938,13 +7074,13 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
     __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_lower, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 374, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 394, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
   __pyx_v_colorterm = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "code_muse/terminal_utils.pyx":375
+  /* "code_muse/terminal_utils.pyx":395
  *     # Check COLORTERM - this is the most reliable indicator
  *     colorterm = os.environ.get("COLORTERM", "").lower()
  *     if colorterm in ("truecolor", "24bit"):             # <<<<<<<<<<<<<<
@@ -6953,20 +7089,20 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
 */
   __Pyx_INCREF(__pyx_v_colorterm);
   __pyx_t_1 = __pyx_v_colorterm;
-  __pyx_t_7 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_truecolor, Py_EQ)); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 375, __pyx_L1_error)
+  __pyx_t_7 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_truecolor, Py_EQ)); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 395, __pyx_L1_error)
   if (!__pyx_t_7) {
   } else {
     __pyx_t_6 = __pyx_t_7;
     goto __pyx_L4_bool_binop_done;
   }
-  __pyx_t_7 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_kp_u_24bit, Py_EQ)); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 375, __pyx_L1_error)
+  __pyx_t_7 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_kp_u_24bit, Py_EQ)); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 395, __pyx_L1_error)
   __pyx_t_6 = __pyx_t_7;
   __pyx_L4_bool_binop_done:;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_7 = __pyx_t_6;
   if (__pyx_t_7) {
 
-    /* "code_muse/terminal_utils.pyx":376
+    /* "code_muse/terminal_utils.pyx":396
  *     colorterm = os.environ.get("COLORTERM", "").lower()
  *     if colorterm in ("truecolor", "24bit"):
  *         return True             # <<<<<<<<<<<<<<
@@ -6978,7 +7114,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
     __pyx_r = Py_True;
     goto __pyx_L0;
 
-    /* "code_muse/terminal_utils.pyx":375
+    /* "code_muse/terminal_utils.pyx":395
  *     # Check COLORTERM - this is the most reliable indicator
  *     colorterm = os.environ.get("COLORTERM", "").lower()
  *     if colorterm in ("truecolor", "24bit"):             # <<<<<<<<<<<<<<
@@ -6987,22 +7123,22 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
 */
   }
 
-  /* "code_muse/terminal_utils.pyx":379
+  /* "code_muse/terminal_utils.pyx":399
  * 
  *     # Check TERM for known truecolor-capable terminals
  *     term = os.environ.get("TERM", "").lower()             # <<<<<<<<<<<<<<
  *     truecolor_terms = (
  *         "xterm-direct",
 */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_os); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 379, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_os); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 399, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_environ); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 379, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_environ); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 399, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_get); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 379, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_get); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 399, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_mstate_global->__pyx_tuple[1], NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 379, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_mstate_global->__pyx_tuple[1], NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 399, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_4 = __pyx_t_3;
@@ -7013,14 +7149,14 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
     __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_lower, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 379, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 399, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_cur_scope->__pyx_v_term = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "code_muse/terminal_utils.pyx":381
+  /* "code_muse/terminal_utils.pyx":401
  *     term = os.environ.get("TERM", "").lower()
  *     truecolor_terms = (
  *         "xterm-direct",             # <<<<<<<<<<<<<<
@@ -7030,23 +7166,23 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
   __Pyx_INCREF(__pyx_mstate_global->__pyx_tuple[2]);
   __pyx_v_truecolor_terms = __pyx_mstate_global->__pyx_tuple[2];
 
-  /* "code_muse/terminal_utils.pyx":386
+  /* "code_muse/terminal_utils.pyx":406
  *         "vte-256color",  # Many modern terminals set this
  *     )
  *     if any(t in term for t in truecolor_terms):             # <<<<<<<<<<<<<<
  *         return True
  * 
 */
-  __pyx_t_1 = __pyx_pf_9code_muse_14terminal_utils_24detect_truecolor_support_genexpr(((PyObject*)__pyx_cur_scope), __pyx_v_truecolor_terms); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 386, __pyx_L1_error)
+  __pyx_t_1 = __pyx_pf_9code_muse_14terminal_utils_24detect_truecolor_support_genexpr(((PyObject*)__pyx_cur_scope), __pyx_v_truecolor_terms); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 406, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_Generator_GetInlinedResult(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 386, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_Generator_GetInlinedResult(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 406, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 386, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 406, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   if (__pyx_t_7) {
 
-    /* "code_muse/terminal_utils.pyx":387
+    /* "code_muse/terminal_utils.pyx":407
  *     )
  *     if any(t in term for t in truecolor_terms):
  *         return True             # <<<<<<<<<<<<<<
@@ -7058,7 +7194,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
     __pyx_r = Py_True;
     goto __pyx_L0;
 
-    /* "code_muse/terminal_utils.pyx":386
+    /* "code_muse/terminal_utils.pyx":406
  *         "vte-256color",  # Many modern terminals set this
  *     )
  *     if any(t in term for t in truecolor_terms):             # <<<<<<<<<<<<<<
@@ -7067,16 +7203,16 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
 */
   }
 
-  /* "code_muse/terminal_utils.pyx":390
+  /* "code_muse/terminal_utils.pyx":410
  * 
  *     # Some terminals like iTerm2, Kitty, Alacritty set specific env vars
  *     if os.environ.get("ITERM_SESSION_ID"):             # <<<<<<<<<<<<<<
  *         return True
  *     if os.environ.get("KITTY_WINDOW_ID"):
 */
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_os); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 390, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_os); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 410, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_environ); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 390, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_environ); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 410, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_1 = __pyx_t_2;
@@ -7087,14 +7223,14 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
     __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 390, __pyx_L1_error)
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 410, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
   }
-  __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 390, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 410, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   if (__pyx_t_7) {
 
-    /* "code_muse/terminal_utils.pyx":391
+    /* "code_muse/terminal_utils.pyx":411
  *     # Some terminals like iTerm2, Kitty, Alacritty set specific env vars
  *     if os.environ.get("ITERM_SESSION_ID"):
  *         return True             # <<<<<<<<<<<<<<
@@ -7106,7 +7242,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
     __pyx_r = Py_True;
     goto __pyx_L0;
 
-    /* "code_muse/terminal_utils.pyx":390
+    /* "code_muse/terminal_utils.pyx":410
  * 
  *     # Some terminals like iTerm2, Kitty, Alacritty set specific env vars
  *     if os.environ.get("ITERM_SESSION_ID"):             # <<<<<<<<<<<<<<
@@ -7115,16 +7251,16 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
 */
   }
 
-  /* "code_muse/terminal_utils.pyx":392
+  /* "code_muse/terminal_utils.pyx":412
  *     if os.environ.get("ITERM_SESSION_ID"):
  *         return True
  *     if os.environ.get("KITTY_WINDOW_ID"):             # <<<<<<<<<<<<<<
  *         return True
  *     if os.environ.get("ALACRITTY_SOCKET"):
 */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_os); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 392, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_os); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 412, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_environ); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 392, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_environ); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 412, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_2 = __pyx_t_4;
@@ -7135,14 +7271,14 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
     __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 392, __pyx_L1_error)
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 412, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
   }
-  __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 392, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 412, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   if (__pyx_t_7) {
 
-    /* "code_muse/terminal_utils.pyx":393
+    /* "code_muse/terminal_utils.pyx":413
  *         return True
  *     if os.environ.get("KITTY_WINDOW_ID"):
  *         return True             # <<<<<<<<<<<<<<
@@ -7154,7 +7290,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
     __pyx_r = Py_True;
     goto __pyx_L0;
 
-    /* "code_muse/terminal_utils.pyx":392
+    /* "code_muse/terminal_utils.pyx":412
  *     if os.environ.get("ITERM_SESSION_ID"):
  *         return True
  *     if os.environ.get("KITTY_WINDOW_ID"):             # <<<<<<<<<<<<<<
@@ -7163,16 +7299,16 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
 */
   }
 
-  /* "code_muse/terminal_utils.pyx":394
+  /* "code_muse/terminal_utils.pyx":414
  *     if os.environ.get("KITTY_WINDOW_ID"):
  *         return True
  *     if os.environ.get("ALACRITTY_SOCKET"):             # <<<<<<<<<<<<<<
  *         return True
  *     if os.environ.get("WT_SESSION"):  # Windows Terminal
 */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_os); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 394, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_os); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 414, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_environ); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 394, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_environ); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 414, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_4 = __pyx_t_1;
@@ -7183,14 +7319,14 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
     __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 394, __pyx_L1_error)
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 414, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
   }
-  __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 394, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 414, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   if (__pyx_t_7) {
 
-    /* "code_muse/terminal_utils.pyx":395
+    /* "code_muse/terminal_utils.pyx":415
  *         return True
  *     if os.environ.get("ALACRITTY_SOCKET"):
  *         return True             # <<<<<<<<<<<<<<
@@ -7202,7 +7338,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
     __pyx_r = Py_True;
     goto __pyx_L0;
 
-    /* "code_muse/terminal_utils.pyx":394
+    /* "code_muse/terminal_utils.pyx":414
  *     if os.environ.get("KITTY_WINDOW_ID"):
  *         return True
  *     if os.environ.get("ALACRITTY_SOCKET"):             # <<<<<<<<<<<<<<
@@ -7211,16 +7347,16 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
 */
   }
 
-  /* "code_muse/terminal_utils.pyx":396
+  /* "code_muse/terminal_utils.pyx":416
  *     if os.environ.get("ALACRITTY_SOCKET"):
  *         return True
  *     if os.environ.get("WT_SESSION"):  # Windows Terminal             # <<<<<<<<<<<<<<
  *         return True
  * 
 */
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_os); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 396, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_os); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 416, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_environ); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 396, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_environ); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 416, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_1 = __pyx_t_2;
@@ -7231,14 +7367,14 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
     __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 396, __pyx_L1_error)
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 416, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
   }
-  __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 396, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 416, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   if (__pyx_t_7) {
 
-    /* "code_muse/terminal_utils.pyx":397
+    /* "code_muse/terminal_utils.pyx":417
  *         return True
  *     if os.environ.get("WT_SESSION"):  # Windows Terminal
  *         return True             # <<<<<<<<<<<<<<
@@ -7250,7 +7386,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
     __pyx_r = Py_True;
     goto __pyx_L0;
 
-    /* "code_muse/terminal_utils.pyx":396
+    /* "code_muse/terminal_utils.pyx":416
  *     if os.environ.get("ALACRITTY_SOCKET"):
  *         return True
  *     if os.environ.get("WT_SESSION"):  # Windows Terminal             # <<<<<<<<<<<<<<
@@ -7259,7 +7395,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
 */
   }
 
-  /* "code_muse/terminal_utils.pyx":400
+  /* "code_muse/terminal_utils.pyx":420
  * 
  *     # Use Rich's detection as a fallback
  *     try:             # <<<<<<<<<<<<<<
@@ -7275,7 +7411,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
     __Pyx_XGOTREF(__pyx_t_10);
     /*try:*/ {
 
-      /* "code_muse/terminal_utils.pyx":401
+      /* "code_muse/terminal_utils.pyx":421
  *     # Use Rich's detection as a fallback
  *     try:
  *         from rich.console import Console             # <<<<<<<<<<<<<<
@@ -7284,14 +7420,14 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
 */
       {
         PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_Console};
-        __pyx_t_11 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_rich_console, __pyx_imported_names, 1, NULL, 0); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 401, __pyx_L11_error)
+        __pyx_t_11 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_rich_console, __pyx_imported_names, 1, NULL, 0); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 421, __pyx_L11_error)
       }
       __pyx_t_3 = __pyx_t_11;
       __Pyx_GOTREF(__pyx_t_3);
       {
         PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_Console};
         __pyx_t_12 = 0; {
-          __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_3, __pyx_imported_names[__pyx_t_12]); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 401, __pyx_L11_error)
+          __pyx_t_2 = __Pyx_ImportFrom(__pyx_t_3, __pyx_imported_names[__pyx_t_12]); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 421, __pyx_L11_error)
           __Pyx_GOTREF(__pyx_t_2);
           switch (__pyx_t_12) {
             case 0:
@@ -7305,7 +7441,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
       }
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-      /* "code_muse/terminal_utils.pyx":403
+      /* "code_muse/terminal_utils.pyx":423
  *         from rich.console import Console
  * 
  *         console = Console(force_terminal=True)             # <<<<<<<<<<<<<<
@@ -7329,32 +7465,32 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
       #endif
       {
         PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_2, NULL};
-        __pyx_t_4 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 403, __pyx_L11_error)
+        __pyx_t_4 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 423, __pyx_L11_error)
         __Pyx_GOTREF(__pyx_t_4);
-        if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_force_terminal, Py_True, __pyx_t_4, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 403, __pyx_L11_error)
+        if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_force_terminal, Py_True, __pyx_t_4, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 423, __pyx_L11_error)
         __pyx_t_3 = __Pyx_Object_Vectorcall_CallFromBuilder((PyObject*)__pyx_t_1, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_4);
         __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-        if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 403, __pyx_L11_error)
+        if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 423, __pyx_L11_error)
         __Pyx_GOTREF(__pyx_t_3);
       }
       __pyx_v_console = __pyx_t_3;
       __pyx_t_3 = 0;
 
-      /* "code_muse/terminal_utils.pyx":404
+      /* "code_muse/terminal_utils.pyx":424
  * 
  *         console = Console(force_terminal=True)
  *         color_system = console.color_system             # <<<<<<<<<<<<<<
  *         return color_system == "truecolor"
  *     except Exception:
 */
-      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_console, __pyx_mstate_global->__pyx_n_u_color_system); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 404, __pyx_L11_error)
+      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_console, __pyx_mstate_global->__pyx_n_u_color_system); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 424, __pyx_L11_error)
       __Pyx_GOTREF(__pyx_t_3);
       __pyx_v_color_system = __pyx_t_3;
       __pyx_t_3 = 0;
 
-      /* "code_muse/terminal_utils.pyx":405
+      /* "code_muse/terminal_utils.pyx":425
  *         console = Console(force_terminal=True)
  *         color_system = console.color_system
  *         return color_system == "truecolor"             # <<<<<<<<<<<<<<
@@ -7362,12 +7498,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
  *         pass
 */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_3 = PyObject_RichCompare(__pyx_v_color_system, __pyx_mstate_global->__pyx_n_u_truecolor, Py_EQ); __Pyx_XGOTREF(__pyx_t_3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 405, __pyx_L11_error)
+      __pyx_t_3 = PyObject_RichCompare(__pyx_v_color_system, __pyx_mstate_global->__pyx_n_u_truecolor, Py_EQ); __Pyx_XGOTREF(__pyx_t_3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 425, __pyx_L11_error)
       __pyx_r = __pyx_t_3;
       __pyx_t_3 = 0;
       goto __pyx_L15_try_return;
 
-      /* "code_muse/terminal_utils.pyx":400
+      /* "code_muse/terminal_utils.pyx":420
  * 
  *     # Use Rich's detection as a fallback
  *     try:             # <<<<<<<<<<<<<<
@@ -7381,7 +7517,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "code_muse/terminal_utils.pyx":406
+    /* "code_muse/terminal_utils.pyx":426
  *         color_system = console.color_system
  *         return color_system == "truecolor"
  *     except Exception:             # <<<<<<<<<<<<<<
@@ -7395,7 +7531,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
     }
     goto __pyx_L13_except_error;
 
-    /* "code_muse/terminal_utils.pyx":400
+    /* "code_muse/terminal_utils.pyx":420
  * 
  *     # Use Rich's detection as a fallback
  *     try:             # <<<<<<<<<<<<<<
@@ -7421,7 +7557,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
     __Pyx_ExceptionReset(__pyx_t_8, __pyx_t_9, __pyx_t_10);
   }
 
-  /* "code_muse/terminal_utils.pyx":409
+  /* "code_muse/terminal_utils.pyx":429
  *         pass
  * 
  *     return False             # <<<<<<<<<<<<<<
@@ -7433,7 +7569,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
   __pyx_r = Py_False;
   goto __pyx_L0;
 
-  /* "code_muse/terminal_utils.pyx":362
+  /* "code_muse/terminal_utils.pyx":382
  * 
  * 
  * def detect_truecolor_support() -> bool:             # <<<<<<<<<<<<<<
@@ -7462,7 +7598,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_22detect_truecolor_support
   return __pyx_r;
 }
 
-/* "code_muse/terminal_utils.pyx":412
+/* "code_muse/terminal_utils.pyx":432
  * 
  * 
  * def print_truecolor_warning(console: Console | None = None) -> None:             # <<<<<<<<<<<<<<
@@ -7510,24 +7646,24 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_console,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 412, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 432, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 412, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 432, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "print_truecolor_warning", 0) < (0)) __PYX_ERR(0, 412, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "print_truecolor_warning", 0) < (0)) __PYX_ERR(0, 432, __pyx_L3_error)
       if (!values[0]) values[0] = __Pyx_NewRef(((PyObject *)Py_None));
     } else {
       switch (__pyx_nargs) {
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 412, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 432, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
@@ -7538,7 +7674,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("print_truecolor_warning", 0, 0, 1, __pyx_nargs); __PYX_ERR(0, 412, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("print_truecolor_warning", 0, 0, 1, __pyx_nargs); __PYX_ERR(0, 432, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -7586,7 +7722,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
   __Pyx_RefNannySetupContext("print_truecolor_warning", 0);
   __Pyx_INCREF(__pyx_v_console);
 
-  /* "code_muse/terminal_utils.pyx":418
+  /* "code_muse/terminal_utils.pyx":438
  *         console: Optional Rich Console instance. If None, creates a new one.
  *     """
  *     if detect_truecolor_support():             # <<<<<<<<<<<<<<
@@ -7594,7 +7730,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
  * 
 */
   __pyx_t_2 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_detect_truecolor_support); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 418, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_detect_truecolor_support); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 438, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_4 = 1;
   #if CYTHON_UNPACK_METHODS
@@ -7613,14 +7749,14 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
     __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_3, __pyx_callargs+__pyx_t_4, (1-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 418, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 438, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
-  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 418, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 438, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_5) {
 
-    /* "code_muse/terminal_utils.pyx":419
+    /* "code_muse/terminal_utils.pyx":439
  *     """
  *     if detect_truecolor_support():
  *         return  # All good, no warning needed             # <<<<<<<<<<<<<<
@@ -7631,7 +7767,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "code_muse/terminal_utils.pyx":418
+    /* "code_muse/terminal_utils.pyx":438
  *         console: Optional Rich Console instance. If None, creates a new one.
  *     """
  *     if detect_truecolor_support():             # <<<<<<<<<<<<<<
@@ -7640,7 +7776,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
 */
   }
 
-  /* "code_muse/terminal_utils.pyx":421
+  /* "code_muse/terminal_utils.pyx":441
  *         return  # All good, no warning needed
  * 
  *     if console is None:             # <<<<<<<<<<<<<<
@@ -7650,7 +7786,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
   __pyx_t_5 = (__pyx_v_console == Py_None);
   if (__pyx_t_5) {
 
-    /* "code_muse/terminal_utils.pyx":422
+    /* "code_muse/terminal_utils.pyx":442
  * 
  *     if console is None:
  *         try:             # <<<<<<<<<<<<<<
@@ -7666,7 +7802,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
       __Pyx_XGOTREF(__pyx_t_8);
       /*try:*/ {
 
-        /* "code_muse/terminal_utils.pyx":423
+        /* "code_muse/terminal_utils.pyx":443
  *     if console is None:
  *         try:
  *             from rich.console import Console             # <<<<<<<<<<<<<<
@@ -7675,14 +7811,14 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
 */
         {
           PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_Console};
-          __pyx_t_9 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_rich_console, __pyx_imported_names, 1, NULL, 0); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 423, __pyx_L5_error)
+          __pyx_t_9 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_rich_console, __pyx_imported_names, 1, NULL, 0); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 443, __pyx_L5_error)
         }
         __pyx_t_1 = __pyx_t_9;
         __Pyx_GOTREF(__pyx_t_1);
         {
           PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_Console};
           __pyx_t_10 = 0; {
-            __pyx_t_3 = __Pyx_ImportFrom(__pyx_t_1, __pyx_imported_names[__pyx_t_10]); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 423, __pyx_L5_error)
+            __pyx_t_3 = __Pyx_ImportFrom(__pyx_t_1, __pyx_imported_names[__pyx_t_10]); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 443, __pyx_L5_error)
             __Pyx_GOTREF(__pyx_t_3);
             switch (__pyx_t_10) {
               case 0:
@@ -7696,7 +7832,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
         }
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-        /* "code_muse/terminal_utils.pyx":425
+        /* "code_muse/terminal_utils.pyx":445
  *             from rich.console import Console
  * 
  *             console = Console()             # <<<<<<<<<<<<<<
@@ -7723,13 +7859,13 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
           __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_2, __pyx_callargs+__pyx_t_4, (1-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 425, __pyx_L5_error)
+          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 445, __pyx_L5_error)
           __Pyx_GOTREF(__pyx_t_1);
         }
         __Pyx_DECREF_SET(__pyx_v_console, __pyx_t_1);
         __pyx_t_1 = 0;
 
-        /* "code_muse/terminal_utils.pyx":422
+        /* "code_muse/terminal_utils.pyx":442
  * 
  *     if console is None:
  *         try:             # <<<<<<<<<<<<<<
@@ -7746,7 +7882,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
       __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-      /* "code_muse/terminal_utils.pyx":426
+      /* "code_muse/terminal_utils.pyx":446
  * 
  *             console = Console()
  *         except ImportError:             # <<<<<<<<<<<<<<
@@ -7756,12 +7892,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
       __pyx_t_11 = __Pyx_PyErr_ExceptionMatches(((PyObject *)(((PyTypeObject*)PyExc_ImportError))));
       if (__pyx_t_11) {
         __Pyx_AddTraceback("code_muse.terminal_utils.print_truecolor_warning", __pyx_clineno, __pyx_lineno, __pyx_filename);
-        if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_2, &__pyx_t_3) < 0) __PYX_ERR(0, 426, __pyx_L7_except_error)
+        if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_2, &__pyx_t_3) < 0) __PYX_ERR(0, 446, __pyx_L7_except_error)
         __Pyx_XGOTREF(__pyx_t_1);
         __Pyx_XGOTREF(__pyx_t_2);
         __Pyx_XGOTREF(__pyx_t_3);
 
-        /* "code_muse/terminal_utils.pyx":428
+        /* "code_muse/terminal_utils.pyx":448
  *         except ImportError:
  *             # Rich not available, fall back to plain print
  *             print("\n" + "=" * 70)             # <<<<<<<<<<<<<<
@@ -7774,12 +7910,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
           PyObject *__pyx_callargs[2] = {__pyx_t_13, __pyx_mstate_global->__pyx_kp_u__3};
           __pyx_t_12 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_print, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 428, __pyx_L7_except_error)
+          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 448, __pyx_L7_except_error)
           __Pyx_GOTREF(__pyx_t_12);
         }
         __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
 
-        /* "code_muse/terminal_utils.pyx":429
+        /* "code_muse/terminal_utils.pyx":449
  *             # Rich not available, fall back to plain print
  *             print("\n" + "=" * 70)
  *             print("  WARNING: TERMINAL DOES NOT SUPPORT TRUECOLOR (24-BIT COLOR)")             # <<<<<<<<<<<<<<
@@ -7792,12 +7928,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
           PyObject *__pyx_callargs[2] = {__pyx_t_13, __pyx_mstate_global->__pyx_kp_u_WARNING_TERMINAL_DOES_NOT_SUPPO};
           __pyx_t_12 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_print, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 429, __pyx_L7_except_error)
+          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 449, __pyx_L7_except_error)
           __Pyx_GOTREF(__pyx_t_12);
         }
         __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
 
-        /* "code_muse/terminal_utils.pyx":430
+        /* "code_muse/terminal_utils.pyx":450
  *             print("\n" + "=" * 70)
  *             print("  WARNING: TERMINAL DOES NOT SUPPORT TRUECOLOR (24-BIT COLOR)")
  *             print("=" * 70)             # <<<<<<<<<<<<<<
@@ -7810,12 +7946,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
           PyObject *__pyx_callargs[2] = {__pyx_t_13, __pyx_mstate_global->__pyx_kp_u__4};
           __pyx_t_12 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_print, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 430, __pyx_L7_except_error)
+          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 450, __pyx_L7_except_error)
           __Pyx_GOTREF(__pyx_t_12);
         }
         __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
 
-        /* "code_muse/terminal_utils.pyx":431
+        /* "code_muse/terminal_utils.pyx":451
  *             print("  WARNING: TERMINAL DOES NOT SUPPORT TRUECOLOR (24-BIT COLOR)")
  *             print("=" * 70)
  *             print("Code Puppy looks best with truecolor support.")             # <<<<<<<<<<<<<<
@@ -7828,12 +7964,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
           PyObject *__pyx_callargs[2] = {__pyx_t_13, __pyx_mstate_global->__pyx_kp_u_Code_Puppy_looks_best_with_truec};
           __pyx_t_12 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_print, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 431, __pyx_L7_except_error)
+          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 451, __pyx_L7_except_error)
           __Pyx_GOTREF(__pyx_t_12);
         }
         __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
 
-        /* "code_muse/terminal_utils.pyx":432
+        /* "code_muse/terminal_utils.pyx":452
  *             print("=" * 70)
  *             print("Code Puppy looks best with truecolor support.")
  *             print("Consider using a modern terminal like:")             # <<<<<<<<<<<<<<
@@ -7846,12 +7982,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
           PyObject *__pyx_callargs[2] = {__pyx_t_13, __pyx_mstate_global->__pyx_kp_u_Consider_using_a_modern_terminal};
           __pyx_t_12 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_print, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 432, __pyx_L7_except_error)
+          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 452, __pyx_L7_except_error)
           __Pyx_GOTREF(__pyx_t_12);
         }
         __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
 
-        /* "code_muse/terminal_utils.pyx":433
+        /* "code_muse/terminal_utils.pyx":453
  *             print("Code Puppy looks best with truecolor support.")
  *             print("Consider using a modern terminal like:")
  *             print("   iTerm2 (macOS)")             # <<<<<<<<<<<<<<
@@ -7864,12 +8000,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
           PyObject *__pyx_callargs[2] = {__pyx_t_13, __pyx_mstate_global->__pyx_kp_u_iTerm2_macOS};
           __pyx_t_12 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_print, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 433, __pyx_L7_except_error)
+          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 453, __pyx_L7_except_error)
           __Pyx_GOTREF(__pyx_t_12);
         }
         __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
 
-        /* "code_muse/terminal_utils.pyx":434
+        /* "code_muse/terminal_utils.pyx":454
  *             print("Consider using a modern terminal like:")
  *             print("   iTerm2 (macOS)")
  *             print("   Windows Terminal (Windows)")             # <<<<<<<<<<<<<<
@@ -7882,12 +8018,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
           PyObject *__pyx_callargs[2] = {__pyx_t_13, __pyx_mstate_global->__pyx_kp_u_Windows_Terminal_Windows};
           __pyx_t_12 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_print, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 434, __pyx_L7_except_error)
+          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 454, __pyx_L7_except_error)
           __Pyx_GOTREF(__pyx_t_12);
         }
         __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
 
-        /* "code_muse/terminal_utils.pyx":435
+        /* "code_muse/terminal_utils.pyx":455
  *             print("   iTerm2 (macOS)")
  *             print("   Windows Terminal (Windows)")
  *             print("   Kitty, Alacritty, or any modern terminal emulator")             # <<<<<<<<<<<<<<
@@ -7900,12 +8036,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
           PyObject *__pyx_callargs[2] = {__pyx_t_13, __pyx_mstate_global->__pyx_kp_u_Kitty_Alacritty_or_any_modern_t};
           __pyx_t_12 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_print, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 435, __pyx_L7_except_error)
+          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 455, __pyx_L7_except_error)
           __Pyx_GOTREF(__pyx_t_12);
         }
         __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
 
-        /* "code_muse/terminal_utils.pyx":436
+        /* "code_muse/terminal_utils.pyx":456
  *             print("   Windows Terminal (Windows)")
  *             print("   Kitty, Alacritty, or any modern terminal emulator")
  *             print("")             # <<<<<<<<<<<<<<
@@ -7918,12 +8054,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
           PyObject *__pyx_callargs[2] = {__pyx_t_13, __pyx_mstate_global->__pyx_kp_u_};
           __pyx_t_12 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_print, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 436, __pyx_L7_except_error)
+          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 456, __pyx_L7_except_error)
           __Pyx_GOTREF(__pyx_t_12);
         }
         __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
 
-        /* "code_muse/terminal_utils.pyx":437
+        /* "code_muse/terminal_utils.pyx":457
  *             print("   Kitty, Alacritty, or any modern terminal emulator")
  *             print("")
  *             print("You can also try setting: export COLORTERM=truecolor")             # <<<<<<<<<<<<<<
@@ -7936,12 +8072,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
           PyObject *__pyx_callargs[2] = {__pyx_t_13, __pyx_mstate_global->__pyx_kp_u_You_can_also_try_setting_export};
           __pyx_t_12 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_print, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 437, __pyx_L7_except_error)
+          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 457, __pyx_L7_except_error)
           __Pyx_GOTREF(__pyx_t_12);
         }
         __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
 
-        /* "code_muse/terminal_utils.pyx":438
+        /* "code_muse/terminal_utils.pyx":458
  *             print("")
  *             print("You can also try setting: export COLORTERM=truecolor")
  *             print("")             # <<<<<<<<<<<<<<
@@ -7954,12 +8090,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
           PyObject *__pyx_callargs[2] = {__pyx_t_13, __pyx_mstate_global->__pyx_kp_u_};
           __pyx_t_12 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_print, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 438, __pyx_L7_except_error)
+          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 458, __pyx_L7_except_error)
           __Pyx_GOTREF(__pyx_t_12);
         }
         __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
 
-        /* "code_muse/terminal_utils.pyx":439
+        /* "code_muse/terminal_utils.pyx":459
  *             print("You can also try setting: export COLORTERM=truecolor")
  *             print("")
  *             print("Note: The built-in macOS Terminal.app does not support truecolor")             # <<<<<<<<<<<<<<
@@ -7972,12 +8108,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
           PyObject *__pyx_callargs[2] = {__pyx_t_13, __pyx_mstate_global->__pyx_kp_u_Note_The_built_in_macOS_Terminal};
           __pyx_t_12 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_print, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 439, __pyx_L7_except_error)
+          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 459, __pyx_L7_except_error)
           __Pyx_GOTREF(__pyx_t_12);
         }
         __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
 
-        /* "code_muse/terminal_utils.pyx":440
+        /* "code_muse/terminal_utils.pyx":460
  *             print("")
  *             print("Note: The built-in macOS Terminal.app does not support truecolor")
  *             print("(Sequoia and earlier). You'll need a different terminal app.")             # <<<<<<<<<<<<<<
@@ -7990,12 +8126,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
           PyObject *__pyx_callargs[2] = {__pyx_t_13, __pyx_mstate_global->__pyx_kp_u_Sequoia_and_earlier_You_ll_need};
           __pyx_t_12 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_print, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 440, __pyx_L7_except_error)
+          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 460, __pyx_L7_except_error)
           __Pyx_GOTREF(__pyx_t_12);
         }
         __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
 
-        /* "code_muse/terminal_utils.pyx":441
+        /* "code_muse/terminal_utils.pyx":461
  *             print("Note: The built-in macOS Terminal.app does not support truecolor")
  *             print("(Sequoia and earlier). You'll need a different terminal app.")
  *             print("=" * 70 + "\n")             # <<<<<<<<<<<<<<
@@ -8008,12 +8144,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
           PyObject *__pyx_callargs[2] = {__pyx_t_13, __pyx_mstate_global->__pyx_kp_u__5};
           __pyx_t_12 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_print, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 441, __pyx_L7_except_error)
+          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 461, __pyx_L7_except_error)
           __Pyx_GOTREF(__pyx_t_12);
         }
         __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
 
-        /* "code_muse/terminal_utils.pyx":442
+        /* "code_muse/terminal_utils.pyx":462
  *             print("(Sequoia and earlier). You'll need a different terminal app.")
  *             print("=" * 70 + "\n")
  *             return             # <<<<<<<<<<<<<<
@@ -8029,7 +8165,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
       }
       goto __pyx_L7_except_error;
 
-      /* "code_muse/terminal_utils.pyx":422
+      /* "code_muse/terminal_utils.pyx":442
  * 
  *     if console is None:
  *         try:             # <<<<<<<<<<<<<<
@@ -8051,7 +8187,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
       __pyx_L10_try_end:;
     }
 
-    /* "code_muse/terminal_utils.pyx":421
+    /* "code_muse/terminal_utils.pyx":441
  *         return  # All good, no warning needed
  * 
  *     if console is None:             # <<<<<<<<<<<<<<
@@ -8060,16 +8196,16 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
 */
   }
 
-  /* "code_muse/terminal_utils.pyx":445
+  /* "code_muse/terminal_utils.pyx":465
  * 
  *     # Get detected color system for diagnostic info
  *     color_system = console.color_system or "unknown"             # <<<<<<<<<<<<<<
  * 
  *     # Build the warning box
 */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_console, __pyx_mstate_global->__pyx_n_u_color_system); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 445, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_console, __pyx_mstate_global->__pyx_n_u_color_system); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 465, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 445, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 465, __pyx_L1_error)
   if (!__pyx_t_5) {
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   } else {
@@ -8084,114 +8220,114 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
   __pyx_v_color_system = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "code_muse/terminal_utils.pyx":461
+  /* "code_muse/terminal_utils.pyx":481
  *         "[bold bright_red on red]" + "" * 72 + "[/]",
  *         "",
  *         f"[yellow]Detected color system:[/] [bold]{color_system}[/]",             # <<<<<<<<<<<<<<
  *         "",
  *         "[bold white]Code Puppy uses rich colors and will look degraded without truecolor.[/]",
 */
-  __pyx_t_3 = __Pyx_PyObject_FormatSimple(__pyx_v_color_system, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 461, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_FormatSimple(__pyx_v_color_system, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 481, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_14[0] = __pyx_mstate_global->__pyx_kp_u_yellow_Detected_color_system_bo;
   __pyx_t_14[1] = __pyx_t_3;
   __pyx_t_14[2] = __pyx_mstate_global->__pyx_kp_u__6;
   __pyx_t_2 = __Pyx_PyUnicode_Join(__pyx_t_14, 3, 40 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_3) + 3, 127 | __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_3));
-  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 461, __pyx_L1_error)
+  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 481, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "code_muse/terminal_utils.pyx":448
+  /* "code_muse/terminal_utils.pyx":468
  * 
  *     # Build the warning box
  *     warning_lines = [             # <<<<<<<<<<<<<<
  *         "",
  *         "[bold bright_red on red]" + "" * 72 + "[/]",
 */
-  __pyx_t_3 = PyList_New(26); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 448, __pyx_L1_error)
+  __pyx_t_3 = PyList_New(26); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 468, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_mstate_global->__pyx_kp_u_) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_mstate_global->__pyx_kp_u_) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_bold_bright_red_on_red);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_bold_bright_red_on_red);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_mstate_global->__pyx_kp_u_bold_bright_red_on_red) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_mstate_global->__pyx_kp_u_bold_bright_red_on_red) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_bold_bright_red_on_red_bold_bri);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_bold_bright_red_on_red_bold_bri);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 2, __pyx_mstate_global->__pyx_kp_u_bold_bright_red_on_red_bold_bri) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 2, __pyx_mstate_global->__pyx_kp_u_bold_bright_red_on_red_bold_bri) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_bold_bright_red_on_red_bold_bri_2);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_bold_bright_red_on_red_bold_bri_2);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 3, __pyx_mstate_global->__pyx_kp_u_bold_bright_red_on_red_bold_bri_2) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 3, __pyx_mstate_global->__pyx_kp_u_bold_bright_red_on_red_bold_bri_2) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_bold_bright_red_on_red_bold_bri);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_bold_bright_red_on_red_bold_bri);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 4, __pyx_mstate_global->__pyx_kp_u_bold_bright_red_on_red_bold_bri) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 4, __pyx_mstate_global->__pyx_kp_u_bold_bright_red_on_red_bold_bri) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_bold_bright_red_on_red);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_bold_bright_red_on_red);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 5, __pyx_mstate_global->__pyx_kp_u_bold_bright_red_on_red) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 5, __pyx_mstate_global->__pyx_kp_u_bold_bright_red_on_red) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 6, __pyx_mstate_global->__pyx_kp_u_) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 6, __pyx_mstate_global->__pyx_kp_u_) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_GIVEREF(__pyx_t_2);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 7, __pyx_t_2) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 7, __pyx_t_2) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 8, __pyx_mstate_global->__pyx_kp_u_) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 8, __pyx_mstate_global->__pyx_kp_u_) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_bold_white_Code_Puppy_uses_rich);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_bold_white_Code_Puppy_uses_rich);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 9, __pyx_mstate_global->__pyx_kp_u_bold_white_Code_Puppy_uses_rich) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 9, __pyx_mstate_global->__pyx_kp_u_bold_white_Code_Puppy_uses_rich) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 10, __pyx_mstate_global->__pyx_kp_u_) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 10, __pyx_mstate_global->__pyx_kp_u_) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_cyan_Consider_using_a_modern_te);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_cyan_Consider_using_a_modern_te);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 11, __pyx_mstate_global->__pyx_kp_u_cyan_Consider_using_a_modern_te) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 11, __pyx_mstate_global->__pyx_kp_u_cyan_Consider_using_a_modern_te) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_green_bold_iTerm2_macOS_https_i);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_green_bold_iTerm2_macOS_https_i);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 12, __pyx_mstate_global->__pyx_kp_u_green_bold_iTerm2_macOS_https_i) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 12, __pyx_mstate_global->__pyx_kp_u_green_bold_iTerm2_macOS_https_i) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_green_bold_Windows_Terminal_Win);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_green_bold_Windows_Terminal_Win);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 13, __pyx_mstate_global->__pyx_kp_u_green_bold_Windows_Terminal_Win) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 13, __pyx_mstate_global->__pyx_kp_u_green_bold_Windows_Terminal_Win) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_green_bold_Kitty_https_sw_kovid);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_green_bold_Kitty_https_sw_kovid);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 14, __pyx_mstate_global->__pyx_kp_u_green_bold_Kitty_https_sw_kovid) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 14, __pyx_mstate_global->__pyx_kp_u_green_bold_Kitty_https_sw_kovid) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_green_bold_Alacritty_https_alac);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_green_bold_Alacritty_https_alac);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 15, __pyx_mstate_global->__pyx_kp_u_green_bold_Alacritty_https_alac) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 15, __pyx_mstate_global->__pyx_kp_u_green_bold_Alacritty_https_alac) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_green_bold_Warp_macOS_https_war);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_green_bold_Warp_macOS_https_war);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 16, __pyx_mstate_global->__pyx_kp_u_green_bold_Warp_macOS_https_war) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 16, __pyx_mstate_global->__pyx_kp_u_green_bold_Warp_macOS_https_war) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 17, __pyx_mstate_global->__pyx_kp_u_) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 17, __pyx_mstate_global->__pyx_kp_u_) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_cyan_Or_try_setting_the_COLORTE);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_cyan_Or_try_setting_the_COLORTE);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 18, __pyx_mstate_global->__pyx_kp_u_cyan_Or_try_setting_the_COLORTE) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 18, __pyx_mstate_global->__pyx_kp_u_cyan_Or_try_setting_the_COLORTE) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_dim_export_COLORTERM_truecolor);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_dim_export_COLORTERM_truecolor);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 19, __pyx_mstate_global->__pyx_kp_u_dim_export_COLORTERM_truecolor) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 19, __pyx_mstate_global->__pyx_kp_u_dim_export_COLORTERM_truecolor) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 20, __pyx_mstate_global->__pyx_kp_u_) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 20, __pyx_mstate_global->__pyx_kp_u_) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_dim_italic_Note_The_built_in_ma);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_dim_italic_Note_The_built_in_ma);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 21, __pyx_mstate_global->__pyx_kp_u_dim_italic_Note_The_built_in_ma) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 21, __pyx_mstate_global->__pyx_kp_u_dim_italic_Note_The_built_in_ma) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_dim_italic_Setting_COLORTERM_tr);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_dim_italic_Setting_COLORTERM_tr);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 22, __pyx_mstate_global->__pyx_kp_u_dim_italic_Setting_COLORTERM_tr) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 22, __pyx_mstate_global->__pyx_kp_u_dim_italic_Setting_COLORTERM_tr) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 23, __pyx_mstate_global->__pyx_kp_u_) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 23, __pyx_mstate_global->__pyx_kp_u_) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_bold_bright_red);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_bold_bright_red);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 24, __pyx_mstate_global->__pyx_kp_u_bold_bright_red) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 24, __pyx_mstate_global->__pyx_kp_u_bold_bright_red) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_kp_u_);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 25, __pyx_mstate_global->__pyx_kp_u_) != (0)) __PYX_ERR(0, 448, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 25, __pyx_mstate_global->__pyx_kp_u_) != (0)) __PYX_ERR(0, 468, __pyx_L1_error);
   __pyx_t_2 = 0;
   __pyx_v_warning_lines = ((PyObject*)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "code_muse/terminal_utils.pyx":482
+  /* "code_muse/terminal_utils.pyx":502
  *     ]
  * 
  *     for line in warning_lines:             # <<<<<<<<<<<<<<
@@ -8203,18 +8339,18 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
     {
       Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_3);
       #if !CYTHON_ASSUME_SAFE_SIZE
-      if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 482, __pyx_L1_error)
+      if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 502, __pyx_L1_error)
       #endif
       if (__pyx_t_10 >= __pyx_temp) break;
     }
     __pyx_t_2 = __Pyx_PyList_GetItemRefFast(__pyx_t_3, __pyx_t_10, __Pyx_ReferenceSharing_OwnStrongReference);
     ++__pyx_t_10;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 482, __pyx_L1_error)
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 502, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_XDECREF_SET(__pyx_v_line, __pyx_t_2);
     __pyx_t_2 = 0;
 
-    /* "code_muse/terminal_utils.pyx":483
+    /* "code_muse/terminal_utils.pyx":503
  * 
  *     for line in warning_lines:
  *         console.print(line)             # <<<<<<<<<<<<<<
@@ -8226,12 +8362,12 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
       PyObject *__pyx_callargs[2] = {__pyx_t_1, __pyx_v_line};
       __pyx_t_2 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_print, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 483, __pyx_L1_error)
+      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 503, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
     }
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "code_muse/terminal_utils.pyx":482
+    /* "code_muse/terminal_utils.pyx":502
  *     ]
  * 
  *     for line in warning_lines:             # <<<<<<<<<<<<<<
@@ -8240,7 +8376,7 @@ static PyObject *__pyx_pf_9code_muse_14terminal_utils_24print_truecolor_warning(
   }
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "code_muse/terminal_utils.pyx":412
+  /* "code_muse/terminal_utils.pyx":432
  * 
  * 
  * def print_truecolor_warning(console: Console | None = None) -> None:             # <<<<<<<<<<<<<<
@@ -8658,15 +8794,15 @@ static int __Pyx_modinit_type_init_code(__pyx_mstatetype *__pyx_mstate) {
   __Pyx_RefNannySetupContext("__Pyx_modinit_type_init_code", 0);
   /*--- Type init code ---*/
   #if CYTHON_USE_TYPE_SPECS
-  __pyx_mstate->__pyx_ptype_9code_muse_14terminal_utils___pyx_scope_struct__detect_truecolor_support = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_9code_muse_14terminal_utils___pyx_scope_struct__detect_truecolor_support_spec, NULL); if (unlikely(!__pyx_mstate->__pyx_ptype_9code_muse_14terminal_utils___pyx_scope_struct__detect_truecolor_support)) __PYX_ERR(0, 362, __pyx_L1_error)
-  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_9code_muse_14terminal_utils___pyx_scope_struct__detect_truecolor_support_spec, __pyx_mstate->__pyx_ptype_9code_muse_14terminal_utils___pyx_scope_struct__detect_truecolor_support) < (0)) __PYX_ERR(0, 362, __pyx_L1_error)
+  __pyx_mstate->__pyx_ptype_9code_muse_14terminal_utils___pyx_scope_struct__detect_truecolor_support = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_9code_muse_14terminal_utils___pyx_scope_struct__detect_truecolor_support_spec, NULL); if (unlikely(!__pyx_mstate->__pyx_ptype_9code_muse_14terminal_utils___pyx_scope_struct__detect_truecolor_support)) __PYX_ERR(0, 382, __pyx_L1_error)
+  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_9code_muse_14terminal_utils___pyx_scope_struct__detect_truecolor_support_spec, __pyx_mstate->__pyx_ptype_9code_muse_14terminal_utils___pyx_scope_struct__detect_truecolor_support) < (0)) __PYX_ERR(0, 382, __pyx_L1_error)
   #else
   __pyx_mstate->__pyx_ptype_9code_muse_14terminal_utils___pyx_scope_struct__detect_truecolor_support = &__pyx_type_9code_muse_14terminal_utils___pyx_scope_struct__detect_truecolor_support;
   #endif
   #if !CYTHON_COMPILING_IN_LIMITED_API
   #endif
   #if !CYTHON_USE_TYPE_SPECS
-  if (__Pyx_PyType_Ready(__pyx_mstate->__pyx_ptype_9code_muse_14terminal_utils___pyx_scope_struct__detect_truecolor_support) < (0)) __PYX_ERR(0, 362, __pyx_L1_error)
+  if (__Pyx_PyType_Ready(__pyx_mstate->__pyx_ptype_9code_muse_14terminal_utils___pyx_scope_struct__detect_truecolor_support) < (0)) __PYX_ERR(0, 382, __pyx_L1_error)
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount((PyObject*)__pyx_mstate->__pyx_ptype_9code_muse_14terminal_utils___pyx_scope_struct__detect_truecolor_support);
@@ -8677,15 +8813,15 @@ static int __Pyx_modinit_type_init_code(__pyx_mstatetype *__pyx_mstate) {
   }
   #endif
   #if CYTHON_USE_TYPE_SPECS
-  __pyx_mstate->__pyx_ptype_9code_muse_14terminal_utils___pyx_scope_struct_1_genexpr = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_9code_muse_14terminal_utils___pyx_scope_struct_1_genexpr_spec, NULL); if (unlikely(!__pyx_mstate->__pyx_ptype_9code_muse_14terminal_utils___pyx_scope_struct_1_genexpr)) __PYX_ERR(0, 386, __pyx_L1_error)
-  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_9code_muse_14terminal_utils___pyx_scope_struct_1_genexpr_spec, __pyx_mstate->__pyx_ptype_9code_muse_14terminal_utils___pyx_scope_struct_1_genexpr) < (0)) __PYX_ERR(0, 386, __pyx_L1_error)
+  __pyx_mstate->__pyx_ptype_9code_muse_14terminal_utils___pyx_scope_struct_1_genexpr = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_9code_muse_14terminal_utils___pyx_scope_struct_1_genexpr_spec, NULL); if (unlikely(!__pyx_mstate->__pyx_ptype_9code_muse_14terminal_utils___pyx_scope_struct_1_genexpr)) __PYX_ERR(0, 406, __pyx_L1_error)
+  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_9code_muse_14terminal_utils___pyx_scope_struct_1_genexpr_spec, __pyx_mstate->__pyx_ptype_9code_muse_14terminal_utils___pyx_scope_struct_1_genexpr) < (0)) __PYX_ERR(0, 406, __pyx_L1_error)
   #else
   __pyx_mstate->__pyx_ptype_9code_muse_14terminal_utils___pyx_scope_struct_1_genexpr = &__pyx_type_9code_muse_14terminal_utils___pyx_scope_struct_1_genexpr;
   #endif
   #if !CYTHON_COMPILING_IN_LIMITED_API
   #endif
   #if !CYTHON_USE_TYPE_SPECS
-  if (__Pyx_PyType_Ready(__pyx_mstate->__pyx_ptype_9code_muse_14terminal_utils___pyx_scope_struct_1_genexpr) < (0)) __PYX_ERR(0, 386, __pyx_L1_error)
+  if (__Pyx_PyType_Ready(__pyx_mstate->__pyx_ptype_9code_muse_14terminal_utils___pyx_scope_struct_1_genexpr) < (0)) __PYX_ERR(0, 406, __pyx_L1_error)
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount((PyObject*)__pyx_mstate->__pyx_ptype_9code_muse_14terminal_utils___pyx_scope_struct_1_genexpr);
@@ -9079,7 +9215,7 @@ __Pyx_RefNannySetupContext("PyInit_terminal_utils", 0);
  * from collections.abc import Callable
  * from typing import TYPE_CHECKING             # <<<<<<<<<<<<<<
  * 
- * if TYPE_CHECKING:
+ * from libc.stdlib cimport free, malloc
 */
   {
     PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_TYPE_CHECKING};
@@ -9098,20 +9234,20 @@ __Pyx_RefNannySetupContext("PyInit_terminal_utils", 0);
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "code_muse/terminal_utils.pyx":15
- * from typing import TYPE_CHECKING
+  /* "code_muse/terminal_utils.pyx":17
+ * from libc.stdlib cimport free, malloc
  * 
  * if TYPE_CHECKING:             # <<<<<<<<<<<<<<
  *     from rich.console import Console
  * 
 */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_TYPE_CHECKING); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 15, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_TYPE_CHECKING); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 17, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 15, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 17, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (__pyx_t_5) {
 
-    /* "code_muse/terminal_utils.pyx":16
+    /* "code_muse/terminal_utils.pyx":18
  * 
  * if TYPE_CHECKING:
  *     from rich.console import Console             # <<<<<<<<<<<<<<
@@ -9120,23 +9256,23 @@ __Pyx_RefNannySetupContext("PyInit_terminal_utils", 0);
 */
     {
       PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_Console};
-      __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_rich_console, __pyx_imported_names, 1, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 16, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_rich_console, __pyx_imported_names, 1, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 18, __pyx_L1_error)
     }
     __pyx_t_2 = __pyx_t_1;
     __Pyx_GOTREF(__pyx_t_2);
     {
       PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_Console};
       __pyx_t_3 = 0; {
-        __pyx_t_4 = __Pyx_ImportFrom(__pyx_t_2, __pyx_imported_names[__pyx_t_3]); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 16, __pyx_L1_error)
+        __pyx_t_4 = __Pyx_ImportFrom(__pyx_t_2, __pyx_imported_names[__pyx_t_3]); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 18, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
-        if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_imported_names[__pyx_t_3], __pyx_t_4) < (0)) __PYX_ERR(0, 16, __pyx_L1_error)
+        if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_imported_names[__pyx_t_3], __pyx_t_4) < (0)) __PYX_ERR(0, 18, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       }
     }
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "code_muse/terminal_utils.pyx":15
- * from typing import TYPE_CHECKING
+    /* "code_muse/terminal_utils.pyx":17
+ * from libc.stdlib cimport free, malloc
  * 
  * if TYPE_CHECKING:             # <<<<<<<<<<<<<<
  *     from rich.console import Console
@@ -9144,278 +9280,278 @@ __Pyx_RefNannySetupContext("PyInit_terminal_utils", 0);
 */
   }
 
-  /* "code_muse/terminal_utils.pyx":19
+  /* "code_muse/terminal_utils.pyx":21
  * 
  * # Store the original console ctrl handler so we can restore it if needed
  * _original_ctrl_handler: Callable | None = None             # <<<<<<<<<<<<<<
  * 
  * 
 */
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_original_ctrl_handler, Py_None) < (0)) __PYX_ERR(0, 19, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_original_ctrl_handler, Py_None) < (0)) __PYX_ERR(0, 21, __pyx_L1_error)
 
-  /* "code_muse/terminal_utils.pyx":26
+  /* "code_muse/terminal_utils.pyx":28
  * # ---------------------------------------------------------------------------
  * 
  * def strip_ansi(input: str) -> str:             # <<<<<<<<<<<<<<
  *     """Remove ANSI CSI escape sequences and bare carriage-return frames.
  * 
 */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 26, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 28, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_input, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 26, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 26, __pyx_L1_error)
-  __pyx_t_4 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_1strip_ansi, 0, __pyx_mstate_global->__pyx_n_u_strip_ansi, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[1])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 26, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_input, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 28, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 28, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_1strip_ansi, 0, __pyx_mstate_global->__pyx_n_u_strip_ansi, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[1])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 28, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_4);
   #endif
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_4, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_strip_ansi, __pyx_t_4) < (0)) __PYX_ERR(0, 26, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_strip_ansi, __pyx_t_4) < (0)) __PYX_ERR(0, 28, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "code_muse/terminal_utils.pyx":85
+  /* "code_muse/terminal_utils.pyx":105
  * 
  * 
  * def reset_windows_terminal_ansi() -> None:             # <<<<<<<<<<<<<<
  *     """Reset ANSI formatting on Windows stdout/stderr.
  * 
 */
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 85, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 105, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 85, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_3reset_windows_terminal_ansi, 0, __pyx_mstate_global->__pyx_n_u_reset_windows_terminal_ansi, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[2])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 85, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 105, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_3reset_windows_terminal_ansi, 0, __pyx_mstate_global->__pyx_n_u_reset_windows_terminal_ansi, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[2])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 105, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
   #endif
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_4);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_reset_windows_terminal_ansi, __pyx_t_2) < (0)) __PYX_ERR(0, 85, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_reset_windows_terminal_ansi, __pyx_t_2) < (0)) __PYX_ERR(0, 105, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "code_muse/terminal_utils.pyx":103
+  /* "code_muse/terminal_utils.pyx":123
  * 
  * 
  * def reset_windows_console_mode() -> None:             # <<<<<<<<<<<<<<
  *     """Full Windows console mode reset using ctypes.
  * 
 */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 103, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 103, __pyx_L1_error)
-  __pyx_t_4 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_5reset_windows_console_mode, 0, __pyx_mstate_global->__pyx_n_u_reset_windows_console_mode, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[3])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 103, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 123, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_5reset_windows_console_mode, 0, __pyx_mstate_global->__pyx_n_u_reset_windows_console_mode, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[3])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_4);
   #endif
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_4, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_reset_windows_console_mode, __pyx_t_4) < (0)) __PYX_ERR(0, 103, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_reset_windows_console_mode, __pyx_t_4) < (0)) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "code_muse/terminal_utils.pyx":163
+  /* "code_muse/terminal_utils.pyx":183
  * 
  * 
  * def flush_windows_keyboard_buffer() -> None:             # <<<<<<<<<<<<<<
  *     """Flush the Windows keyboard buffer.
  * 
 */
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 183, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 163, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_7flush_windows_keyboard_buffer, 0, __pyx_mstate_global->__pyx_n_u_flush_windows_keyboard_buffer, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[4])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 163, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 183, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_7flush_windows_keyboard_buffer, 0, __pyx_mstate_global->__pyx_n_u_flush_windows_keyboard_buffer, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[4])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 183, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
   #endif
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_4);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_flush_windows_keyboard_buffer, __pyx_t_2) < (0)) __PYX_ERR(0, 163, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_flush_windows_keyboard_buffer, __pyx_t_2) < (0)) __PYX_ERR(0, 183, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "code_muse/terminal_utils.pyx":181
+  /* "code_muse/terminal_utils.pyx":201
  * 
  * 
  * def reset_windows_terminal_full() -> None:             # <<<<<<<<<<<<<<
  *     """Perform a full Windows terminal reset (ANSI + console mode + keyboard buffer).
  * 
 */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 181, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 201, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 181, __pyx_L1_error)
-  __pyx_t_4 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_9reset_windows_terminal_full, 0, __pyx_mstate_global->__pyx_n_u_reset_windows_terminal_full, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[5])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 181, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 201, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_9reset_windows_terminal_full, 0, __pyx_mstate_global->__pyx_n_u_reset_windows_terminal_full, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[5])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 201, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_4);
   #endif
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_4, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_reset_windows_terminal_full, __pyx_t_4) < (0)) __PYX_ERR(0, 181, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_reset_windows_terminal_full, __pyx_t_4) < (0)) __PYX_ERR(0, 201, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "code_muse/terminal_utils.pyx":195
+  /* "code_muse/terminal_utils.pyx":215
  * 
  * 
  * def reset_unix_terminal() -> None:             # <<<<<<<<<<<<<<
  *     """Reset Unix/Linux/macOS terminal to sane state.
  * 
 */
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 195, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 215, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 195, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_11reset_unix_terminal, 0, __pyx_mstate_global->__pyx_n_u_reset_unix_terminal, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[6])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 195, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 215, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_11reset_unix_terminal, 0, __pyx_mstate_global->__pyx_n_u_reset_unix_terminal, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[6])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 215, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
   #endif
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_4);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_reset_unix_terminal, __pyx_t_2) < (0)) __PYX_ERR(0, 195, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_reset_unix_terminal, __pyx_t_2) < (0)) __PYX_ERR(0, 215, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "code_muse/terminal_utils.pyx":210
+  /* "code_muse/terminal_utils.pyx":230
  * 
  * 
  * def reset_terminal() -> None:             # <<<<<<<<<<<<<<
  *     """Cross-platform terminal reset.
  * 
 */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 210, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 230, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 210, __pyx_L1_error)
-  __pyx_t_4 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_13reset_terminal, 0, __pyx_mstate_global->__pyx_n_u_reset_terminal, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[7])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 210, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 230, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_13reset_terminal, 0, __pyx_mstate_global->__pyx_n_u_reset_terminal, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[7])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 230, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_4);
   #endif
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_4, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_reset_terminal, __pyx_t_4) < (0)) __PYX_ERR(0, 210, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_reset_terminal, __pyx_t_4) < (0)) __PYX_ERR(0, 230, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "code_muse/terminal_utils.pyx":222
+  /* "code_muse/terminal_utils.pyx":242
  * 
  * 
  * def disable_windows_ctrl_c() -> bool:             # <<<<<<<<<<<<<<
  *     """Disable Ctrl+C processing at the Windows console input level.
  * 
 */
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 222, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 242, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_bool) < (0)) __PYX_ERR(0, 222, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_15disable_windows_ctrl_c, 0, __pyx_mstate_global->__pyx_n_u_disable_windows_ctrl_c, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[8])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 222, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_bool) < (0)) __PYX_ERR(0, 242, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_15disable_windows_ctrl_c, 0, __pyx_mstate_global->__pyx_n_u_disable_windows_ctrl_c, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[8])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 242, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
   #endif
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_4);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_disable_windows_ctrl_c, __pyx_t_2) < (0)) __PYX_ERR(0, 222, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_disable_windows_ctrl_c, __pyx_t_2) < (0)) __PYX_ERR(0, 242, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "code_muse/terminal_utils.pyx":269
+  /* "code_muse/terminal_utils.pyx":289
  * 
  * 
  * def enable_windows_ctrl_c() -> bool:             # <<<<<<<<<<<<<<
  *     """Re-enable Ctrl+C at the Windows console level.
  * 
 */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 269, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 289, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_bool) < (0)) __PYX_ERR(0, 269, __pyx_L1_error)
-  __pyx_t_4 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_17enable_windows_ctrl_c, 0, __pyx_mstate_global->__pyx_n_u_enable_windows_ctrl_c, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[9])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 269, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_bool) < (0)) __PYX_ERR(0, 289, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_17enable_windows_ctrl_c, 0, __pyx_mstate_global->__pyx_n_u_enable_windows_ctrl_c, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[9])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 289, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_4);
   #endif
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_4, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_enable_windows_ctrl_c, __pyx_t_4) < (0)) __PYX_ERR(0, 269, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_enable_windows_ctrl_c, __pyx_t_4) < (0)) __PYX_ERR(0, 289, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "code_muse/terminal_utils.pyx":305
+  /* "code_muse/terminal_utils.pyx":325
  * 
  * # Flag to track if we should keep Ctrl+C disabled
  * _keep_ctrl_c_disabled: bool = False             # <<<<<<<<<<<<<<
  * 
  * 
 */
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_keep_ctrl_c_disabled, Py_False) < (0)) __PYX_ERR(0, 305, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_keep_ctrl_c_disabled, Py_False) < (0)) __PYX_ERR(0, 325, __pyx_L1_error)
 
-  /* "code_muse/terminal_utils.pyx":308
+  /* "code_muse/terminal_utils.pyx":328
  * 
  * 
  * def set_keep_ctrl_c_disabled(value: bool) -> None:             # <<<<<<<<<<<<<<
  *     """Set whether Ctrl+C should be kept disabled.
  * 
 */
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 308, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 328, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_value, __pyx_mstate_global->__pyx_n_u_bool) < (0)) __PYX_ERR(0, 308, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 308, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_19set_keep_ctrl_c_disabled, 0, __pyx_mstate_global->__pyx_n_u_set_keep_ctrl_c_disabled, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[10])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 308, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_value, __pyx_mstate_global->__pyx_n_u_bool) < (0)) __PYX_ERR(0, 328, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 328, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_19set_keep_ctrl_c_disabled, 0, __pyx_mstate_global->__pyx_n_u_set_keep_ctrl_c_disabled, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[10])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 328, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
   #endif
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_4);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_set_keep_ctrl_c_disabled, __pyx_t_2) < (0)) __PYX_ERR(0, 308, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_set_keep_ctrl_c_disabled, __pyx_t_2) < (0)) __PYX_ERR(0, 328, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "code_muse/terminal_utils.pyx":318
+  /* "code_muse/terminal_utils.pyx":338
  * 
  * 
  * def ensure_ctrl_c_disabled() -> bool:             # <<<<<<<<<<<<<<
  *     """Ensure Ctrl+C is disabled if it should be.
  * 
 */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 318, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 338, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_bool) < (0)) __PYX_ERR(0, 318, __pyx_L1_error)
-  __pyx_t_4 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_21ensure_ctrl_c_disabled, 0, __pyx_mstate_global->__pyx_n_u_ensure_ctrl_c_disabled, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[11])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 318, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_bool) < (0)) __PYX_ERR(0, 338, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_21ensure_ctrl_c_disabled, 0, __pyx_mstate_global->__pyx_n_u_ensure_ctrl_c_disabled, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[11])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 338, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_4);
   #endif
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_4, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_ensure_ctrl_c_disabled, __pyx_t_4) < (0)) __PYX_ERR(0, 318, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_ensure_ctrl_c_disabled, __pyx_t_4) < (0)) __PYX_ERR(0, 338, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "code_muse/terminal_utils.pyx":362
+  /* "code_muse/terminal_utils.pyx":382
  * 
  * 
  * def detect_truecolor_support() -> bool:             # <<<<<<<<<<<<<<
  *     """Detect if the terminal supports truecolor (24-bit color).
  * 
 */
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 362, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 382, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_bool) < (0)) __PYX_ERR(0, 362, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_23detect_truecolor_support, 0, __pyx_mstate_global->__pyx_n_u_detect_truecolor_support, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[12])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 362, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_bool) < (0)) __PYX_ERR(0, 382, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_23detect_truecolor_support, 0, __pyx_mstate_global->__pyx_n_u_detect_truecolor_support, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[12])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 382, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
   #endif
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_4);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_detect_truecolor_support, __pyx_t_2) < (0)) __PYX_ERR(0, 362, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_detect_truecolor_support, __pyx_t_2) < (0)) __PYX_ERR(0, 382, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "code_muse/terminal_utils.pyx":412
+  /* "code_muse/terminal_utils.pyx":432
  * 
  * 
  * def print_truecolor_warning(console: Console | None = None) -> None:             # <<<<<<<<<<<<<<
  *     """Print a big fat red warning if truecolor is not supported.
  * 
 */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 412, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 432, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_console, __pyx_mstate_global->__pyx_kp_u_Console_None) < (0)) __PYX_ERR(0, 412, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 412, __pyx_L1_error)
-  __pyx_t_4 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_25print_truecolor_warning, 0, __pyx_mstate_global->__pyx_n_u_print_truecolor_warning, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[13])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 412, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_console, __pyx_mstate_global->__pyx_kp_u_Console_None) < (0)) __PYX_ERR(0, 432, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 432, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_CyFunction_New(&__pyx_mdef_9code_muse_14terminal_utils_25print_truecolor_warning, 0, __pyx_mstate_global->__pyx_n_u_print_truecolor_warning, NULL, __pyx_mstate_global->__pyx_n_u_code_muse_terminal_utils, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[13])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 432, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_4);
@@ -9423,7 +9559,7 @@ __Pyx_RefNannySetupContext("PyInit_terminal_utils", 0);
   __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_4, __pyx_mstate_global->__pyx_tuple[3]);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_4, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_print_truecolor_warning, __pyx_t_4) < (0)) __PYX_ERR(0, 412, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_print_truecolor_warning, __pyx_t_4) < (0)) __PYX_ERR(0, 432, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "code_muse/terminal_utils.pyx":1
@@ -9473,7 +9609,7 @@ __Pyx_RefNannySetupContext("PyInit_terminal_utils", 0);
 
 static int __Pyx_InitCachedBuiltins(__pyx_mstatetype *__pyx_mstate) {
   CYTHON_UNUSED_VAR(__pyx_mstate);
-  __pyx_builtin_print = __Pyx_GetBuiltinName(__pyx_mstate->__pyx_n_u_print); if (!__pyx_builtin_print) __PYX_ERR(0, 428, __pyx_L1_error)
+  __pyx_builtin_print = __Pyx_GetBuiltinName(__pyx_mstate->__pyx_n_u_print); if (!__pyx_builtin_print) __PYX_ERR(0, 448, __pyx_L1_error)
 
   /* Cached unbound methods */
   __pyx_mstate->__pyx_umethod_PyDict_Type_items.type = (PyObject*)&PyDict_Type;
@@ -9482,8 +9618,6 @@ static int __Pyx_InitCachedBuiltins(__pyx_mstatetype *__pyx_mstate) {
   __pyx_mstate->__pyx_umethod_PyDict_Type_pop.method_name = &__pyx_mstate->__pyx_n_u_pop;
   __pyx_mstate->__pyx_umethod_PyDict_Type_values.type = (PyObject*)&PyDict_Type;
   __pyx_mstate->__pyx_umethod_PyDict_Type_values.method_name = &__pyx_mstate->__pyx_n_u_values;
-  __pyx_mstate->__pyx_umethod_PyByteArray_Type__extend.type = (PyObject*)(&PyByteArray_Type);
-  __pyx_mstate->__pyx_umethod_PyByteArray_Type__extend.method_name = &__pyx_mstate->__pyx_n_u_extend;
   return 0;
   __pyx_L1_error:;
   return -1;
@@ -9495,47 +9629,47 @@ static int __Pyx_InitCachedConstants(__pyx_mstatetype *__pyx_mstate) {
   CYTHON_UNUSED_VAR(__pyx_mstate);
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "code_muse/terminal_utils.pyx":374
+  /* "code_muse/terminal_utils.pyx":394
  *     """
  *     # Check COLORTERM - this is the most reliable indicator
  *     colorterm = os.environ.get("COLORTERM", "").lower()             # <<<<<<<<<<<<<<
  *     if colorterm in ("truecolor", "24bit"):
  *         return True
 */
-  __pyx_mstate_global->__pyx_tuple[0] = PyTuple_Pack(2, __pyx_mstate_global->__pyx_n_u_COLORTERM, __pyx_mstate_global->__pyx_kp_u_); if (unlikely(!__pyx_mstate_global->__pyx_tuple[0])) __PYX_ERR(0, 374, __pyx_L1_error)
+  __pyx_mstate_global->__pyx_tuple[0] = PyTuple_Pack(2, __pyx_mstate_global->__pyx_n_u_COLORTERM, __pyx_mstate_global->__pyx_kp_u_); if (unlikely(!__pyx_mstate_global->__pyx_tuple[0])) __PYX_ERR(0, 394, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_mstate_global->__pyx_tuple[0]);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_tuple[0]);
 
-  /* "code_muse/terminal_utils.pyx":379
+  /* "code_muse/terminal_utils.pyx":399
  * 
  *     # Check TERM for known truecolor-capable terminals
  *     term = os.environ.get("TERM", "").lower()             # <<<<<<<<<<<<<<
  *     truecolor_terms = (
  *         "xterm-direct",
 */
-  __pyx_mstate_global->__pyx_tuple[1] = PyTuple_Pack(2, __pyx_mstate_global->__pyx_n_u_TERM, __pyx_mstate_global->__pyx_kp_u_); if (unlikely(!__pyx_mstate_global->__pyx_tuple[1])) __PYX_ERR(0, 379, __pyx_L1_error)
+  __pyx_mstate_global->__pyx_tuple[1] = PyTuple_Pack(2, __pyx_mstate_global->__pyx_n_u_TERM, __pyx_mstate_global->__pyx_kp_u_); if (unlikely(!__pyx_mstate_global->__pyx_tuple[1])) __PYX_ERR(0, 399, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_mstate_global->__pyx_tuple[1]);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_tuple[1]);
 
-  /* "code_muse/terminal_utils.pyx":381
+  /* "code_muse/terminal_utils.pyx":401
  *     term = os.environ.get("TERM", "").lower()
  *     truecolor_terms = (
  *         "xterm-direct",             # <<<<<<<<<<<<<<
  *         "xterm-truecolor",
  *         "iterm2",
 */
-  __pyx_mstate_global->__pyx_tuple[2] = PyTuple_Pack(4, __pyx_mstate_global->__pyx_kp_u_xterm_direct, __pyx_mstate_global->__pyx_kp_u_xterm_truecolor, __pyx_mstate_global->__pyx_n_u_iterm2, __pyx_mstate_global->__pyx_kp_u_vte_256color); if (unlikely(!__pyx_mstate_global->__pyx_tuple[2])) __PYX_ERR(0, 381, __pyx_L1_error)
+  __pyx_mstate_global->__pyx_tuple[2] = PyTuple_Pack(4, __pyx_mstate_global->__pyx_kp_u_xterm_direct, __pyx_mstate_global->__pyx_kp_u_xterm_truecolor, __pyx_mstate_global->__pyx_n_u_iterm2, __pyx_mstate_global->__pyx_kp_u_vte_256color); if (unlikely(!__pyx_mstate_global->__pyx_tuple[2])) __PYX_ERR(0, 401, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_mstate_global->__pyx_tuple[2]);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_tuple[2]);
 
-  /* "code_muse/terminal_utils.pyx":412
+  /* "code_muse/terminal_utils.pyx":432
  * 
  * 
  * def print_truecolor_warning(console: Console | None = None) -> None:             # <<<<<<<<<<<<<<
  *     """Print a big fat red warning if truecolor is not supported.
  * 
 */
-  __pyx_mstate_global->__pyx_tuple[3] = PyTuple_Pack(1, Py_None); if (unlikely(!__pyx_mstate_global->__pyx_tuple[3])) __PYX_ERR(0, 412, __pyx_L1_error)
+  __pyx_mstate_global->__pyx_tuple[3] = PyTuple_Pack(1, Py_None); if (unlikely(!__pyx_mstate_global->__pyx_tuple[3])) __PYX_ERR(0, 432, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_mstate_global->__pyx_tuple[3]);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_tuple[3]);
   #if CYTHON_IMMORTAL_CONSTANTS
@@ -9568,39 +9702,39 @@ static int __Pyx_InitCachedConstants(__pyx_mstatetype *__pyx_mstate) {
 static int __Pyx_InitConstants(__pyx_mstatetype *__pyx_mstate) {
   CYTHON_UNUSED_VAR(__pyx_mstate);
   {
-    const struct { const unsigned int length: 9; } index[] = {{0},{4},{5},{45},{38},{14},{55},{64},{179},{60},{67},{32},{52},{1},{71},{70},{71},{3},{1},{8},{236},{243},{159},{170},{84},{28},{51},{59},{36},{102},{93},{7},{6},{2},{58},{64},{56},{75},{60},{20},{9},{12},{12},{15},{40},{16},{9},{8},{18},{7},{17},{17},{22},{23},{34},{25},{14},{12},{16},{15},{4},{20},{16},{17},{14},{4},{13},{10},{7},{6},{18},{1},{4},{5},{7},{14},{2},{5},{18},{5},{24},{15},{12},{9},{7},{6},{24},{41},{22},{21},{22},{7},{6},{5},{29},{14},{8},{7},{3},{5},{6},{1},{6},{5},{13},{5},{6},{5},{21},{8},{4},{5},{8},{4},{10},{6},{1},{8},{8},{14},{4},{22},{2},{3},{8},{3},{5},{23},{12},{5},{14},{19},{26},{27},{27},{6},{12},{3},{4},{24},{12},{10},{9},{6},{12},{10},{6},{3},{10},{10},{3},{6},{1},{4},{8},{5},{9},{15},{6},{7},{5},{6},{13},{6},{5},{233},{17},{278},{2},{69},{53},{38},{212},{284},{48},{114},{170},{30},{154}};
-    #if (CYTHON_COMPRESS_STRINGS) == 3 && __PYX_LIMITED_VERSION_HEX >= 0x030e0000 /* compression: zstd (2337 bytes) */
-const char* const cstring = "(\265/\375`\255\024\275H\000Zfx\025E\340\222\314\001@X\276\201\035\336`\206\031\257\361\010\225rn\271\035\034\211\263c\000\234\020\351M\005)\311b\002\177.\347\201?\021\340t\332$\235} \177T\206\233\330E\240\021\034\353\356n\245o\266\223\002[BF\0134\001A\001<\001\022\304\372\265\302N\020\244!\\,+\010| \360}\250\261\362\245\343t\225\025T$\277i0\337\231\n\262e\202YqiQ\221+\224\014\212T:\261j\311\326\n\225J\235`\311\026\352$Y%T\214\224\031\235L&V\245\021'\323i5\232\221\262\206\315\216\361\206\216\257g\273-\014F1N\t\265\n\371U\330\366\342M-\275:\254Y\226\312g9\246\"\254\355\356\013\312\224\231\365\3554\323\024\331-\227\331rJ\223\272K\320\332,C\215\2230\223\374\270\245\341:LsNq}\361^-\013\273%\350\322\301e%UJ\311\\\357\356\\\342\260\355t\333\327\305\026\224\374\312\254e\035G\222\235\312\272\354:Kn5(i4\372\265$\013U\351L\346\273\322\361\r_\322\312Z\362\305v}\332\272S\034\316,.\323])\036\311\013\270\336o\t\211C\206\016)m\326'\351BZ\254_,\315\305\022\323|g\333v\231\365LR\031\313\227\207r[\360\362\254I_\337\232\313\255\261\2566\334]\312\372\275\311\316\355Kr\032\255\261\304\321haJZP\223\372}\271\264\3140\254`\020!m\332\035v\032\255\261\254q8+\314n\334\013k\375zq\233o\017\365\326\267f\034\247`\266\255\231\022\244\022\t\322,\245T\264J21\247\021\211\331b\301\354\252\327\330\323\354\365\306\324\340Rs\316\240bN\246\231\0221\246yB\261\246\311b0S\022`gYP\233\350v\204\014\2524[\243\231\032\255f\246\314\350DkeB\321:\201\212)\261X%\022j\225*\235L2\255\023\251\223i\242H\220J\263$\0033:\225\266\336\273\304\271\255z\247@\2131%\265J%H(\326T\321j\231V\244\221\314\313\314v\216\343\335\306\270n\032c\213[\251\331\240\241e\305v\033\310\357L\327\257\337\226+\022\351\236\257\204\261Y\360\273UP\241m:C\303\322m\306\351\030xm\232\346\273\361\022\261\255?\312\302\362\302i\275\313\\\256\035\253\261l\371\005qrE\322\260\225\311\236\222\365M\262\244\253^L\373\225\256\331\005-~\321\273\251m\226\365\276\266l\345F\275\2702\305\325\02558\332\307\361\355\341d\231\315\372\205\026\244;fA\211\361\275q)\013]\322""\366+\273\321\230!\263\2262l\350p\201v\317.\213\335\375\n\020Bv\235\232M\210\t;\323o\300\331}\360\004\200p<&O\201\036\245\376\200\310&d#bD4v\370(\274\201N\0174\206\032\250r\243\334\213_\343\0218\350Qq\304\303\363\360\037\017o@\247\247\312\255\214\022:\274\320\030A\245\033\351`9\001\271\316X\373$\376\223\302\333\304Om\244\243\203\237\300\203:<\325\1770\200#\340\306cD\3607x\223N\357C\302\003\371\350\r\350\360F\337\344W\177\023kdt@8#7\243Q\002gg\373\3357\2149\267!\246\266|\323\231&\207\374\246\267\254\317\331i\257\220\323\356\016\365\336\274o\332y\307!\205YpN\236\303\375e|y\24657\207\335r\2731\rks\346Mo=\337M\243i\332\254S\314\365\3263_\260\363\233\3153\232\373\2566\216\303|\351l\316m[2`\233\267\245\241\331~e/\032~'\277\223\327+\223\325ncs\326\034\302\346\264ukX\370\232\340\246\372\205\26342\036b\0308y\266u\342\335\353\274\315\235m\354\003\3011\255\032{\370\346\004k\235\365E\277\213?\3135}\331Jw\237\371N\\i\252\225UY\355\0015\221\244\303\363\024\350\205lN9Q\016\365It\320\350q;Q\215'\013D\237\301\030\241GmFt\265\034\311\330q\031q\370\335#\360\364<\376\313\0054\242\204r\200rl\260A\241\203\021\303\327\210.%\234\2357\031'\350@\214\2411\204\357 z@c\375\017Bv!\237\233\022\017/\364Ex\23082\246pv1?\362\275\232\310\207n\237\017O\364C&\237:f\030K\306\255\372'\177\373\225o\361%~\213$\336\200\2077\322\231\350j\016&\207\222\003\345<r1#\312\010`|}\230\217\362Ao\300W1\003\350+\370\330<\311\207\342G\204\323\271\021QQ\204\021Q\304\002 \362\343C\301W\360!\372\001~\202\017\236G\310\327\340M>z\"\261\237\334\320/\363\007j\237\364_\374\033(\307\222\"\262\023\351$\020\267J\024\341\211r(\306\010\243\312\007\375\226O!\266\210\236Zht\371\023\337\202\247\322\331r$\372%|\025\017\300\203@8\tnB#\ng\367\301\243\377\301\207(g\341\300Ne\243)\214\004~\315S/\301\227|\007\240\357\361)x\016b\201\016g\247\022\251W\221tx\036\276#\016\020\351B\272\226\036\001o@\224\013\220\373>\007\177\002\"\002\362 O\254\247\032'\200v \317Cj?\201\260\250\3610\246\0242#3\"\"I\222\244\003!\010Bq\234\265\234\3352\312\032\346""\220$\206\210\310\210\004\"$\"JRPRRPHc\004D\275\204\203jg!V\227q\205KO\230\227\321\214\232\302\247\342y&\321\212\000{K\010\2200\207,\2611\024\t\260\313\245-\314\301\300\252\346\342\373\236\257E~m\017\351\333'\013\253H?\023\354\363\270\202\210\216Ng\300\244t\253\232v\240Q\032\016\311\270 ~\256\241\224\331\231\366\261*\256a*Z\346\343\335\003f<_\224Yl\374\344\242.B\026a\310\263O*f\236\317u\362\353\254\241\316\305\352\214\224\244\221\030aRd;\r6=\002\266\220h\311\367T\235\205/&\024\207(\246\245r\325\320\323\307fbY\241\313\251=\034-\010\315\351\325\325\372\014\242!\322\313Yq#\313\000\245\030ya\212JPG\201\014\014\007a\350L\211\370\222\021\215\023-\230w\356\302zi\340D\251\201\206!\304\2704|\244\3169\255\002\311\342E\375\222\3202HK]\013V\207\341\311|\033P\243\351\322\236\260\363K\327\324\315/U\024\331\377\204\215\214[h\334`K\377\340\016\020Sj=\260\367\327\326\000P1+\2562f,\004cA\352\201\344X\270\315\013\310\376\204\371s\222\000\377\362\312\277\326\263\000\366\330\020@amsT\207\265\350@D\231\324\217\206ek\267\206vHv\326Q\272\246\356['nl)V\255\234UD<\361\312n{\260\235\010\251\021\236]\020\320\007\314\023\245\036S\3036\326\372c)\234\350\226\225%\177\300\304\353\305\202\204\313\207\016\242\304k\234\330\310\373\317\006\370\265\325 ?c\002`\3517\350\007\036\206e+2\262l\244x\241*\"\023\020\375\007\272\021Ge\026\341\3757\237\236\215\356*$r\374\233H\275\226H\007\322\005\244W\253\202\230$o\033\001a\371\377\r\237\212\033\270\001<\361\343\317\300m,\257\203\253\342\342\315\377,\260Y\203\333)*\346\367C\322\t)\214U\251\240$n|!\346\216\037A\022\334\037\355\272\002\024\217\223[j\231OG\031\350\233\333\221l\210\002\270n>[s\350\014\325\025\311\320\345b|\310\327\347\331\252A5+\235k\277\036\220*\323\006\350.\365\2657[T\207|\3672z\345\310\332\353\214*1{A\354\204\215~8\365\263\246\343m\010\320\245d\3146\307\273?`\312\252\260u\266\272\240\230}\013\325\376ZD\310\272<Q\332\376\363)D\264\034E\355\2403dI\247aBc\304\036rh/=\331?=\006%\341\311\356\210i\000\030\272\006\003\001\316&\326\00515}\224\271\334""\374\365\363\032asG\262\321\222\377)\342\353b0\037b\231\3329\371}\234\244t0.\262\277\025\\\347b<Z\343B?\202\203\365\373\t\366\3336\354\204s\306\177\303\327\376$\346q\276~0+\321:d\324\260\026\3545d\342\021\216s\254\306?\244y\3703\202\014\316\213\361\275\344\370v\222A\250y\3136it\322\360\364\014L/\221\264\tv\345\202\317\215\257\025\212\205\200p\251\356\332\365{[\360\340\363-\325\346\265)*'6\022\275{\2742\344Ox\376\020\2035\321+\327Ex\021\263\365O5\022\326Rm1\252\036\226\241z\260Y\271UC\253\366\010tA\003t\347cV\340~\2020\236\330\353VT\273\033W\2747\311]\273X\240B\021H\227>\024\272\335\010%C^M\336\027\252Z\033\300:%\251~\370\376G\244P\003";
-    PyObject *data = __Pyx_DecompressString(cstring, 2337, 3);
+    const struct { const unsigned int length: 9; } index[] = {{0},{4},{5},{45},{38},{14},{55},{64},{179},{60},{67},{32},{52},{1},{71},{70},{71},{3},{1},{8},{236},{243},{159},{170},{84},{28},{51},{59},{36},{102},{93},{7},{6},{2},{58},{64},{56},{75},{60},{20},{9},{12},{12},{15},{40},{16},{9},{8},{18},{7},{17},{17},{22},{23},{34},{25},{14},{12},{16},{15},{4},{20},{16},{17},{14},{4},{13},{10},{7},{18},{1},{4},{5},{6},{5},{7},{14},{2},{5},{18},{5},{24},{15},{12},{9},{7},{6},{24},{41},{22},{21},{22},{7},{5},{29},{14},{8},{7},{3},{5},{6},{1},{6},{5},{13},{5},{6},{1},{1},{5},{21},{8},{4},{5},{8},{4},{10},{6},{1},{8},{8},{14},{4},{22},{2},{8},{3},{5},{23},{12},{5},{14},{19},{26},{27},{27},{12},{6},{12},{3},{4},{24},{12},{10},{9},{6},{12},{10},{6},{3},{10},{10},{3},{6},{1},{8},{4},{8},{5},{9},{15},{6},{7},{5},{6},{13},{6},{5},{233},{17},{278},{2},{69},{53},{38},{212},{376},{48},{114},{170},{30},{154}};
+    #if (CYTHON_COMPRESS_STRINGS) == 3 && __PYX_LIMITED_VERSION_HEX >= 0x030e0000 /* compression: zstd (2405 bytes) */
+const char* const cstring = "(\265/\375`\033\025\335J\000\372i,\026F\340\260\314\001@X\026\241\022\2170C\0332\201\022\217@\334\262{D\037\345\256\235\356\347\2777\025\244$=\004$i\357R\010\242\326[\370\345q\277\363[\027\364?\351ucsN\300\203\331\235\343:%\020\3056\357@\001>\001I\001G\001/\321n\332e\261\273\301)b\r\232\260T\024\253\207\227\213\t\020\016 !\0169;a\272N\317\\\303)\201er\234\026\363\265\2210]\247\017-/#\226\311J\321\244J\246\032\226k\272X)\225\252\2465])\324l\231R1\223\206\204:\211`\231B\240N(\026\311fN\03076J\0315B=\333ma\260\212\361\312\250K\314\220\204m/\336\325\326\253G\233m\261\204,\307\025\204\275\335}\305\271B\263\276\275\346\2722\273\3453[^kS\367)Z\233\347\250u\023v\232!nk\272\016\323\234W\034\202\274\207\366\204\335S|\321\360\322\2422\251f\016\357\356|\352\260\355u[\360b+N~g\326\262\256+\315^e}v\235'\267Z\234\265Z\r\271f+\025V\332\314\267\245\343;\202\323\312\\\023\306v\215\332\272W<\322\254.\327\035VL\232\024t\275\337\2319\243E\2159m\326\250\231bZ\254a\354\354\342\211k\276\264m\373\314\2326\353\214\345\313\307\271\255xy\326\245P\337\232\317\255\261\016\355\270\373\224\365\213\233\235[p\362\231\326x\352j\265Q5\255\250K\375\202/#Z\005\023\n\002\226\353\n\332\260\356N\363\2458\234\205V\026\312jv\217\275V\303X\326x\244!\rk\257\"\rav\353@\2545\010r\233o\037\365\3267\314:^]63%\223L\211\232T%\\&\232\030\024I\206\272Z0\313\3529\213\242=\27419\235\212R\233T\014\352d3\023s\242\250T\213\236,\026s\225\021{\313\212ZD\267!hR&\352\"Q\025\211eCiH5.\326i\204\253&\025cj\265L\245\024KeB\235h\\5*\324\211\246dJ&j\242\371@B\231\266\336\333\304\271\r\365V\211\026\343Zr\231fJ\251\026-\341r\235X%\022\r\014\315v\256\343\335\306\274p\032c\253k\311a\2700j\261\375&\362K\323a\250\337\321\025\211t\317w~\270Y1\204\223\300R\333\325f\346\322m\326\351\230xoz\026\302\361\231\330\326\241\352\342\002\303k\275\313^\257\035\013c\331\362+\352f\313\254a+\233}%k\334l\315Wxq\355w\276hW\264\030\254w\327\033-\353}o\331\316\235\202y\345\252\013M\344t\265\020\307\267\217\324\205F\303\320h\305\272cV\234\030_\034\237\262""\3615m\2772\334\013\0273\353\331\"F\215*\237\336\307\363\017\333w\360\321\353\330n<\250\364N\177\001\247\327\341\023\340\301\361\234<!\277Z=\212\350\006t\003BDTj\370#\374I\347\367)A\013V;\322N\305\317y\003\014~\225\024\361\3708<\211\3077\240\363[\355ZJ\010\035\037\250LY\361H<\330N\300\256S\332\376\210'!\341o$\211\255\254%\203\177\300\177:\276\325o0\200#\340\006Gi\340c\360%\235\037\311\210\317\243\3437\240\343#\375\222\037z\034\231k\321\361\340\210\334 \225\0208=\333\357\306a\314\271\035q\275e\234\316\263<r\234\336\262Ni\266\230\342[{\257\201#\257\335=\352\275y\337\265\363\n\263\"\245\226\213\331\362<\356P\336c\267\233\333\256\003i\307#\276<\327\334\315c\267\334n\\G\033\245yW\\\317w\327j\272F\353\025\327\270\336\232\366\\\276b\3478\233i5\367\035\3368\036\363\2554J\267\035Y\3006o;\253\331~e\340lv\202_\312/\345\341\225\311\302nc\224\206y\204Qj\303\255a#H\305]5\250\2633\031\0371L\244<\333\220\342\335C\212\243;\333X\250\003\3075\324xC\210R1\014i\010\326\320\305\2416r\244\343\363\204\374@7\250\235h\227\3722^\344\373\247\344\300\231\254J\223\004\242\257\240L\371\325\033\021\236m7Rv^H\031~\367\006<?\216\017\276|\312\007 \032\037\032\030nF\360V\260\3609\362\245\200/\361\250\360:\224\240\322\203\327@z>e\370\033|\364>Hn\024\370 <\214\323\263\375\rdH\207\357Cr\220\235rTZ\320\211\277\372\267\023o\"=&6\257\"\372\326\237\330\276\3127\361\201x\374\301\016\300\316V\242\224\256?\372\005\376\366,?\362%$\010nRn8\217\305\033\201\330u\354\300\362C\371\240\004P\2025>\305\363\217?!\361\231\370>%\206\013\336\344\303\351xl\036\005$E:\276\020\020\016\010\207o\2217^\345\t\340U\230\275Y\256t\210~\200\177\240\303\307\361\361/\370\222\216\237\210\354(7\352\227y\024\333/}\025\037\367\331\271\254\020\350\021\350\034 \367\212$\340\023\355F\224)%\313\377|\227'A\216H\217\rT\276\274\211G\341[\361n\273R\375\020>\213\007\340?\036\234\0037@\345\003N\257\303W\177\203\016\321n\002Jou\243#\224 \337\346\253\207\340\013|\006\237\317\361#\370\014dH\207\323[\221\325\257F:>\016\337!\007\210x \336\350\007\342OD""\273\000\273\320\317\340M<\010|\374\307\023\373\255\312\201\274\250\001\261R\n\231\231\021\021\221$I\322\001!\010Bq\034\245\336\335R\312\030\346\220$\204\210\310\210\004\"$\"JRPRRPHc/\261\030\306\014d\342\261]!\336\203\340%\265\242\241\350\251\232O6Ak-\010x!\250 \020#Q\273\321F\323\330\003$\247!u\210\330\014\352\233=\337\2136\264 \333J*\213\324\222G\000\341\322\204\277\362#G\373\024\265\n\322.\273\202u&\\\210\267\034!\254-\312P\316\361=^T\025J\201\2201\335\021\262\017\256S?z\222\321S+7ng\230\000\004\321#\035\"\332\360\312\030\243W\010\342\232\243%H:\243\335\336T5\377\256\372\335i\r\237@\253?n\306\305\322\t+\320[\373Zw]\331A\274\316\314\213\311\352-V\037\211\361 s\262\004\3333\333\002\017\352\\\022\362\025K\222\202\200A\247\257\306$\261\"\221\323\177\270\277\340\231\363\256\013\365L\274\201\256+U%\030\307p]L\370q\2152\270\277\240\006\014*\302\372L\235\370\312#\032\031-\240w\372\245\375 0\3245X7$9\256\211.\025\263N\2530X\344P'\004\272\n<^\254%*kht\352\306\263ixY\362`\346/\300)\026\377\252xb\213\022\236l\2570\336\200+}\3029\332\330\234\346\214MX\033$ZE\245\330\302\230s!'\013\264OI^\345\n\342\300\372#\346\317%!\374\313jX\347\027\232n|\340\242\346\332q\273#\203v\372Mz-\300\215\314\033\372\266\000k\342Y\212\206:t\237\272\014T\352\210\006\215\253\022\246\332\206x\252\020V\244\201)\n\020\016\313\242+\247v\355@w\306(\234\356V\022\244zT\202\016\264\005\rk\207M\003\241\241\315_\273\002<\237\240\241\266\000*\233\245\311\221&X\311\306@\366\211\024)T\305dB\363\366\036\234\260\324'\200a\377\302)u\321n\227\301l\302\217\t\323\3004KE@R\365*\305\230\314\345\361\017\025se!\240\240\362\303[\000z\314\027\307\010\354\364\016@-\272\331\200\333\211,\366$\302\211\205\004\265U\227q(\356\273\360\000+\300#\365\341\277\3107\242Q\214N\272\345ft\023\202\255\234S\236\004~\013\005T\270{\322b\206.\240\036\211@\356\034\206L\276\354g\213\r\252\020)]\033\367\201'J\336\310\334\205\251\3663\013\360!4\254\337\232\034C\250v\246\346`/\210\2350\356\207Sy\266\264\224\rA\252\224\204\331\316\363\032\026l\260*""\035\316B.\350hWQ\035\274\226{l\376\201G\333\034\177E\010\000\007!:\201\014Y\352T\230\004\021y\307\034\331K/\366O\337\210\"\346\251B$~\310\017]\203a>\347\022\353\202\230\032_\325\3346\177\372\034EH\273#\277\350\231\00737\353C\360\335a\231\3319\301y<\3514\330.j\377\024\334qy8\355\312B\r\201\216x\363\004Kb\233\265\302\371\344\276\341k?R\2678\177.\230\225h\035\2625\242\027\333\025_\305S:n\023\326xH\367\370\343\n\031(\2139\377\022\023\333i\016AY[1\t\243\220\206'f`\032\211F\203\240T \370\324xW\241X\010\010\225\352\262}~o)^)b\245\332\274.1\340\304>\261\263\223U\242\377\204\237/b`m\343\353h\301\263*\223\232C\326\034c\301\252\036\224\0012\260\311\270\265\241\235\366\210|\001\001h\344\243\211@~b3\226\2304\210\250qgV\340o2w%hQ\240mI\017~x\270\031\004\245\330\274Z\217/V\232\357\305\002%\251~x\376\007\240P\003";
+    PyObject *data = __Pyx_DecompressString(cstring, 2405, 3);
     if (unlikely(!data)) __PYX_ERR(0, 1, __pyx_L1_error)
     const char* const bytes = __Pyx_PyBytes_AsString(data);
     #if !CYTHON_ASSUME_SAFE_MACROS
     if (likely(bytes)); else { Py_DECREF(data); __PYX_ERR(0, 1, __pyx_L1_error) }
     #endif
-    #elif (CYTHON_COMPRESS_STRINGS) == 2 /* compression: bz2 (2508 bytes) */
-const char* const cstring = "BZh91AY&SY\357H\200\342\000\001>\377\377\377\377\377\377\377\357\377\327\277\357\377\352\277\377\377\367\350@\304PP@@@@\001@@P\000\300\000`\t\\|2E]\006\"\334\256\266-\250\335\334\273\025Y\300\366\004\242\023HMO)\344\310OM\032\247\352dx\231\242\223zeO\312OdI\351=M\250\3654\r\007\244\320<Q\2652yM\036Q\350dOP\330\232@\311\020\305=\010\332T\375'\246\224m&G\250\000\003@\000\032\000\000\000\000\000\000\000\000\002\212zQ\352zz\204\014#F\231\032\r0\023CL\230M\000\3202b`\000\000\2152\003A\220h\321\221\202DE2jh\304\332\t\2522d\362\215\000\033P\006\200hh\000\000\003@\000h\r\006\236\240\032\001\006\000\t\200\000\214\000\0020\000F\214M0\004\300\000\023\010\3020\023&#\0200$\210&\022i\2414\323M\t\351S\361)\352\036\247\250\006\232\006\2004\r\000\032\000h\000\0006\246\215\031\000\320\305f\274\261\233=V\333T\r\306\010\307\317B\340?O\331\301\371\261\262\002\\2\\O\365\375\200\323\006\301\211\263\"\021x\037\360\205S@\\Q\005\256\266$\213[`6&\300l\023`\330\333i\211\241\261`A\351\316\304, lA\007\221\352O\201R\300\330`\261`1J\"\024\231!\231\230\2213\245+\345J\261\260,\302|\217\367qA\001\026\031\265\204\247 \357b\260\3008\212\371E\001\033\tfrz\206\211\304x\3108GLd\2155\243R0\014\342\025\252\n\323,l\211Z\026\245g\242\36251$T/\312\023\224\336\225|!\337\216\345\207\240\202\275\216\246\252\355\233\\\202\252\214\333\375<\374:{\232;\361\230\335\203\310\357\341MW\261U|\236^\337GWl\2233\314\233'\232\327\253\304q\361G$\035\341Io\025\244\242Dy\r\232\"\211\300K1\376\007\233~na\360\0033\307\350\303\320\364gc\351\360&X\375;y\370\007+\353\342`v@\305\332\006y-f\204us\325(I\352\234\271\264b)\351\r\322\206\021\332\304\353J\300\214\306VcL\217V\241A\013Ew_\212\345\336vB\242\210\220\337\034\353\256\353\244\227\027\333!\261\336\327\227\257j\264z\020\321\231\226P\201\3563\224F\311\366JV\014\221\214\326\244F\023'z\"\247L\\|LN\274g\214u\210*\226\352\325\203\362\376\23724\231\360\331\016\021\004\373\316\212\275^\353\330\324\007u:\254aY\316\033\262^\007\234Is\237ho^\307\235\031t\362\301W\360t\025h\254\007o\274\301""\240\210\234\313\213Y\3431\214\354\220a2\235N\357\346_E\207\027B^\316\370\235\225\034\274\033\307[\312qfC#\023\246\031\231\004Y%\0307Q\372\205C\204\351\343W\375\356\312b\362\351\273\243\327fp\360\364\304\256\315:|\375\343H*\335\264It\225Sz\301\222)h\031\022j\326\010\254z\013\006\001\353\221W\020\214x]\301\030\017\237A\211\360\360\201\322\272\361\251\247L\301\317C\3171\355\236{\272s<q\341\330\240XZ9\204D\270\214N\221u(\214(\226\034&a\n\365\335\270\321k\221\222\014nr\007@\310\371\210\3452T\343\227%\263\376w:\312\253.\241\233oU\t\035\376\360\261~.;\035\007\212Pf\213\357\223\003M\336M\3008\357\330##Z\222[\365\035\3320$\216\006\241\223A\037\035\266\036@\373\353r\247Q+\033\302\010\251~4\220Dr]\272MS6\177B\202\232\370\304\223\025\th\244\247\317\310#\216*C9\302\3172\262d$\244\322\207:\355\315\010\207w\020\267\311\027/6\"\2446\255\246\354\3643U!\023\375b0G\305\356*\202(\375^\323s\332\254 A4\031B\004\030&e\202\212e\325\246\353\202\331e\325h\311\335X\366n@\366,\354\331\330\323\\*\340\\U\237\235;d\350\367%%,\032$\254\2331\260\236\nv\231\276sh\0164\332\317\0108\231K\025\032\022\327\031\224\212k\275\311:\241\345\271\354N\200\357>\030\331\2233jE\277\264\227\365\204d\007\254d\270\342{s\344\304\325\351g\365H\255r\261 \362\242\274\336R;F9)\346_q\322L\331\271Y\005\031y\r\201L\025s\324\302_F\014k\001\212\300\322SI\322\361~\254\2433\037_\267\000#\027\202I\302\326\0001P\323D\343;h\211\206;MX\266\231-n`\2208Wy\037S\034^O\037D\033L\016##\215\034\033\271)\020\366\026\354\231,M\220&\267\016\021\251\006\256\213\207\200\350\000y\306\206\342#CR&\226\347\022\270\365\244\354\274\222\314\204\005\032]\245\261\260Pd*\312\226\223\\\256\"@\305\020e\212\225\337\027\002\t\r\330*\202\202\305\234\r9,\211\324\261\322hN\2716\210\330\273\206\205r\301g\356\343\031ID]I\001\205\323\241\364\037\nQ\213\264\240\320\353|j\214\207\2622\311\373g\n\365\215;\232\241j\234\223\r\rg\033wx\243\251\276\333M\241\246\004\254\367\303\326e[w\274\242\3331\\\327V\327&\336\204Y5$\203T\265\306\202X\332\321VaC%\004'\206\356\263t""\326\037d\323\273\030\360w\310\344\005\333\272xJ\350+\207r)n\336\212\267+\345\210\361c\250}\320\234:{\312+\200\023\0137?1\263\2511\322\330\235\2616\221A\266Q\321\240\336\030.\342\035\375\361[{\02262+\341C\t\257VflF\355n\003\337=\255\3151\362)\260\236\230\243\340\310^\277 CwO\035\250\014\214\245\224\236\r\277\270\200\246\002\t;q\333`8\205\013\320\316B\004d\362\241\3425p\213P\032G\264\311r[\016\005B]\330K\2157e\311\227\216YsWE\341\351\302\344\304\027\312\206\003\331\331\206\014\034\365de\204\314\203\322b0{\034\245\216\264\271g\200\n\006\004\310\253\210L\251\206\321\245J\251\232\024D\351h\214\023\240'v\321\342\240L`\232\023\340=\223Y\226\352\314'\020\031\244T\205(cNzS\n1A\222\250Ipr9.\211sgc\311<\243\263p\300o6ff\254\222\305,\001\034f\226\254\274FZZ\032EE\022\335OVF\252;\262W\353\304S\204M%\000efb\233\033\002Q\030\203\352\262\320r\3002a\321\3071\211\022\254\270\313:XN\241\2409\014\244(\241EG\017\202\203\001\363\030\342\205\231\362\210\213\250N\201\006\n\346\005\3404vgm\\\241ov\310c\001\264l\356L\344\307\230\322dF\221\264Q\033\236\245\267\217\206\020\205\355zm\257(\023\231\016\316\264\342\241P\024\331\016i\367\364\310\350\236\007\032\036\3721\225\234Rb\355\004);\233\303\177?6j\334r\260W\255\346;\364m\203\255lhhx(\335\346:\333e\036\216.\254(nJ\230\014\320D>+\324K\352j\004}\212\027'\204\361\010\314\361I*\303\0201\021\361h\234\036\3661W^#\320[\322bZz\232\025\231\002Y1\330\332\347*Fm>\002|\n\274\006R)jG\311h\331\202d\375\223'\222\266S\"\330\305\210\034\225\326\215kgs\204\355w\2329^Y\233\030\272\246\203\032\354h\223\204\301\351}%D\324<\301\206\366\263.\334\3620\321m\367[\202\3407\326\313`\271O\267\200_\301x\016\244f\004\032\006FR\030\014m\014\326)X\\\360\3620\206\330X\331\220\306\235\245\307F\275\247D\355\272q5\340\033}n\023\251hq\214\013\221q(-&Q\005\304\207\014\002kD\323E\340C\003\000]\024H\036\270\215(%\260?]Fd\303\236\001\342\265\263\303?\002<&\263\376y\337=\223\014\310d\315\377@\202@\203\354h\017\207\326\314D4\330\017\203\227\322\263\221\374t\374\301z\243\177\030\254`""\267\337\304\332~<\240dr\026z\373l\032\003{709\363O\344\336\201/\256A\234\337\327[\374\025\0375\210\276\r\276\0348\033\247\206\020y\361{\034\255zAO\323\246\315\305\005`\203\330R\246}~\217i\\\241\232Y\004\0209\nj\213}M\337x\357\367=\007\035D\n\333\000\330\3656\265\265\353\271x\366\353\330\361\377u\242\003\374A\254\366\371\233\341\255]=6\242\221b(\"\372W\013{X\003\220\262\275h\201bK\025\375\373@\243Z\030iW\260\303(\260\273\226<<\256\316\303c{\013\364d\306\244*\360aZ\212C\233\316jQ\274\247\255>P?\\\235\225\321\243\367e\366<\034\367\364/\007I{\033T\003\366\370\363\375L[v\342\342\233\255\324\370{+\202W\254\324\335\207\034\330\231s\376O\200\313<T'J\327\030\3306\235\250\352\372u{\321\273\264\341\304H\363\253\022\251\301\320!\357\240\234\312\034\021\005\241\203\000\013(\320\200h\360\010\001\026C\300!\016b\204a(\200\300\020\2003\016a\014e\010\302\313\n\261\342\264\305UY\302\211+D*MiKX\354\230+j \2141Ebp\343`s0\342\2334\3651Z\307\000\353;\025+f.J\357\021\276\222\001\363\222@4I\277\313XLv\346\233\361\324\311\262\253\026\004\272\303m\2529\213\334e\313\037\370\273\222)\302\204\207zD\007\020";
-    PyObject *data = __Pyx_DecompressString(cstring, 2508, 2);
+    #elif (CYTHON_COMPRESS_STRINGS) == 2 /* compression: bz2 (2542 bytes) */
+const char* const cstring = "BZh91AY&SY\2517\261g\000\001O\177\377\377\377\377\377\377\357\377\327\277\357\377\352\277\377\377\367\350@\304PP@@@@\001@@P\000\300\000`\t\234|=\331\335\327\265\345\355\271\336\273\254\363k#\335s\235\226\333\031\340\036\363\241(\204ML\246F\203jm\017Ri\351\036\246\306\243H\310i\350\t\210\006\206\200\003M14\302z50\230L\232\030\324\000\224A\0324\230\231\032\032\236\225?!\250\3126\243\324=G\242\014\201\243 \365\000\000\000\000\000\000\000\000\022\211=4$S\3054\006\321\001\240z\200\000\000\320\000\000\000\031\000\000\000\032\000\000\t\022\020FT\237\264\t\221'\251\350\236\246\236\220=@\365\006@\003@\000\000\000\000\000\001\247\250hh\004\030\000&\000\0020\000\010\300\001\03214\300\023\000\000L#\010\300L\230\214@\300\222Bdh\230AO&F\202\237\2454\r\000\017P\320\032\000\000\000\000\000\0006\246\215\000\r\013\253\331\3023lQejk[B0\311\317B\374xO\325\217\206\033\033!s\231\014\220\344H\177\327\366\003\006\r\261\214m1\204e\004i\003\376\020\244s\365\205\305\004Z\352\261$Z\333@\330\206\3016\r\215\266\230\231\014\302\212\010Y\032\310V\2206$ \251\375\227B[\205e\200\324\212\314&\224\000T2\02335d\211kJ\352\237\232\246\023\213\214&'\240 \231d\n#BD\324b\033\302\307^*\001\024L\002\365\320,\243,\007\346\324\245}\n\207\214\213\347SP\345&\302\001\004\030#\003\202\352\321[\246\212a\262\314,\304c\214\336R\213A<xL\232\316\273\n?\242\216\261\225\264%\n\352|%\025\272\372o\300\252\244;\236\017\2066\035,\rh\030\334\243e\332\352v\337b\252\354\303\265\332\255\355\347\025|}\264\3136\356\177z'\337r\250\216z\2058\261\031\345\244\352\233\362\t\205\315.,\373\217B\275\255\241\322\002\363\217\236\376w>3<\375\262$\317\2376\235A\310v=\362F\307\2269\236_j\306bF\2755$\372\035RqY\230b\n,\226\305%\\\3642\253l\266D\352\033\2158[\311\336\036\312\037\201\277\301\331\237\347\004\206%\313}n\314w}RY\2019\215Fv\240\3224L6\303e\021\220\236\005\314\261\177\033\351D\274\2424\212\0043\211C\031\213\t\000\222\265g\234\373Ayr$\\\300\370\307Nza\321\2311\354\335\347\353`\342r\243D\030\302\t\212\\WWl\226\271n\266\177\016\020/T6r:""\010;\027LAt\212u\251\022\223\323\033\275\234\010\254\3110\305=u\t\352\036\rn\266\263\343.9\233@\302\315\275\350w\376\341\331\"\301]{\305\313\326\023\tG.\306\251Ch\334\227\032D\260\346W\225\212\210\216U\204\246$\003vR>\273\025\034'JK\260\346Tmpiq5V\037Vq\\2\232Uc\303\217>\203\232c\2247d\343h\207 \373T\215g\034]s#\177f=y\267d\030\257\270\264\357iy\270\267\355\250\303\010\203\216w4\263dp\350\265\336q\303sby1b\322\"\005b,7E\274\2400\240LpD\225\263nEo\202X\362\224\n\"d\r\"\241\341\241qJCn\234\223\327\367\304\334&I\323loF\335\205\r\261c\334\334\342\310\223 \352\242\200\334k\233\007TE\036\320nk\314\"\323\032\241-\254\016\033LT\221F\243\001\223=\036\023d;\021\333S\315\210\231\254\215f\200j\023\224k\203\301\303\007\354\306[!\227\361 &L\362\314b.B\264RJ\227>b8\342dj\347\013$\262\223\035+\023\0064\336\235\335\354C\273\350t\270b\251\372\220\251\032\343\244\232\\\2449\312\221\204\337b0G\342\353\252\202(\377s\021\267MV\017 \227\254\224\362\014\022\\E\212Cmh\356\001\357\307`\344F~E\273\374\024\252\036}\334\372r\314o\265y\236\214\226n\322RG(\262T\255\314\215`\267\005\223\311\035\253r\376RZ\210\013%\256\024f\250EG\262\215Y\033\346r\223N\310\306R\025\2072\016\260\342\207E\025\335\211\246\336\010\257\027:\245\372Jt\250\016KK[\216q\310\343\037\347_\2329,|\343\303\240\344\362\356\035\224R^I\363\032\023f=9\215\024\341\235\317\251\177\320J%\342^5\252\n\275@\301S\005\325\265\236\210K^_\247\264\360\205\237}\021&A\030\rJ\231\031V:\213z\232\020\250\335\272dvmX\241V\211%$'!\264\261\315,\305\303x\263\260\245\201\306doG\016\356I\304<kvFJ\323d\t\255\243R\rR6@yF\206\342#3R\023KO\032\333\266\022u\340H\256\362\002m\346\311:\216\201QG\177uk5w\"$\234\205d\035\240\270b\205\223\007^\230\316\365\026L\362N~el\037\001\371\336b\035\\\367\020\246\243/\335\235i\007\241\323\203\300`\2559\016\304s(\204\034\257j\267[(\231\nFN\2054\261a\244WNWC\246\201\321\"\3439\277\253X\345y\3306\323hi\201%\237\034=F\013{;\300Ve.\213-\246\253-}\346\016Ihr\234mk\324\203\341\003.\0149\313f\315\225\344\351^\231\322\363\026\021""\256m\263\177\252\034\360'^\\\222\242h2\313\243E8nR\331\335mc\240\306\350\355\017\213\365\357(-\260\"\023mZ\014{\251\215ma\303\003)\004\031h\207&\333M!J\344\217\243D\026m\211\031\031\025r\220\302,fUU\240^R\33625\345\\\362\014\244\205\244\2259\016\213\315\033R\n\227q>{\r\2356\242\323d;\276^\230Zd\264\265j\340\216\354\330\t\241\025)T\306\202\213\026\016\351\261q\027\352&@4\013Z\215V\220b\260GV\256Z'(4G$)\342%\235f\305\026\376\215\210\342\005\213S$B\270*\212\222U\201xh\311\313A\363Q\252\205f\375-\305\253M\020\0010\2512(\342\023([`\322\235\024\2452h\226\313D\344\241\000\366\027\035\247\230\021A\036D+E\255S)G\007`\025bP\252s,\316\354\347*X\244d\252\n\031\215\307\020\265k\243E\3638\216\340\341\3160\033FK\313\324\322V% G\004R\302\336\254\266\346}\302\245@\236\267T\310\302\2279\222\325\243;\252!JE\ts\246$^\205\342\343\236Ar\3371\006\202?\177\205\364#\225r`[Hf\277\236A\r!\202\030(\343C\357`Ic\034_\327]Q\302\233\350sn\220j\247f\307+\325ErD\271\221\034\271\345\013{\226C\030\r\243\211\265)a\2239\254\301\032\306\321b5\272\242z\207JO\323\013+\262\254\363\320\004b?g\002p\251*\001E\220\342\376\356\233\215q\221\277I\335B\024M\302\241\212\331\350T9\306\220\325j\247\202\312BY\035\021\261\345\274\035)[CC\252m\345/\245\225\315\347\343\351\265\r\310\241Q\204\021\017\217\216\022\307-\252\242\307;\n\351\262\227\017J]%\r%\221\204\252\261\177\013\310\306YY\2516\366\361\022\360c\300\264\2629\031\365\304yE\354ll\261\214i\242M-\261:\222\247<efY\025\3312<\247;\230TU\3275\024Wb\250\233\225\344\213\355\316\214\353G\"\026\247^;\242\264R)Yj\226$)(\233\022\270c\302HF\242a\026\007 \242\361\310Epy.)\366\242\231\202\2614\266Z\204\231\221\253Y\247^\200\365\236\226 \230\315\235\352\245\206\347W\212\027\265\273\323\304\221\r\341m'-\244R\254\252\261\030\031L\0376g\270\307u\301w*\022\316E\272\334\322\202\016\023\207\265\256B\250EKt\266b\313\216\321\022$\017\303\010\225\276\013#\026i+\355\260\274\210ix7U9\337+\372tr\214g\371\355yl\230a\220\311\233\375\001\351\001\001\271\032\222C#\220)\242\"\252\363\262\256/""\251\201\362\020:*\031\351\214\324\005\033E:u\257\303\226\300T@\246\025/\232KQ\023Y\206\253N\000`\351;\t\246\242\212\202\346l\365\2765\357\003\203\360\262\212\215k\310\365N\007Rh. \203\030\226V\236\305\320f\353<\214yBY<\020@\341,\305L^kJCM\357w\206\200\324\241\200\201\224\025Y\236\232V\305\262\357g\342\317l\355?\274\330\200\374 \326/\351tgD\233\376h\n\023\355\336g\241Z\322\337\016\370.8\014j\014\210\035\022O\235n\035\304kB\377\206l\330\232TJ\024\364\250\272}\375\306\276\003\366\362 \204U\264\225\240\270\nAk\3742ph\331\252\237\324\362\001cJ\034\336c\260\262l\014\377\345\345\036\250X.\355\034\353\020\326\361\376\325n\256\217\235v\355\257g\037\240c\230U\217\377J\276n<}I\022+\317\204\356M\337\371/\014b\235\214\236O\264c^\273v#\236\304\233\355\236\247o\2059\205\007\303L\026\301U\267,D\023\364\251R\246\327\002\240\223R\250\026\t5\201\354b\346W\252b/l\226+\261JSx\353\255*\335\326\027N-C\250\244\320\242\203\202N\3068r\261\020\217J\3301:\025\273\035\212\023\207\027\216\033\223\245\\OV\372\230\316\006\203\352\244\242X\260\\\304q$\200o\311$\003!\347\027\270\252.\312\355\027@\311z\241\027\204\235!\271\312\0248\214\3160\302?\361w$S\205\t\n\223{\026p";
+    PyObject *data = __Pyx_DecompressString(cstring, 2542, 2);
     if (unlikely(!data)) __PYX_ERR(0, 1, __pyx_L1_error)
     const char* const bytes = __Pyx_PyBytes_AsString(data);
     #if !CYTHON_ASSUME_SAFE_MACROS
     if (likely(bytes)); else { Py_DECREF(data); __PYX_ERR(0, 1, __pyx_L1_error) }
     #endif
-    #elif (CYTHON_COMPRESS_STRINGS) != 0 /* compression: zlib (2323 bytes) */
-const char* const cstring = "x\332\335WOs\333\306\025\247\022\311\246-Z\022%\371_\023\273+\331\211\344IE\225\262b{4M<\024E\307\034+\244H\321V<\036\rf\t,IT \226Z,H\261\323\264\356\364\202[q\350\001\323\023&'\036u\3241\037\201G\0369\376\002\325G\350\333\005I\375o\342Ir\261\006\002\260ow\337\373\275\337{\373\036\370\311\233?V\227\226\213:OR\215\240\r\273Vk\"\203\322\035\013\025\211\305QC\347\025\304\231MTjP\206,\230\247\214\307\222\324\264t\2150d[\272YF\030Ua73\021'\254\252\233\330@\206\276CV\304*j\020\364W\224\241&A\350\335\333\037\320\013\235\363\346\037P\302\300*\013^A-6\233g4\220\252m`NY\206r\262\202\n\025\202\212\266n\360\005\335DU\254f7Q\241\2672\206k5\244Qb!\223\362>\302#\314b?\342\025\314Q\262\311+\324D\272\2054b\350E\3020'F\023Y\234\351*\230\025\213L\264\221\332XX~\262\014\2204\304\310\237\211\312-\320YT\rlY`\202\226\002\030\200\2027k\304\212\241t\t5\251\215LB4\304)\252\301\272\343\033x\205\230\310\"\\\274\2409l\002F\314uj*\260\035\250\233C\232\316\300\210^'b\3673lX$6\277Ivm\252c\t\202`f\350\204=\210\241\327\324\2363\214\300\022\206}\245\022a\304\344G\224\001\021\261w\377\361\377{\360/\204\266\022\371L:\363\r0\227\312\177\233\316$\326\321Z6\265\2112\331\002\332|\271\261\221\315\027P!\3772\225\314\256g\363h~iya5]@r\364 \010\324\226nj\264a\rhF\363=\311\003\300\201T\240\n\260R\340\271)\334\003B\312+\210\354I\356\245\032a\367\253A\024bW\277\372\340\376\256\276Y\334~\2125M\201\230\2227Ejh\250\310\364r\205+\214h\333\357\376\375\366\203\274\300\351\323\276\"8U\201\313\377\370 \257\377\353\362?O\3176*:T\234\336<\372U\376\336\017\300{\301\353\327\213_X0\372Z~&\026\tb\373X\313\261E\255\204:\\A\262\\X\262\3645t(w\242\031A\301.3\254\021M\366#j\037+\3571\320\251\202\036\245\n*\026\373\245P\261\271nX\261Zs\357\215\332\304\346\366O\366\253~\267Y\021\020\345\226,;^\333d\371\036\3245D\314\272\316\250Y\025\345\267\216\231\216\213\006\021[\201\000M\257n_\\\007\205zX\201t\216\r]\335\376\245\315\r\235\337*NY\331\354\371p\016\036\324\240\346\034G\025b\324\320\202hd?\335a@\271\246[\302cb\212{Y\005\257\313\014F""\333\3207\004\t2\306\333\203\026/D\013\250\302y\315ZY\\\304}q\214\262\362\371;_\234\335e5b;\264\256ke\332\004RL\302\027w\304\242\363\367oaV\023\243y\311\345\203cj\0320\023\323H\375\202}\247Z\236\324\321\357z\240eU\304\010\351&4\352\376\322x\374|U\272\320\261t>\010]\320\271\024Si5\350\264\301\332\376B\335\nh\325\352\234,,}\371H\206iOlY\010>\025\202\367\243\214j\022\303\240\215\3555\302a\022\002\327\373RkZ\234TW\216\205c=\221\314\247\013\205\327\312f6\371\"U\030$C\022\033\2060(\236D\333`T%\226\225b\214\262\336\367[*\223X]O)\251\344\363\254\222\316l\274,\364\004\353\351L\352\204`#\237M\24667Sk\027H\263/\013G\342W\351|\341eb]\351\227\233\376:\250A\275\025[\371\304\206\222((\251\354zo\3537\204\3670}\013\347\027F\233\\{\016\231o\220\264P\243l\212\375\331\214\222^{!=\335Jg\326\262[0\024\337\237\212\262\321\334\203\3775\370\332S2d\217\347Ii\263\320\303\252<Od\326\326Sb\034\230\352\013NX\024F\n\2577RJ\362y*\371\002\220n\025\3726{\t\001\007\204\230\032\266\232\246\252S\0101\203b\245\233\304*\026)5\212MFJ\252b\033\324,\253\270\306mF\024\230\257\331\\\255\250\025\242\356\250\006\254Ut\3708dX%E,$\324\"\203\372\026;Y\337 \322\206\370v\004\2001\\Te\340\225 \360\362]\254V\003\364\252\374Z\325d\216(\203\334Qz\005\345\"y\354O\006U\3413\357\353X\231\230P\324X\357\340+\215\300[E\345\314P\324 a\317\010-\341_0Pz\033\265^\341\004\366\201\246\222a[\025y\033\354\335!\315\"\305LS\212\266(>%\312T\242\014\274VJ\266\251*J\017L\231p\270\324JEf\200\016\264\251\026\334\201NE\007\024}\356\341\270U\255\340\314\355\024\241\357\200\rR;\215k\007\272\0011\036.\211\000\300i\"LQ\252\0304*\242Q\310\273m\210\247UW\031\007\261\211\25304IC.\020O\213k\260>\030\355q\205B\377\223\230\245\241\000\"\243\226\01074\032\360\253Z\243\265\032\203b\"o\307\270\207\032eB\265V\224]\033\033\201\035F\240\r\311\333\200\213`d\233\372\336)\321 \nA\340%\242\2233\003:14\305\013\246J\266\001\372 CM\321\224c=e\3146\241:ib\307y$*\212\230\t \303\233FJ\3306\270\3051\343\"4\300\020a,\340) \344\2103x\003j\340\247\230\3705V\223\310\340GT""-(F\220\322AVs\201O\001\224\026\207{\205\321\306\200\266#\376\304\032+\370ue\233;&m\230ul\330D\336\254>\271\"\316\226\360\3320\032\320\215H;t\337O\034\216\205F\302o\367\234\206\253zS^\242\023\276\322\035\036\351\214Ot\303S\356#\357\246?tx)t\345\256\227\353\204\243\356-\357\216\217\375]!\231p\352\356wB:\341\216{\273~\270u\251U\332O\354\347\304\334=\177\246\023\006\325\235\360B+\327\r_\351D&\334\241Nd\314\301G\267\356`\2434pGX\276\351\356y\337\267\022\255\334@\362\251\270\315\370\321n\370\272\373\312{\342\307\373\366\306\300\332\263\203\231\203\270T\177\303\305\027\250\037k\341\356hD8\232\006\265\221\320\310\245\3160(m\207>\365\322\355\317\236\036\354\nY\270}\371\367\336\256\364\37420a\271\000\037\264F\333\321\317\374\\\027\264\227\301Q`$\022u\2430\367[>\256\201\353#\323\356c/\326\372\270\025\027\203\353\256\210Ip\t^\256v{O)Z\332\237\331\217\017\346\337\353\022\312\2578a\210Lx\034\202\231s\261\223k\207\300cI\311\231\214\010\217:\217\335\317\275!/:x=W&\330\276\343]\244d\322\275\357bw\327\273\352\177\016\031C\017r\020\274\366\215/Z\361\013-\213\310\014\337\365pg\030\362\240\035\232\365g\016o\205F\242\356G\356\274w\337\303\2200\311V}?\327\201\320\375\305\235v\267E\356\215;\"GG\"\316\222\363\235[\360\242\336\274\177\317\177\325\212w\004\204#\006\272\303\327\234\334`u\370-sn\201\006 B\312\204\306\367\227\010M\227:\341k\355k2m'\33590\277\330\212\212\354nxr\315\367^\022|\032\215\004\020\301\363\033n\305\303\207\323\002\002w\342RMwx\312\375\322\273\014\031<\324\031\276\345\311\333\307^\0348\031\276\355\335\006\037\207E\316\017#y<GF\235Yg\0252?\014\3768\030`A4\342\207\341\320\265\t\307v\223n\035\322w\3426\004Id\031\344\230\230~\350\250\356uW\363f\275U\257\350\177\344\317\372k\255\241V\2645\333Zm\251\373S\373\211N\344\272\013\321\021\266Om\203\367q\207\271\223\356\222\233w\2317\355\345 \014\314\237\364\037\372*8:1\005\351;\343\305;\023B\301\204\\\335\020A?\256\347\261;\343\306%^q\346v\273}\221\233pA\"\354\224\005\245\355\320\234\277{~*\211\n5\346\224\334g\036\034\233\311A\352A""\272\034N@\010\202\243<\330\")\275\334\276|\327S\375hox\246\312\235-B\021\347\211\373\324\237\361\277\336\007\340\220\240\235\310\224\333\013\320hD>\333!\021\203\311\223\261;k\372g\330\032T\324Qg\331\331s\377\016\225\366o\373\257\016\036\375\030\375qF\332\025\213f\375h\200k\031\014\024\275\241n\344\246\313\275\307\020\276D\200n\031\016W\330\037o\355\356\217\035@\025<\201\024by\206\313{>\224\320O\274x\340\307\357.`\356\327\203?\355\347\216\3711\rx\033\220\177C\342\254\214;\034\022\340\271\227m\305[\231\203\231>\356\377\001b\255N\007";
-    PyObject *data = __Pyx_DecompressString(cstring, 2323, 1);
+    #elif (CYTHON_COMPRESS_STRINGS) != 0 /* compression: zlib (2390 bytes) */
+const char* const cstring = "x\332\335W\315o\033\307\025\247l\312\246%Z\022mYv\233\304\035\371#\222\321\212\nY\3056\204$\006M\3211a\205\024?d\3050\204\305pwH\256\265\334\241fgI\261hZ\027\275\360\326=\364\260\350i\321\023\217<\352\230?\201G\036\005\377\003\365\237\3207\263$\365\335\304Hz\261\260\232\235y3\357\353\367\336\274\267\374\344\365\027\265\370JI\347I\252\021\264a\327\353-dP\272c\241\022\2618j\352\274\2128\263\211J\r\312\220\005\373\224\361h\222\232\226\256\021\206lK7+\010\243\032p3\023q\302j\272\211\rd\350;dU\234\242\006A\177F\031j\022\204\336\275\3757z\241s\336\372\003J\030Xe\376\024\304b\263uJ\002\251\331\006\346\224e('\253\250X%\250d\353\006_\322MT\303j\266\200\212\203\223Q\\\257#\215\022\013\231\224\017-<\264Y\360#^\305\034%[\274JM\244[H#\206^\"\014sb\264\220\305\231\256\202Zq\310D\033\251\215\245\225\307+`\222\206\030yCTn\201\314\222j`\313\002\025\264\354\233\001V\360V\235XQ\224.\243\026\265\221I\210\2068Eu8w\224\201W\211\211,\302\305\004-`\023l\304\\\247\246\002\354\000\335\002\322t\006J\364\006\021\334\317\260a\221\350b\201\354\332T\307\322\010\202\231\241\023\366 \212^Q{\3010|M\030\370\312e\302\210\311\017!\003 \242\357\376\345\375g\377\037\010m%\362\231t\346[@.\225\377.\235I\254\243\265l\252\2002\331\"*lnld\363ET\314o\246\222\331\365l\036-\306W\226\236\246\213H\256\036\370\201\332\322M\2156\255\021\314hq@y\000v \025\240\002[)\340\334\022\356\001 \225UD\366$\366R\214\320\373\365(\n\321\211\257?\272\277\211\327\313\333O\260\246)\020S\362\272D\r\r\225\230^\251r\205\021m\373\335?\337~\224\0178}\322W\004\267\312w\371o\037\345\363?]\376\373\311\335fU\207\2123\330G\277\312\337\207\031\360A\346\r\353\305/,\030C)?\323\026i\304\366\221\226c\213Z\tu\270\212d\271\260d\351k\352P\356D3\202\202]aX#\232\354G\324>R\336\243 S\0059J\rD,\017K\241bs\335\260\242\365\326\336k\265\205\315\355\237\354W\303n\263*L\224,Yv\264\266\311\362=\252k\210\230\r\235Q\263&\312o\0033\035\227\014\"X\001\000M\257m\237_\007\205x8\201t\216\r]\335\376\245\315\r\235\335*Nh)\014|8\303\036\324\244\346\002GUb\324\321\222hd?""\335a@\270\246[\302cb\212\261\242\202\327\025\006\253m\350\033\002\004\031\343\355Q\213\027\244%T\345\274n\255./\343!9JY\345l\316\027\247\271\254ft\2076t\255B[\000\212I\370\362\2168t6\377\026fu\261Z\224X>8\"\246\t;Q\2154\316\341;\321\362\244\214a\327\003)OE\214\220nB\243\036\036\215\305\316\026\245\013\031\361\263\215\320\005\234\361\250Jk~\247\365\317\016\017\352\226\017\253\326\340d)\376\345C\031\246=\301\262\344\177*\370\363\303\214j\021\303\240\315\3555\302a\023\0027\370RkY\234\324V\217\204c=\221\314\247\213\305WJ!\233|\221*\216\222!\211\rC(\024o\242m0\252\022\313J1F\331\340\373-\225I<]O)\251\344\363\254\222\316ll\026\007\204\365t&u\214\260\221\317&S\205Bj\355\034jv\263xH~\231\316\0277\023\353\312\260\334\014\317A\r\032\234\330\312'6\224DQIe\327\007\254\337\022>\260\351;\270\277\260*p\3559d\276A\322B\214R\020\374\331\214\222^{!=\335Jg\326\262[\260\024\337\237\212\262\321\332\203\3775\370\332S2d\217\347I\271P\034\330\252<Od\326\326Sb\355\253\032\022\216i\024J\212\2576RJ\362y*\371\002,\335*\016u\016\022\002[-S\325)\004\227A\231\322Mb\225J\224\032\245\026#eU\3210\307\252\002\033\252b\033\324\254\250\270\316mF\004\245\016\304\252Z%\352\216j\000\233\242\303\027\"\303*)aA\241\026\031\025\271\350\361\"\007\3416\304\007$X\031\305%UF_\361\243/\347\342\264\352\273\240\312OVM&\2122J ePU\316\243G\2772\250\n\337z\337D+\304\204\312\306\006\267_i\372.+*g\206\242\372Y{\212h\t\377\374\2052`\324\006\325\263l\330VU\016#\256\035\322*Q\3144\245d\213\332S\246L%\312\310_\245l\233\252\242\014\314\250\020\016\217Z\255\312\004\320\0010\325\202\021\200Tt\320?\014\000\334\266\232\345_\2717;;%h<\240\205\324O\332\264\003\355\200\030\177\214\013\360\341:\021\246(5\0142\025\321)\344h\033\342m5T\306\201l\342\032,M\322\224\007\304\333\342\032\234\367W{\\\241\320\000\245\325R\221o$\243V\035\332\014\270U\253\323z\235A)\221\303\021\320\241B\231P\253\025e\327\306\206\257\204\021hBr\030A\341\257lS\337;A\032\301\357G\\\232s|g\204&\206\226x\316V\3316\204<\333\340J\251\305\211\305\010\244\251)\332st ""\230\331&\324)Mp\237\205\246\242\210\035\337|\230i\244\214A\230\3051\343\"J\000\025a\314\007\314G\346\020<\230A\340\340G\231\370]V\227V\302\317\251\272_\226 \257\375\324\346\034\353\206b@s\002\233\025\260\334\3420V\031m\216\240<\304T\234\261\374\337[\266\271c\322\246\331\300\206M\344`\r\001\027\201\267\004\022\206\321\204\376Dz\201{^\342\375T`<\364v\257\335tT\367\272\233\350\207\256\034\004\307\373\3233\007\241\353\316C\367\2467\366\376R\340\312m7\327\017E\234[\356g\036\366v\005e\246\335p\276\027\324\031g\332\335\365B\235K\235r7\321\315\211\275\273\336|?\004\242\373\241\245N\356 t\245\037\236q\306\372\341\2516>\034\016F\214R\301gB\363Mg\317\375\241\223\350\344F\224O\3050\357E\016B7\234\227\356c/6\3247\005\332\236\355\317\357\307\244\3709\007\237#~\252\203\017&\303\302\3214\210\r\007\306/\365\203 \264\027\370\324M\367\356?\331\337\025\264P\357\362\357\334]\351\371e@\302r\300|\220\032\351E\356{\271\003\220^\001G\001\221p\304\211\300\336\377\363u\025\\\037\237u\036\271\321\316\305NL,n8\"&\376#p\2318\030\274%)\336\235\357\306F\373\037\364\010\341W\332!\210Lh\032\202\231sp;\327\013\200\307\022\222S\031\021\232l?r>w\307\334\310hz&M\240\375\231{\236\220k\316=\007;\273\356\204\3679d\014\335\317A\360zs\277\357\304\316\325,\"\023\274\355\342~\020\362\240\027\270\343\315\277\277\025\030\2178\027\234E\367\236\213!a\222\235F7\327\207\320\375\311\231u\266E\356M\267E\216\216\207\333\361\366\367N\321\215\270\213\336]\357e'\326\027&\034\"p\020\274\332\316\215N\207\336\262\366-\220\000@H\232\220\370\341\024!\351R?t\265wU\246\3555g\001\324/w\"\"\273\233\256<\363\203\233\004\237&\303\276\211\340\371\234Su\361\3739a\002o\307\244\230\203\340u\347K\3672d\360X?x\313\275\350\306\000\216\340\202\007\032Q\017}\321\275\324\305]\251\275\321.\210\010\202/\267\\y\024\006q\035\202\010n\356D`b\262\037\232j\227\000-\231cs\000=\334Dag(\020\231\005\025\027\335\207^\244?\013\021\353\317\334p`\210\210m\313\271\353l\002\274%\357\202w\307{\352\225:\301\3163H\265x7\337\265\366\357B\330f~\003A\237\021\367""\363\004\033\314\257;q'\3570\367\232\033w\213\336\234\267\333\271\320\271\003a\262\272\363\375Y\340s\357\203\377b2\030nH\031\016qc\003aC\211\342R\334wv\345D\016\342\202\312\3623+U\300\235\r\267S\316\r\221R\303\323\r7\347\276\001\205\363\003\206\333.\361\342\036\344G\250=\326\216\364\203\223\355\257D \334\335^\000\340<;ME\365\233j\227\235g.H\2716JkH\305\3673\020^\277L\214Xd\270.\367.\337vU\200\322_\236\252\240\247\013\\\270\375\330y\342\315{\337t\3017H\376~\370\2723\010\376dX\276{\001\021\304k\307\363\342\264\352\237\241kT\255'\333+\355=\347\257P\305\377\322}\271\377\360\307\310\217\363R\2578t\307\213\370v\255\200\202\222;v\020\276\351p\367\021$@\302\267n\005\262'\344Mwv\273S\373Pa\217Y\n\211w\n\313\273\036\224\347O\334\230\357\307o\317A\356\3273\177\326\313\035\361c\026\354mB\006\217\211{8\335\346N\314y\356f;\261Nf\177~h\367\177\001 \007x\265";
+    PyObject *data = __Pyx_DecompressString(cstring, 2390, 1);
     if (unlikely(!data)) __PYX_ERR(0, 1, __pyx_L1_error)
     const char* const bytes = __Pyx_PyBytes_AsString(data);
     #if !CYTHON_ASSUME_SAFE_MACROS
     if (likely(bytes)); else { Py_DECREF(data); __PYX_ERR(0, 1, __pyx_L1_error) }
     #endif
-    #else /* compression: none (5549 bytes) */
-const char* const bytes = "\033[0m24bitCode Puppy looks best with truecolor support.Consider using a modern terminal like:Console | None  \342\200\242 Kitty, Alacritty, or any modern terminal emulatorNote: The built-in macOS Terminal.app does not support truecolorNote that Cython is deliberately stricter than PEP-484 and rejects subclasses of builtin types. If you need to pass subclasses then set the 'annotation_typing' directive to False.(Sequoia and earlier). You'll need a different terminal app.\342\232\240\357\270\217  WARNING: TERMINAL DOES NOT SUPPORT TRUECOLOR (24-BIT COLOR)  \342\200\242 Windows Terminal (Windows)You can also try setting: export COLORTERM=truecolor.\n==================================================================================================================================================================================================================\n[/]?add_note[bold bright_red]\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200[/][bold bright_red on red]\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342""\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201[/][bold bright_red on red]\342\224\203[/][bold bright_white on red]                                                                      [/][bold bright_red on red]\342\224\203[/][bold bright_red on red]\342\224\203[/][bold bright_white on red]  \342\232\240\357\270\217   WARNING: TERMINAL DOES NOT SUPPORT TRUECOLOR (24-BIT COLOR)  \342\232\240\357\270\217   [/][bold bright_red on red]\342\224\203[/][bold white]Code Puppy uses rich colors and will look degraded without truecolor.[/]code_muse/terminal_utils.pyx[cyan]Consider using a modern terminal emulator:[/][cyan]Or try setting the COLORTERM environment variable:[/]  [dim]export COLORTERM=truecolor[/][dim italic]Note: The built-in macOS Terminal.app does not support truecolor (Sequoia and earlier).[/][dim italic]Setting COLORTERM=truecolor won't help - you'll need a different terminal app.[/]disableenablegc  [green]\342\200\242[/] [bold]Alacritty[/] - https://alacritty.org  [green]\342\200\242[/] [bold]Kitty[/] - https://sw.kovidgoyal.net/kitty  [green]\342\200\242[/] [bold]Warp[/] (macOS) - https://warp.dev  [green]\342\200\242[/] [bold]Windows Terminal[/] (Windows) - Built into Windows 11  [green]\342\200\242[/] [bold]iTerm2[/] (macOS) - https://iterm2.com  \342\200\242 iTerm2 (macOS)isenabledvte-256colorxterm-directxterm-truecolor[yellow]Detected color system:[/] [bo""ld]ALACRITTY_SOCKETCOLORTERMCallableCalledProcessErrorConsoleENABLE_ECHO_INPUTENABLE_LINE_INPUTENABLE_PROCESSED_INPUTENABLE_PROCESSED_OUTPUTENABLE_VIRTUAL_TERMINAL_PROCESSINGENABLE_WRAP_AT_EOL_OUTPUTGetConsoleModeGetStdHandleITERM_SESSION_IDKITTY_WINDOW_IDNone__Pyx_PyDict_NextRefSTD_INPUT_HANDLESTD_OUTPUT_HANDLESetConsoleModeTERMTYPE_CHECKINGWT_SESSIONWindowsappendasyncio.coroutinesbboolbyrefc_ulongcapture_outputchcheckcline_in_tracebackclosecode_muse.terminal_utilscollections.abccolor_systemcolortermconsolectypesdetect_truecolor_supportdetect_truecolor_support.<locals>.genexprdisable_windows_ctrl_cenable_windows_ctrl_censure_ctrl_c_disabledenvironextendflushflush_windows_keyboard_bufferforce_terminal__func__genexprgetgetchhandleiin_csiinput_is_coroutineitemsiterm2kbhit_keep_ctrl_c_disabledkernel32linelower__main__mode__module__msvcrtn__name__new_modenew_stdin_modenext_original_ctrl_handlerosoutplatformpopprintprint_truecolor_warning__qualname__resetreset_terminalreset_unix_terminalreset_windows_console_modereset_windows_terminal_ansireset_windows_terminal_fullreturnrich.consolerunsendset_keep_ctrl_c_disabled__set_name__setdefaultstart_csistderrstdin_handlestdin_modestdoutstrstrip_ansisubprocesssyssystemtterm__test__throwtruecolortruecolor_termstypingunknownvaluevalueswarning_lineswindllwrite\320\000$\240A\360\016\000\005\010\200x\210w\220c\230\023\230A\330\010\t\340\004\005\330\017\020\340\010\023\2206\230\027\240\001\360\006\000\t\036\230Q\330\010\021\220\030\230\035\240a\240q\360\006\000\t\020\210v\220X\230Q\330\010\020\220\017\230q\240\010\250\006\250f\260A\260Q\360\006\000\t#\240!\330\010$\240A\330\010-\250Q\340\010\t\330\014\020\220\001\330\014\016\210a\330\014\016\210a\330\014\016\210a\340\010\020\220\017\230q\240\010\250\001\360\006\000\t\035\230A\330\010\027\220x\230}\250A\250Q\360\006\000\t\035\230A\330\010\034\230A\330\010!\240\021\340\010\025\220V\2308\2401\330\010\020\220\017\230q\240\016\250f\260F\270!\2701\340\010\t\330\014\026\220a\330\014\016\210a""\330\014\016\210a\330\014\016\210a\340\010\020\220\017\230q\240\016\250a\340\013\014\320\000$\240I\250Q\360\014\000\005\006\330\004\034\230A\320\000\034\230I\320%?\270q\360\014\000\005\010\320\007\037\230q\330\010\t\340\004\007\200x\210s\220!\330\010\t\330\014\021\320\021%\240Q\340\014\026\220g\230Q\330\017\020\340\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\r\360\006\000\005\024\2207\230.\250\003\2501\360\006\000\005\025\220A\330\010\t\330\010\t\330\010\t\360\006\000\t\n\340\010\t\360\006\000\t\n\330\010\t\330\0102\260!\2601\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\360\006\000\005\t\210\010\220\001\330\010\017\210v\220Q\220a\210Q\320\000%\240Q\360\014\000\005\010\200x\210w\220c\230\023\230A\330\010\t\340\004\005\330\010\013\2107\220&\230\001\230\021\330\010\013\2107\220&\230\001\330\010\013\2107\220&\230\001\230\021\330\010\013\2107\220&\230\001\330\013\014\320\000\035\230Q\360\014\000\005\010\200x\210w\220c\230\023\230A\330\010\t\340\004\005\330\010\022\220$\220a\220q\230\n\240&\250\006\250o\270Q\330\014\026\320\026+\2501\320\000%\240Q\360\014\000\005\010\200x\210w\220c\230\023\230A\330\010\t\340\004\037\230q\330\004\036\230a\330\004!\240\021\320\000\"\240!\360\030\000\005\021\220\002\220(\230$\230a\230}\250C\250v\260Q\330\004\007\200z\220\024\220]\240!\330\010\017\210q\360\006\000\005\014\2102\210X\220T\230\021\230(\240#\240V\2501\330\004\005\330\010\t\330\010\t\330\010\t\330\010\t\340\004\r\210Q\330\010\017\210q\360\006\000\005\010\200r\210\030\220\024\220Q\220a\330\010\017\210q\330\004\007\200r\210\030\220\024\220Q\220a""\330\010\017\210q\330\004\007\200r\210\030\220\024\220Q\220a\330\010\017\210q\330\004\007\200r\210\030\220\024\220Q\220a\330\010\017\210q\360\006\000\005\006\330\010\r\320\r!\240\021\340\010\022\220'\230\021\230/\250\021\330\010\027\220w\230a\330\010\017\210}\230C\230q\330\013\014\360\006\000\005\014\2101\320\000\026\220h\230a\360\024\000\005\010\200t\2101\330\010\017\210q\340\004\023\2205\230\007\230q\240\001\330\004\030\230\001\330\004\030\230\003\2301\230A\330\004\031\230\031\240!\330\004\026\220a\330\004 \240\001\360\006\000\005\013\210\"\210B\210a\330\010\r\210Q\210a\210q\330\010\013\2101\360\010\000\r\020\210u\220C\220v\230Q\330\020\031\230\021\330\014\021\220\021\330\014\r\330\010\013\2103\210c\220\025\220d\230\"\230B\230b\240\002\240\"\240D\250\001\250\021\250\"\250B\250c\260\023\260A\330\014\025\220Q\330\014\030\230\001\330\014\021\220\021\330\014\r\330\010\013\2103\210c\220\021\330\014\017\210r\220\022\2202\220R\220r\230\024\230Q\230a\230r\240\022\2403\240c\250\021\330\020\023\2207\230!\2301\330\020\025\220Q\330\020\021\330\014\017\210w\220a\220q\330\014\021\220\021\330\014\r\330\010\013\2107\220!\2201\330\010\r\210Q\340\004\007\200q\340\010\013\2107\220!\2201\220A\220Q\340\004\013\2103\210g\220Q\220a\320\000'\240q\360\014\000\005\010\200x\210w\220c\230\023\230A\330\010\t\340\004\005\330\017\020\340\010\016\210f\220F\230!\330\014\022\220&\230\001\330\013\014\320\000\037\230q\360\020\000\005\006\340\004\007\200x\210w\220c\230\023\230A\330\010\017\210q\340\004\007\320\007\036\230c\240\021\330\010\017\210q\340\004\005\330\017\020\340\010\023\2206\230\027\240\001\360\006\000\t\035\230A\330\010\027\220x\230}\250A\250Q\360\006\000\t\014\2108\220?\240!\240>\260\021\330\014%\240Q\330\014\023\2201\330\010\017\210q\340\013\014\330\010\017\210q\320\000 \240\001\360\022\000\005\010\200t\2101\330\010\017\210q\340\004\007\200x\210w\220c\230\023\230A\330\010\017\210q\340\004\005\330\017\020\340\010\023\2206\230\027\240\001\360\006\000\t\035\230A\330\010\027\220x\230}""\250A\250Q\360\006\000\t\020\210v\220X\230Q\330\010\013\2104\210x\220\177\240a\240~\260V\2706\300\021\300!\330\014\023\2201\360\006\000\t\"\240\021\360\006\000\t\014\2104\210w\220b\230\001\340\014\027\220t\2307\240\"\240A\240Q\330\014\023\2204\220q\230\010\240\017\250q\260\016\270a\340\010\017\210q\340\013\014\330\010\017\210q\320\000\030\230\001\360\014\000\005\010\200x\210w\220c\230\023\230A\330\010#\2401\340\010\033\2301\320\000 \240\001\360\032\000\005\006\340\004\007\200x\210w\220c\230\023\230A\330\010\017\210q\340\004\005\330\017\020\340\010\023\2206\230\027\240\001\360\006\000\t\035\230A\330\010\027\220x\230}\250A\250Q\360\006\000\t\020\210v\220X\230Q\330\010\013\2104\210x\220\177\240a\240~\260V\2706\300\021\300!\330\014\023\2201\360\006\000\t\"\240\024\240Q\360\006\000\t\"\240\021\360\006\000\t\024\2204\220w\230b\240\001\240\021\340\010\017\210t\2201\220H\230O\2501\250N\270!\340\013\014\330\010\017\210q";
+    #else /* compression: none (5659 bytes) */
+const char* const bytes = "\033[0m24bitCode Puppy looks best with truecolor support.Consider using a modern terminal like:Console | None  \342\200\242 Kitty, Alacritty, or any modern terminal emulatorNote: The built-in macOS Terminal.app does not support truecolorNote that Cython is deliberately stricter than PEP-484 and rejects subclasses of builtin types. If you need to pass subclasses then set the 'annotation_typing' directive to False.(Sequoia and earlier). You'll need a different terminal app.\342\232\240\357\270\217  WARNING: TERMINAL DOES NOT SUPPORT TRUECOLOR (24-BIT COLOR)  \342\200\242 Windows Terminal (Windows)You can also try setting: export COLORTERM=truecolor.\n==================================================================================================================================================================================================================\n[/]?add_note[bold bright_red]\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200\342\224\200[/][bold bright_red on red]\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342""\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201\342\224\201[/][bold bright_red on red]\342\224\203[/][bold bright_white on red]                                                                      [/][bold bright_red on red]\342\224\203[/][bold bright_red on red]\342\224\203[/][bold bright_white on red]  \342\232\240\357\270\217   WARNING: TERMINAL DOES NOT SUPPORT TRUECOLOR (24-BIT COLOR)  \342\232\240\357\270\217   [/][bold bright_red on red]\342\224\203[/][bold white]Code Puppy uses rich colors and will look degraded without truecolor.[/]code_muse/terminal_utils.pyx[cyan]Consider using a modern terminal emulator:[/][cyan]Or try setting the COLORTERM environment variable:[/]  [dim]export COLORTERM=truecolor[/][dim italic]Note: The built-in macOS Terminal.app does not support truecolor (Sequoia and earlier).[/][dim italic]Setting COLORTERM=truecolor won't help - you'll need a different terminal app.[/]disableenablegc  [green]\342\200\242[/] [bold]Alacritty[/] - https://alacritty.org  [green]\342\200\242[/] [bold]Kitty[/] - https://sw.kovidgoyal.net/kitty  [green]\342\200\242[/] [bold]Warp[/] (macOS) - https://warp.dev  [green]\342\200\242[/] [bold]Windows Terminal[/] (Windows) - Built into Windows 11  [green]\342\200\242[/] [bold]iTerm2[/] (macOS) - https://iterm2.com  \342\200\242 iTerm2 (macOS)isenabledvte-256colorxterm-directxterm-truecolor[yellow]Detected color system:[/] [bo""ld]ALACRITTY_SOCKETCOLORTERMCallableCalledProcessErrorConsoleENABLE_ECHO_INPUTENABLE_LINE_INPUTENABLE_PROCESSED_INPUTENABLE_PROCESSED_OUTPUTENABLE_VIRTUAL_TERMINAL_PROCESSINGENABLE_WRAP_AT_EOL_OUTPUTGetConsoleModeGetStdHandleITERM_SESSION_IDKITTY_WINDOW_IDNone__Pyx_PyDict_NextRefSTD_INPUT_HANDLESTD_OUTPUT_HANDLESetConsoleModeTERMTYPE_CHECKINGWT_SESSIONWindowsasyncio.coroutinesbboolbyrefc_datac_outc_ulongcapture_outputchcheckcline_in_tracebackclosecode_muse.terminal_utilscollections.abccolor_systemcolortermconsolectypesdetect_truecolor_supportdetect_truecolor_support.<locals>.genexprdisable_windows_ctrl_cenable_windows_ctrl_censure_ctrl_c_disabledenvironflushflush_windows_keyboard_bufferforce_terminal__func__genexprgetgetchhandleiin_csiinput_is_coroutineitemsiterm2jkkbhit_keep_ctrl_c_disabledkernel32linelower__main__mode__module__msvcrtn__name__new_modenew_stdin_modenext_original_ctrl_handlerosplatformpopprintprint_truecolor_warning__qualname__resetreset_terminalreset_unix_terminalreset_windows_console_modereset_windows_terminal_ansireset_windows_terminal_fullresult_bytesreturnrich.consolerunsendset_keep_ctrl_c_disabled__set_name__setdefaultstart_csistderrstdin_handlestdin_modestdoutstrstrip_ansisubprocesssyssystemttail_lenterm__test__throwtruecolortruecolor_termstypingunknownvaluevalueswarning_lineswindllwrite\320\000$\240A\360\016\000\005\010\200x\210w\220c\230\023\230A\330\010\t\340\004\005\330\017\020\340\010\023\2206\230\027\240\001\360\006\000\t\036\230Q\330\010\021\220\030\230\035\240a\240q\360\006\000\t\020\210v\220X\230Q\330\010\020\220\017\230q\240\010\250\006\250f\260A\260Q\360\006\000\t#\240!\330\010$\240A\330\010-\250Q\340\010\t\330\014\020\220\001\330\014\016\210a\330\014\016\210a\330\014\016\210a\340\010\020\220\017\230q\240\010\250\001\360\006\000\t\035\230A\330\010\027\220x\230}\250A\250Q\360\006\000\t\035\230A\330\010\034\230A\330\010!\240\021\340\010\025\220V\2308\2401\330\010\020\220\017\230q\240\016\250f\260F\270!\2701\340\010\t\330\014\026\220a""\330\014\016\210a\330\014\016\210a\330\014\016\210a\340\010\020\220\017\230q\240\016\250a\340\013\014\320\000$\240I\250Q\360\014\000\005\006\330\004\034\230A\320\000\034\230I\320%?\270q\360\014\000\005\010\320\007\037\230q\330\010\t\340\004\007\200x\210s\220!\330\010\t\330\014\021\320\021%\240Q\340\014\026\220g\230Q\330\017\020\340\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\021\220\021\220!\330\014\r\360\006\000\005\024\2207\230.\250\003\2501\360\006\000\005\025\220A\330\010\t\330\010\t\330\010\t\360\006\000\t\n\340\010\t\360\006\000\t\n\330\010\t\330\0102\260!\2601\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\330\010\t\360\006\000\005\t\210\010\220\001\330\010\017\210v\220Q\220a\210Q\320\000%\240Q\360\014\000\005\010\200x\210w\220c\230\023\230A\330\010\t\340\004\005\330\010\013\2107\220&\230\001\230\021\330\010\013\2107\220&\230\001\330\010\013\2107\220&\230\001\230\021\330\010\013\2107\220&\230\001\330\013\014\320\000\035\230Q\360\014\000\005\010\200x\210w\220c\230\023\230A\330\010\t\340\004\005\330\010\022\220$\220a\220q\230\n\240&\250\006\250o\270Q\330\014\026\320\026+\2501\320\000%\240Q\360\014\000\005\010\200x\210w\220c\230\023\230A\330\010\t\340\004\037\230q\330\004\036\230a\330\004!\240\021\320\000\"\240!\360\030\000\005\021\220\002\220(\230$\230a\230}\250C\250v\260Q\330\004\007\200z\220\024\220]\240!\330\010\017\210q\360\006\000\005\014\2102\210X\220T\230\021\230(\240#\240V\2501\330\004\005\330\010\t\330\010\t\330\010\t\330\010\t\340\004\r\210Q\330\010\017\210q\360\006\000\005\010\200r\210\030\220\024\220Q\220a\330\010\017\210q\330\004\007\200r\210\030""\220\024\220Q\220a\330\010\017\210q\330\004\007\200r\210\030\220\024\220Q\220a\330\010\017\210q\330\004\007\200r\210\030\220\024\220Q\220a\330\010\017\210q\360\006\000\005\006\330\010\r\320\r!\240\021\340\010\022\220'\230\021\230/\250\021\330\010\027\220w\230a\330\010\017\210}\230C\230q\330\013\014\360\006\000\005\014\2101\320\000\026\220h\230a\360\026\000\005\010\200t\2101\330\010\017\210q\340\004\023\2205\230\007\230q\240\001\330\004\030\230\003\2301\230A\330\004'\240q\330\004 \320 0\260\006\260a\260q\330\004\007\200v\210S\220\001\330\010\t\340\004\030\230\001\330\004\030\230\001\330\004\026\220a\330\004 \240\001\360\n\000\n\013\330\010\016\210b\220\002\220!\330\014\021\220\026\220q\230\001\330\014\017\210q\360\010\000\021\024\2205\230\003\2306\240\021\330\024\035\230Q\330\020\025\220Q\330\020\021\330\014\017\210s\220#\220U\230$\230b\240\002\240\"\240B\240b\250\004\250F\260!\2602\260R\260s\270#\270Q\330\020\031\230\021\330\020\034\230A\330\020\025\220Q\330\020\021\330\014\017\210s\220#\220Q\330\020\023\2202\220R\220r\230\022\2302\230T\240\026\240q\250\002\250\"\250C\250s\260!\330\024\031\230\021\230%\230q\330\024\031\230\021\330\024\031\230\021\330\024\025\330\020\025\220Q\220e\2301\330\020\025\220Q\330\020\025\220Q\330\020\021\330\014\021\220\021\220%\220q\330\014\021\220\021\330\014\021\220\021\340\004\007\200q\360\006\000\t\024\2202\220R\220q\330\010\014\210E\220\025\220a\220q\330\014\021\220\021\220%\220v\230Q\230j\250\002\250!\330\014\021\220\021\340\004\036\230e\2402\240Q\330\004\010\210\001\210\021\330\004\013\210<\220w\230a\230q\320\000'\240q\360\014\000\005\010\200x\210w\220c\230\023\230A\330\010\t\340\004\005\330\017\020\340\010\016\210f\220F\230!\330\014\022\220&\230\001\330\013\014\320\000\037\230q\360\020\000\005\006\340\004\007\200x\210w\220c\230\023\230A\330\010\017\210q\340\004\007\320\007\036\230c\240\021\330\010\017\210q\340\004\005\330\017\020\340\010\023\2206\230\027\240\001\360\006\000\t\035\230A\330\010\027\220x\230}\250A\250Q\360\006\000""\t\014\2108\220?\240!\240>\260\021\330\014%\240Q\330\014\023\2201\330\010\017\210q\340\013\014\330\010\017\210q\320\000 \240\001\360\022\000\005\010\200t\2101\330\010\017\210q\340\004\007\200x\210w\220c\230\023\230A\330\010\017\210q\340\004\005\330\017\020\340\010\023\2206\230\027\240\001\360\006\000\t\035\230A\330\010\027\220x\230}\250A\250Q\360\006\000\t\020\210v\220X\230Q\330\010\013\2104\210x\220\177\240a\240~\260V\2706\300\021\300!\330\014\023\2201\360\006\000\t\"\240\021\360\006\000\t\014\2104\210w\220b\230\001\340\014\027\220t\2307\240\"\240A\240Q\330\014\023\2204\220q\230\010\240\017\250q\260\016\270a\340\010\017\210q\340\013\014\330\010\017\210q\320\000\030\230\001\360\014\000\005\010\200x\210w\220c\230\023\230A\330\010#\2401\340\010\033\2301\320\000 \240\001\360\032\000\005\006\340\004\007\200x\210w\220c\230\023\230A\330\010\017\210q\340\004\005\330\017\020\340\010\023\2206\230\027\240\001\360\006\000\t\035\230A\330\010\027\220x\230}\250A\250Q\360\006\000\t\020\210v\220X\230Q\330\010\013\2104\210x\220\177\240a\240~\260V\2706\300\021\300!\330\014\023\2201\360\006\000\t\"\240\024\240Q\360\006\000\t\"\240\021\360\006\000\t\024\2204\220w\230b\240\001\240\021\340\010\017\210t\2201\220H\230O\2501\250N\270!\340\013\014\330\010\017\210q";
     PyObject *data = NULL;
     CYTHON_UNUSED_VAR(__Pyx_DecompressString);
     #endif
     PyObject **stringtab = __pyx_mstate->__pyx_string_tab;
     Py_ssize_t pos = 0;
-    for (int i = 0; i < 165; i++) {
+    for (int i = 0; i < 168; i++) {
       Py_ssize_t bytes_length = index[i].length;
       PyObject *string = PyUnicode_DecodeUTF8(bytes + pos, bytes_length, NULL);
       if (likely(string) && i >= 45) PyUnicode_InternInPlace(&string);
@@ -9611,7 +9745,7 @@ const char* const bytes = "\033[0m24bitCode Puppy looks best with truecolor supp
       stringtab[i] = string;
       pos += bytes_length;
     }
-    for (int i = 165; i < 179; i++) {
+    for (int i = 168; i < 182; i++) {
       Py_ssize_t bytes_length = index[i].length;
       PyObject *string = PyBytes_FromStringAndSize(bytes + pos, bytes_length);
       stringtab[i] = string;
@@ -9622,14 +9756,14 @@ const char* const bytes = "\033[0m24bitCode Puppy looks best with truecolor supp
       }
     }
     Py_XDECREF(data);
-    for (Py_ssize_t i = 0; i < 179; i++) {
+    for (Py_ssize_t i = 0; i < 182; i++) {
       if (unlikely(PyObject_Hash(stringtab[i]) == -1)) {
         __PYX_ERR(0, 1, __pyx_L1_error)
       }
     }
     #if CYTHON_IMMORTAL_CONSTANTS
     {
-      PyObject **table = stringtab + 165;
+      PyObject **table = stringtab + 168;
       for (Py_ssize_t i=0; i<14; ++i) {
         #if CYTHON_COMPILING_IN_CPYTHON_FREETHREADING
         #if PY_VERSION_HEX < 0x030E0000
@@ -9675,72 +9809,72 @@ static int __Pyx_CreateCodeObjects(__pyx_mstatetype *__pyx_mstate) {
   PyObject* tuple_dedup_map = PyDict_New();
   if (unlikely(!tuple_dedup_map)) return -1;
   {
-    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS|CO_GENERATOR), 386};
+    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS|CO_GENERATOR), 406};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_t};
     __pyx_mstate_global->__pyx_codeobj_tab[0] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_code_muse_terminal_utils_pyx, __pyx_mstate->__pyx_n_u_genexpr, __pyx_mstate->__pyx_kp_b_iso88591_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[0])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 8, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 26};
-    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_input, __pyx_mstate->__pyx_n_u_b, __pyx_mstate->__pyx_n_u_i, __pyx_mstate->__pyx_n_u_n, __pyx_mstate->__pyx_n_u_out, __pyx_mstate->__pyx_n_u_in_csi, __pyx_mstate->__pyx_n_u_start_csi, __pyx_mstate->__pyx_n_u_ch};
-    __pyx_mstate_global->__pyx_codeobj_tab[1] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_code_muse_terminal_utils_pyx, __pyx_mstate->__pyx_n_u_strip_ansi, __pyx_mstate->__pyx_kp_b_iso88591_ha_t1_q_5_q_1A_a_Ba_Qaq_1_uCvQ, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[1])) goto bad;
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 13, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 28};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_input, __pyx_mstate->__pyx_n_u_b, __pyx_mstate->__pyx_n_u_n, __pyx_mstate->__pyx_n_u_c_data, __pyx_mstate->__pyx_n_u_c_out, __pyx_mstate->__pyx_n_u_i, __pyx_mstate->__pyx_n_u_j, __pyx_mstate->__pyx_n_u_in_csi, __pyx_mstate->__pyx_n_u_start_csi, __pyx_mstate->__pyx_n_u_ch, __pyx_mstate->__pyx_n_u_tail_len, __pyx_mstate->__pyx_n_u_k, __pyx_mstate->__pyx_n_u_result_bytes};
+    __pyx_mstate_global->__pyx_codeobj_tab[1] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_code_muse_terminal_utils_pyx, __pyx_mstate->__pyx_n_u_strip_ansi, __pyx_mstate->__pyx_kp_b_iso88591_ha_t1_q_5_q_1A_q_0_aq_vS_a_b_q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[1])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 0, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 85};
+    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 0, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 105};
     PyObject* const varnames[] = {0};
     __pyx_mstate_global->__pyx_codeobj_tab[2] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_code_muse_terminal_utils_pyx, __pyx_mstate->__pyx_n_u_reset_windows_terminal_ansi, __pyx_mstate->__pyx_kp_b_iso88591_Q_xwc_A_7_7_7_7, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[2])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 16, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 103};
+    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 16, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 123};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_ctypes, __pyx_mstate->__pyx_n_u_kernel32, __pyx_mstate->__pyx_n_u_STD_OUTPUT_HANDLE, __pyx_mstate->__pyx_n_u_handle, __pyx_mstate->__pyx_n_u_mode, __pyx_mstate->__pyx_n_u_ENABLE_PROCESSED_OUTPUT, __pyx_mstate->__pyx_n_u_ENABLE_WRAP_AT_EOL_OUTPUT, __pyx_mstate->__pyx_n_u_ENABLE_VIRTUAL_TERMINAL_PROCESSI, __pyx_mstate->__pyx_n_u_new_mode, __pyx_mstate->__pyx_n_u_STD_INPUT_HANDLE, __pyx_mstate->__pyx_n_u_stdin_handle, __pyx_mstate->__pyx_n_u_ENABLE_LINE_INPUT, __pyx_mstate->__pyx_n_u_ENABLE_ECHO_INPUT, __pyx_mstate->__pyx_n_u_ENABLE_PROCESSED_INPUT, __pyx_mstate->__pyx_n_u_stdin_mode, __pyx_mstate->__pyx_n_u_new_stdin_mode};
     __pyx_mstate_global->__pyx_codeobj_tab[3] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_code_muse_terminal_utils_pyx, __pyx_mstate->__pyx_n_u_reset_windows_console_mode, __pyx_mstate->__pyx_kp_b_iso88591_A_xwc_A_6_Q_aq_vXQ_q_fAQ_A_Q_a, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[3])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 163};
+    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 183};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_msvcrt};
     __pyx_mstate_global->__pyx_codeobj_tab[4] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_code_muse_terminal_utils_pyx, __pyx_mstate->__pyx_n_u_flush_windows_keyboard_buffer, __pyx_mstate->__pyx_kp_b_iso88591_q_xwc_A_fF, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[4])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 0, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 181};
+    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 0, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 201};
     PyObject* const varnames[] = {0};
     __pyx_mstate_global->__pyx_codeobj_tab[5] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_code_muse_terminal_utils_pyx, __pyx_mstate->__pyx_n_u_reset_windows_terminal_full, __pyx_mstate->__pyx_kp_b_iso88591_Q_xwc_A_q_a, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[5])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 0, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 195};
+    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 0, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 215};
     PyObject* const varnames[] = {0};
     __pyx_mstate_global->__pyx_codeobj_tab[6] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_code_muse_terminal_utils_pyx, __pyx_mstate->__pyx_n_u_reset_unix_terminal, __pyx_mstate->__pyx_kp_b_iso88591_Q_xwc_A_aq_oQ_1, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[6])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 0, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 210};
+    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 0, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 230};
     PyObject* const varnames[] = {0};
     __pyx_mstate_global->__pyx_codeobj_tab[7] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_code_muse_terminal_utils_pyx, __pyx_mstate->__pyx_n_u_reset_terminal, __pyx_mstate->__pyx_kp_b_iso88591_xwc_A_1_1, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[7])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 7, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 222};
+    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 7, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 242};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_ctypes, __pyx_mstate->__pyx_n_u_kernel32, __pyx_mstate->__pyx_n_u_STD_INPUT_HANDLE, __pyx_mstate->__pyx_n_u_stdin_handle, __pyx_mstate->__pyx_n_u_mode, __pyx_mstate->__pyx_n_u_ENABLE_PROCESSED_INPUT, __pyx_mstate->__pyx_n_u_new_mode};
     __pyx_mstate_global->__pyx_codeobj_tab[8] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_code_muse_terminal_utils_pyx, __pyx_mstate->__pyx_n_u_disable_windows_ctrl_c, __pyx_mstate->__pyx_kp_b_iso88591_xwc_A_q_6_A_x_AQ_vXQ_4x_a_V6_1, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[8])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 4, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 269};
+    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 4, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 289};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_ctypes, __pyx_mstate->__pyx_n_u_kernel32, __pyx_mstate->__pyx_n_u_STD_INPUT_HANDLE, __pyx_mstate->__pyx_n_u_stdin_handle};
     __pyx_mstate_global->__pyx_codeobj_tab[9] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_code_muse_terminal_utils_pyx, __pyx_mstate->__pyx_n_u_enable_windows_ctrl_c, __pyx_mstate->__pyx_kp_b_iso88591_q_xwc_A_q_c_q_6_A_x_AQ_8_Q_1_q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[9])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 308};
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 328};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_value};
     __pyx_mstate_global->__pyx_codeobj_tab[10] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_code_muse_terminal_utils_pyx, __pyx_mstate->__pyx_n_u_set_keep_ctrl_c_disabled, __pyx_mstate->__pyx_kp_b_iso88591_IQ_A, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[10])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 7, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 318};
+    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 7, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 338};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_ctypes, __pyx_mstate->__pyx_n_u_kernel32, __pyx_mstate->__pyx_n_u_STD_INPUT_HANDLE, __pyx_mstate->__pyx_n_u_stdin_handle, __pyx_mstate->__pyx_n_u_mode, __pyx_mstate->__pyx_n_u_ENABLE_PROCESSED_INPUT, __pyx_mstate->__pyx_n_u_new_mode};
     __pyx_mstate_global->__pyx_codeobj_tab[11] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_code_muse_terminal_utils_pyx, __pyx_mstate->__pyx_n_u_ensure_ctrl_c_disabled, __pyx_mstate->__pyx_kp_b_iso88591_t1_q_xwc_A_q_6_A_x_AQ_vXQ_4x_a, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[11])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 8, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 362};
+    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 8, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 382};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_colorterm, __pyx_mstate->__pyx_n_u_term, __pyx_mstate->__pyx_n_u_truecolor_terms, __pyx_mstate->__pyx_n_u_Console, __pyx_mstate->__pyx_n_u_console, __pyx_mstate->__pyx_n_u_color_system, __pyx_mstate->__pyx_n_u_genexpr, __pyx_mstate->__pyx_n_u_genexpr};
     __pyx_mstate_global->__pyx_codeobj_tab[12] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_code_muse_terminal_utils_pyx, __pyx_mstate->__pyx_n_u_detect_truecolor_support, __pyx_mstate->__pyx_kp_b_iso88591_a_CvQ_z_q_2XT_V1_Q_q_r_Qa_q_r_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[12])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 5, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 412};
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 5, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 432};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_console, __pyx_mstate->__pyx_n_u_Console, __pyx_mstate->__pyx_n_u_color_system, __pyx_mstate->__pyx_n_u_warning_lines, __pyx_mstate->__pyx_n_u_line};
     __pyx_mstate_global->__pyx_codeobj_tab[13] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_code_muse_terminal_utils_pyx, __pyx_mstate->__pyx_n_u_print_truecolor_warning, __pyx_mstate->__pyx_kp_b_iso88591_I_q_q_xs_Q_gQ_7_1_A_2_1_vQa, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[13])) goto bad;
   }
@@ -11052,251 +11186,7 @@ static int __Pyx__ArgTypeTest(PyObject *obj, PyTypeObject *type, const char *nam
     return 0;
 }
 
-/* SetStringIndexingError (used by GetItemIntBytes) */
-static void __Pyx_SetStringIndexingError(const char* message, int has_gil) {
-    if (!has_gil) {
-        PyGILState_STATE gil_state = PyGILState_Ensure();
-        PyErr_SetString(PyExc_IndexError, message);
-        PyGILState_Release(gil_state);
-    } else
-        PyErr_SetString(PyExc_IndexError, message);
-}
-
-/* GetItemIntBytes */
-static CYTHON_INLINE int __Pyx_GetItemInt_Bytes_Fast(PyObject* bytes, Py_ssize_t index,
-                                                     int wraparound, int boundscheck, int has_gil) {
-    const unsigned char *c_string;
-    if (wraparound && index < 0) {
-        Py_ssize_t size = __Pyx_PyBytes_GET_SIZE(bytes);
-        #if !CYTHON_ASSUME_SAFE_SIZE
-        if (unlikely(size < 0)) return -1;
-        #endif
-        index += size;
-    }
-    if (boundscheck) {
-        Py_ssize_t size = __Pyx_PyBytes_GET_SIZE(bytes);
-        #if !CYTHON_ASSUME_SAFE_SIZE
-        if (unlikely(size < 0)) return -1;
-        #endif
-        if (unlikely(!__Pyx_is_valid_index(index, size))) {
-            __Pyx_SetStringIndexingError("string index out of range", has_gil);
-            return -1;
-        }
-    }
-    c_string = __Pyx_PyBytes_AsUString(bytes);
-    #if !CYTHON_ASSUME_SAFE_MACROS
-    if (unlikely(!c_string)) return -1;
-    #endif
-    return (int) c_string[index];
-}
-
-/* PyObjectCall2Args (used by PyObjectCallMethod1) */
-static CYTHON_INLINE PyObject* __Pyx_PyObject_Call2Args(PyObject* function, PyObject* arg1, PyObject* arg2) {
-    PyObject *args[3] = {NULL, arg1, arg2};
-    return __Pyx_PyObject_FastCall(function, args+1, 2 | __Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET);
-}
-
-/* PyObjectGetMethod (used by PyObjectCallMethod1) */
-#if !(CYTHON_VECTORCALL && (__PYX_LIMITED_VERSION_HEX >= 0x030C0000 || (!CYTHON_COMPILING_IN_LIMITED_API && PY_VERSION_HEX >= 0x03090000)))
-static int __Pyx_PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method) {
-    PyObject *attr;
-#if CYTHON_UNPACK_METHODS && CYTHON_COMPILING_IN_CPYTHON && CYTHON_USE_PYTYPE_LOOKUP
-    __Pyx_TypeName type_name;
-    PyTypeObject *tp = Py_TYPE(obj);
-    PyObject *descr;
-    descrgetfunc f = NULL;
-    PyObject **dictptr, *dict;
-    int meth_found = 0;
-    assert (*method == NULL);
-    if (unlikely(tp->tp_getattro != PyObject_GenericGetAttr)) {
-        attr = __Pyx_PyObject_GetAttrStr(obj, name);
-        goto try_unpack;
-    }
-    if (unlikely(tp->tp_dict == NULL) && unlikely(PyType_Ready(tp) < 0)) {
-        return 0;
-    }
-    descr = _PyType_Lookup(tp, name);
-    if (likely(descr != NULL)) {
-        Py_INCREF(descr);
-#if defined(Py_TPFLAGS_METHOD_DESCRIPTOR) && Py_TPFLAGS_METHOD_DESCRIPTOR
-        if (__Pyx_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR))
-#else
-        #ifdef __Pyx_CyFunction_USED
-        if (likely(PyFunction_Check(descr) || __Pyx_IS_TYPE(descr, &PyMethodDescr_Type) || __Pyx_CyFunction_Check(descr)))
-        #else
-        if (likely(PyFunction_Check(descr) || __Pyx_IS_TYPE(descr, &PyMethodDescr_Type)))
-        #endif
-#endif
-        {
-            meth_found = 1;
-        } else {
-            f = Py_TYPE(descr)->tp_descr_get;
-            if (f != NULL && PyDescr_IsData(descr)) {
-                attr = f(descr, obj, (PyObject *)Py_TYPE(obj));
-                Py_DECREF(descr);
-                goto try_unpack;
-            }
-        }
-    }
-    dictptr = _PyObject_GetDictPtr(obj);
-    if (dictptr != NULL && (dict = *dictptr) != NULL) {
-        Py_INCREF(dict);
-        attr = __Pyx_PyDict_GetItemStr(dict, name);
-        if (attr != NULL) {
-            Py_INCREF(attr);
-            Py_DECREF(dict);
-            Py_XDECREF(descr);
-            goto try_unpack;
-        }
-        Py_DECREF(dict);
-    }
-    if (meth_found) {
-        *method = descr;
-        return 1;
-    }
-    if (f != NULL) {
-        attr = f(descr, obj, (PyObject *)Py_TYPE(obj));
-        Py_DECREF(descr);
-        goto try_unpack;
-    }
-    if (likely(descr != NULL)) {
-        *method = descr;
-        return 0;
-    }
-    type_name = __Pyx_PyType_GetFullyQualifiedName(tp);
-    PyErr_Format(PyExc_AttributeError,
-                 "'" __Pyx_FMT_TYPENAME "' object has no attribute '%U'",
-                 type_name, name);
-    __Pyx_DECREF_TypeName(type_name);
-    return 0;
-#else
-    attr = __Pyx_PyObject_GetAttrStr(obj, name);
-    goto try_unpack;
-#endif
-try_unpack:
-#if CYTHON_UNPACK_METHODS
-    if (likely(attr) && PyMethod_Check(attr) && likely(PyMethod_GET_SELF(attr) == obj)) {
-        PyObject *function = PyMethod_GET_FUNCTION(attr);
-        Py_INCREF(function);
-        Py_DECREF(attr);
-        *method = function;
-        return 1;
-    }
-#endif
-    *method = attr;
-    return 0;
-}
-#endif
-
-/* PyObjectCallMethod1 (used by ByteArrayAppend) */
-#if !(CYTHON_VECTORCALL && (__PYX_LIMITED_VERSION_HEX >= 0x030C0000 || (!CYTHON_COMPILING_IN_LIMITED_API && PY_VERSION_HEX >= 0x03090000)))
-static PyObject* __Pyx__PyObject_CallMethod1(PyObject* method, PyObject* arg) {
-    PyObject *result = __Pyx_PyObject_CallOneArg(method, arg);
-    Py_DECREF(method);
-    return result;
-}
-#endif
-static PyObject* __Pyx_PyObject_CallMethod1(PyObject* obj, PyObject* method_name, PyObject* arg) {
-#if CYTHON_VECTORCALL && (__PYX_LIMITED_VERSION_HEX >= 0x030C0000 || (!CYTHON_COMPILING_IN_LIMITED_API && PY_VERSION_HEX >= 0x03090000))
-    PyObject *args[2] = {obj, arg};
-    (void) __Pyx_PyObject_CallOneArg;
-    (void) __Pyx_PyObject_Call2Args;
-    return PyObject_VectorcallMethod(method_name, args, 2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
-#else
-    PyObject *method = NULL, *result;
-    int is_method = __Pyx_PyObject_GetMethod(obj, method_name, &method);
-    if (likely(is_method)) {
-        result = __Pyx_PyObject_Call2Args(method, obj, arg);
-        Py_DECREF(method);
-        return result;
-    }
-    if (unlikely(!method)) return NULL;
-    return __Pyx__PyObject_CallMethod1(method, arg);
-#endif
-}
-
-/* ByteArrayAppend */
-static CYTHON_INLINE int __Pyx_PyByteArray_Append(PyObject* bytearray, int value) {
-    PyObject *pyval, *retval;
-#if CYTHON_COMPILING_IN_CPYTHON
-    if (likely(__Pyx_is_valid_index(value, 256))) {
-        Py_ssize_t n = Py_SIZE(bytearray);
-        if (likely(n != PY_SSIZE_T_MAX)) {
-            if (unlikely(PyByteArray_Resize(bytearray, n + 1) < 0))
-                return -1;
-            PyByteArray_AS_STRING(bytearray)[n] = (char) (unsigned char) value;
-            return 0;
-        }
-    } else {
-        PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
-        return -1;
-    }
-#endif
-    pyval = PyLong_FromLong(value);
-    if (unlikely(!pyval))
-        return -1;
-    retval = __Pyx_PyObject_CallMethod1(bytearray, __pyx_mstate_global->__pyx_n_u_append, pyval);
-    Py_DECREF(pyval);
-    if (unlikely(!retval))
-        return -1;
-    Py_DECREF(retval);
-    return 0;
-}
-
-/* CallUnboundCMethod1 */
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_CallUnboundCMethod1(__Pyx_CachedCFunction* cfunc, PyObject* self, PyObject* arg) {
-    int was_initialized =  __Pyx_CachedCFunction_GetAndSetInitializing(cfunc);
-    if (likely(was_initialized == 2 && cfunc->func)) {
-        int flag = cfunc->flag;
-        if (flag == METH_O) {
-            return __Pyx_CallCFunction(cfunc, self, arg);
-        } else if (flag == METH_FASTCALL) {
-            return __Pyx_CallCFunctionFast(cfunc, self, &arg, 1);
-        } else if (flag == (METH_FASTCALL | METH_KEYWORDS)) {
-            return __Pyx_CallCFunctionFastWithKeywords(cfunc, self, &arg, 1, NULL);
-        }
-    }
-#if CYTHON_COMPILING_IN_CPYTHON_FREETHREADING
-    else if (unlikely(was_initialized == 1)) {
-        __Pyx_CachedCFunction tmp_cfunc = {
-#ifndef __cplusplus
-            0
-#endif
-        };
-        tmp_cfunc.type = cfunc->type;
-        tmp_cfunc.method_name = cfunc->method_name;
-        return __Pyx__CallUnboundCMethod1(&tmp_cfunc, self, arg);
-    }
-#endif
-    PyObject* result = __Pyx__CallUnboundCMethod1(cfunc, self, arg);
-    __Pyx_CachedCFunction_SetFinishedInitializing(cfunc);
-    return result;
-}
-#endif
-static PyObject* __Pyx__CallUnboundCMethod1(__Pyx_CachedCFunction* cfunc, PyObject* self, PyObject* arg){
-    PyObject *result = NULL;
-    if (unlikely(!cfunc->func && !cfunc->method) && unlikely(__Pyx_TryUnpackUnboundCMethod(cfunc) < 0)) return NULL;
-#if CYTHON_COMPILING_IN_CPYTHON
-    if (cfunc->func && (cfunc->flag & METH_VARARGS)) {
-        PyObject *args = PyTuple_New(1);
-        if (unlikely(!args)) return NULL;
-        Py_INCREF(arg);
-        PyTuple_SET_ITEM(args, 0, arg);
-        if (cfunc->flag & METH_KEYWORDS)
-            result = __Pyx_CallCFunctionWithKeywords(cfunc, self, args, NULL);
-        else
-            result = __Pyx_CallCFunction(cfunc, self, args);
-        Py_DECREF(args);
-    } else
-#endif
-    {
-        result = __Pyx_PyObject_Call2Args(cfunc->method, self, arg);
-    }
-    return result;
-}
-
-/* decode_c_bytes (used by decode_bytearray) */
+/* decode_c_bytes (used by decode_bytes) */
 static CYTHON_INLINE PyObject* __Pyx_decode_c_bytes(
          const char* cstring, Py_ssize_t length, Py_ssize_t start, Py_ssize_t stop,
          const char* encoding, const char* errors,
@@ -12202,6 +12092,98 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func) {
     PyObject *arg[2] = {NULL, NULL};
     return __Pyx_PyObject_FastCall(func, arg + 1, 0 | __Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET);
 }
+
+/* PyObjectGetMethod (used by PyObjectCallMethod0) */
+#if !(CYTHON_VECTORCALL && (__PYX_LIMITED_VERSION_HEX >= 0x030C0000 || (!CYTHON_COMPILING_IN_LIMITED_API && PY_VERSION_HEX >= 0x03090000)))
+static int __Pyx_PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method) {
+    PyObject *attr;
+#if CYTHON_UNPACK_METHODS && CYTHON_COMPILING_IN_CPYTHON && CYTHON_USE_PYTYPE_LOOKUP
+    __Pyx_TypeName type_name;
+    PyTypeObject *tp = Py_TYPE(obj);
+    PyObject *descr;
+    descrgetfunc f = NULL;
+    PyObject **dictptr, *dict;
+    int meth_found = 0;
+    assert (*method == NULL);
+    if (unlikely(tp->tp_getattro != PyObject_GenericGetAttr)) {
+        attr = __Pyx_PyObject_GetAttrStr(obj, name);
+        goto try_unpack;
+    }
+    if (unlikely(tp->tp_dict == NULL) && unlikely(PyType_Ready(tp) < 0)) {
+        return 0;
+    }
+    descr = _PyType_Lookup(tp, name);
+    if (likely(descr != NULL)) {
+        Py_INCREF(descr);
+#if defined(Py_TPFLAGS_METHOD_DESCRIPTOR) && Py_TPFLAGS_METHOD_DESCRIPTOR
+        if (__Pyx_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR))
+#else
+        #ifdef __Pyx_CyFunction_USED
+        if (likely(PyFunction_Check(descr) || __Pyx_IS_TYPE(descr, &PyMethodDescr_Type) || __Pyx_CyFunction_Check(descr)))
+        #else
+        if (likely(PyFunction_Check(descr) || __Pyx_IS_TYPE(descr, &PyMethodDescr_Type)))
+        #endif
+#endif
+        {
+            meth_found = 1;
+        } else {
+            f = Py_TYPE(descr)->tp_descr_get;
+            if (f != NULL && PyDescr_IsData(descr)) {
+                attr = f(descr, obj, (PyObject *)Py_TYPE(obj));
+                Py_DECREF(descr);
+                goto try_unpack;
+            }
+        }
+    }
+    dictptr = _PyObject_GetDictPtr(obj);
+    if (dictptr != NULL && (dict = *dictptr) != NULL) {
+        Py_INCREF(dict);
+        attr = __Pyx_PyDict_GetItemStr(dict, name);
+        if (attr != NULL) {
+            Py_INCREF(attr);
+            Py_DECREF(dict);
+            Py_XDECREF(descr);
+            goto try_unpack;
+        }
+        Py_DECREF(dict);
+    }
+    if (meth_found) {
+        *method = descr;
+        return 1;
+    }
+    if (f != NULL) {
+        attr = f(descr, obj, (PyObject *)Py_TYPE(obj));
+        Py_DECREF(descr);
+        goto try_unpack;
+    }
+    if (likely(descr != NULL)) {
+        *method = descr;
+        return 0;
+    }
+    type_name = __Pyx_PyType_GetFullyQualifiedName(tp);
+    PyErr_Format(PyExc_AttributeError,
+                 "'" __Pyx_FMT_TYPENAME "' object has no attribute '%U'",
+                 type_name, name);
+    __Pyx_DECREF_TypeName(type_name);
+    return 0;
+#else
+    attr = __Pyx_PyObject_GetAttrStr(obj, name);
+    goto try_unpack;
+#endif
+try_unpack:
+#if CYTHON_UNPACK_METHODS
+    if (likely(attr) && PyMethod_Check(attr) && likely(PyMethod_GET_SELF(attr) == obj)) {
+        PyObject *function = PyMethod_GET_FUNCTION(attr);
+        Py_INCREF(function);
+        Py_DECREF(attr);
+        *method = function;
+        return 1;
+    }
+#endif
+    *method = attr;
+    return 0;
+}
+#endif
 
 /* PyObjectCallMethod0 (used by PyType_Ready) */
 static PyObject* __Pyx_PyObject_CallMethod0(PyObject* obj, PyObject* method_name) {
@@ -14052,75 +14034,6 @@ bad:
 #endif
 
 /* CIntToPy */
-static CYTHON_INLINE PyObject* __Pyx_PyLong_From_unsigned_char(unsigned char value) {
-#ifdef __Pyx_HAS_GCC_DIAGNOSTIC
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
-#endif
-    const unsigned char neg_one = (unsigned char) -1, const_zero = (unsigned char) 0;
-#ifdef __Pyx_HAS_GCC_DIAGNOSTIC
-#pragma GCC diagnostic pop
-#endif
-    const int is_unsigned = neg_one > const_zero;
-    if (is_unsigned) {
-        if (sizeof(unsigned char) < sizeof(long)) {
-            return PyLong_FromLong((long) value);
-        } else if (sizeof(unsigned char) <= sizeof(unsigned long)) {
-            return PyLong_FromUnsignedLong((unsigned long) value);
-#if !CYTHON_COMPILING_IN_PYPY
-        } else if (sizeof(unsigned char) <= sizeof(unsigned PY_LONG_LONG)) {
-            return PyLong_FromUnsignedLongLong((unsigned PY_LONG_LONG) value);
-#endif
-        }
-    } else {
-        if (sizeof(unsigned char) <= sizeof(long)) {
-            return PyLong_FromLong((long) value);
-        } else if (sizeof(unsigned char) <= sizeof(PY_LONG_LONG)) {
-            return PyLong_FromLongLong((PY_LONG_LONG) value);
-        }
-    }
-    {
-        unsigned char *bytes = (unsigned char *)&value;
-#if !CYTHON_COMPILING_IN_LIMITED_API && PY_VERSION_HEX >= 0x030d00A4
-        if (is_unsigned) {
-            return PyLong_FromUnsignedNativeBytes(bytes, sizeof(value), -1);
-        } else {
-            return PyLong_FromNativeBytes(bytes, sizeof(value), -1);
-        }
-#elif !CYTHON_COMPILING_IN_LIMITED_API && PY_VERSION_HEX < 0x030d0000
-        int one = 1; int little = (int)*(unsigned char *)&one;
-        return _PyLong_FromByteArray(bytes, sizeof(unsigned char),
-                                     little, !is_unsigned);
-#else
-        int one = 1; int little = (int)*(unsigned char *)&one;
-        PyObject *from_bytes, *result = NULL, *kwds = NULL;
-        PyObject *py_bytes = NULL, *order_str = NULL;
-        from_bytes = PyObject_GetAttrString((PyObject*)&PyLong_Type, "from_bytes");
-        if (!from_bytes) return NULL;
-        py_bytes = PyBytes_FromStringAndSize((char*)bytes, sizeof(unsigned char));
-        if (!py_bytes) goto limited_bad;
-        order_str = PyUnicode_FromString(little ? "little" : "big");
-        if (!order_str) goto limited_bad;
-        {
-            PyObject *args[3+(CYTHON_VECTORCALL ? 1 : 0)] = { NULL, py_bytes, order_str };
-            if (!is_unsigned) {
-                kwds = __Pyx_MakeVectorcallBuilderKwds(1);
-                if (!kwds) goto limited_bad;
-                if (__Pyx_VectorcallBuilder_AddArgStr("signed", __Pyx_NewRef(Py_True), kwds, args+3, 0) < 0) goto limited_bad;
-            }
-            result = __Pyx_Object_Vectorcall_CallFromBuilder(from_bytes, args+1, 2 | __Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET, kwds);
-        }
-        limited_bad:
-        Py_XDECREF(kwds);
-        Py_XDECREF(order_str);
-        Py_XDECREF(py_bytes);
-        Py_XDECREF(from_bytes);
-        return result;
-#endif
-    }
-}
-
-/* CIntToPy */
 static CYTHON_INLINE PyObject* __Pyx_PyLong_From_long(long value) {
 #ifdef __Pyx_HAS_GCC_DIAGNOSTIC
 #pragma GCC diagnostic push
@@ -14965,6 +14878,39 @@ static CYTHON_INLINE PyObject *__Pyx_PyIter_Next_Plain(PyObject *iterator) {
     iternextfunc iternext = __Pyx_PyObject_GetIterNextFunc(iterator);
     assert(iternext);
     return iternext(iterator);
+#endif
+}
+
+/* PyObjectCall2Args (used by PyObjectCallMethod1) */
+static CYTHON_INLINE PyObject* __Pyx_PyObject_Call2Args(PyObject* function, PyObject* arg1, PyObject* arg2) {
+    PyObject *args[3] = {NULL, arg1, arg2};
+    return __Pyx_PyObject_FastCall(function, args+1, 2 | __Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET);
+}
+
+/* PyObjectCallMethod1 (used by CoroutineBase) */
+#if !(CYTHON_VECTORCALL && (__PYX_LIMITED_VERSION_HEX >= 0x030C0000 || (!CYTHON_COMPILING_IN_LIMITED_API && PY_VERSION_HEX >= 0x03090000)))
+static PyObject* __Pyx__PyObject_CallMethod1(PyObject* method, PyObject* arg) {
+    PyObject *result = __Pyx_PyObject_CallOneArg(method, arg);
+    Py_DECREF(method);
+    return result;
+}
+#endif
+static PyObject* __Pyx_PyObject_CallMethod1(PyObject* obj, PyObject* method_name, PyObject* arg) {
+#if CYTHON_VECTORCALL && (__PYX_LIMITED_VERSION_HEX >= 0x030C0000 || (!CYTHON_COMPILING_IN_LIMITED_API && PY_VERSION_HEX >= 0x03090000))
+    PyObject *args[2] = {obj, arg};
+    (void) __Pyx_PyObject_CallOneArg;
+    (void) __Pyx_PyObject_Call2Args;
+    return PyObject_VectorcallMethod(method_name, args, 2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+#else
+    PyObject *method = NULL, *result;
+    int is_method = __Pyx_PyObject_GetMethod(obj, method_name, &method);
+    if (likely(is_method)) {
+        result = __Pyx_PyObject_Call2Args(method, obj, arg);
+        Py_DECREF(method);
+        return result;
+    }
+    if (unlikely(!method)) return NULL;
+    return __Pyx__PyObject_CallMethod1(method, arg);
 #endif
 }
 
