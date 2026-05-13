@@ -134,13 +134,23 @@ class BaseAgent(ABC):
             return 128000
 
     def _estimate_context_overhead(self) -> int:
-        """Tokens used by system prompt + registered pydantic tools."""
+        """Tokens used by system prompt + registered pydantic tools.
+
+        Cached per agent instance because tool schemas are fixed per build
+        and the system prompt is stable once ``_assemble_instructions``
+        (which now caches ``load_muse_rules``) has run.
+        """
+        model_name = self.get_model_name()
+        cached = getattr(self, "_context_overhead_cache", None)
+        if cached is not None and cached.get("model_name") == model_name:
+            return cached["value"]
+
         system_prompt = self.get_full_system_prompt()
         try:
             from code_muse.model_utils import prepare_prompt_for_model
 
             prepared = prepare_prompt_for_model(
-                model_name=self.get_model_name() or "",
+                model_name=model_name or "",
                 system_prompt=system_prompt,
                 user_prompt="",
                 prepend_system_to_user=False,
@@ -154,7 +164,9 @@ class BaseAgent(ABC):
             if self.pydantic_agent
             else None
         )
-        return estimate_context_overhead(resolved, tools, self.get_model_name())
+        value = estimate_context_overhead(resolved, tools, model_name)
+        self._context_overhead_cache = {"value": value, "model_name": model_name}
+        return value
 
     # ---- Orchestration (thin delegations) ---------------------------------
     def summarize_messages(
