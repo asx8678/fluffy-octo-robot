@@ -233,7 +233,7 @@ def register_callback(phase: PhaseType, func: CallbackFunc, priority: int = 0) -
 
     # Prevent duplicate registration of the same callback function
     # This can happen if plugins are accidentally loaded multiple times
-    for existing_priority, existing_func in _callbacks[phase]:
+    for _existing_priority, existing_func in _callbacks[phase]:
         if existing_func is func:
             logger.debug(
                 f"Callback {func.__name__} already registered for phase '{phase}', skipping"
@@ -250,7 +250,7 @@ def unregister_callback(phase: PhaseType, func: CallbackFunc) -> bool:
     if phase not in _callbacks:
         return False
 
-    for idx, (existing_priority, existing_func) in enumerate(_callbacks[phase]):
+    for idx, (_existing_priority, existing_func) in enumerate(_callbacks[phase]):
         if existing_func is func:
             del _callbacks[phase][idx]
             logger.debug(

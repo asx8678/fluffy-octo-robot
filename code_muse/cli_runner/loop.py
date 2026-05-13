@@ -6,13 +6,12 @@ import sys
 from pathlib import Path
 
 from code_muse.agents import get_current_agent
-from code_muse.cli_runner.runner import _render_response, run_prompt_with_attachments
-from code_muse.cli_runner.terminal_session import TerminalSession
 from code_muse.cli_runner.input_disposition import (
-    InputDisposition,
     InputDispositionKind,
     classify_input,
 )
+from code_muse.cli_runner.runner import _render_response, run_prompt_with_attachments
+from code_muse.cli_runner.terminal_session import TerminalSession
 from code_muse.command_line.clipboard import get_clipboard_manager
 from code_muse.command_line.shell_passthrough import (
     execute_shell_passthrough,
@@ -208,7 +207,7 @@ async def _run_main_input_loop(message_renderer, terminal_session):
 
         try:
             task = await _read_user_input(message_renderer, terminal_session)
-        except (KeyboardInterrupt, asyncio.CancelledError):
+        except KeyboardInterrupt, asyncio.CancelledError:
             _handle_keyboard_interrupt(terminal_session)
             continue
         except EOFError:
@@ -221,6 +220,7 @@ async def _run_main_input_loop(message_renderer, terminal_session):
             from code_muse.command_line.shell_passthrough import (
                 execute_shell_passthrough,
             )
+
             execute_shell_passthrough(task)
             continue
 
@@ -259,9 +259,7 @@ async def _run_main_input_loop(message_renderer, terminal_session):
                         restore_autosave_interactively,
                     )
 
-                    use_interactive_picker = (
-                        sys.stdin.isatty() and sys.stdout.isatty()
-                    )
+                    use_interactive_picker = sys.stdin.isatty() and sys.stdout.isatty()
                     if os.getenv("MUSE_NO_TUI") == "1":
                         use_interactive_picker = False
 
@@ -276,8 +274,7 @@ async def _run_main_input_loop(message_renderer, terminal_session):
                         agent.set_message_history(history)
                         set_current_autosave_from_session_name(chosen_session)
                         total_tokens = sum(
-                            agent.estimate_tokens_for_message(msg)
-                            for msg in history
+                            agent.estimate_tokens_for_message(msg) for msg in history
                         )
                         session_path = base_dir / f"{chosen_session}.json"
                         emit_success(
@@ -287,6 +284,7 @@ async def _run_main_input_loop(message_renderer, terminal_session):
                         from code_muse.command_line.autosave_menu import (
                             display_resumed_history,
                         )
+
                         display_resumed_history(history)
                     else:
                         await restore_autosave_interactively(Path(AUTOSAVE_DIR))
@@ -297,16 +295,20 @@ async def _run_main_input_loop(message_renderer, terminal_session):
             task = prompt
 
         # TASK — or rewritten task from SLASH_REWRITE
-        if disposition.kind in (
-            InputDispositionKind.TASK,
-            InputDispositionKind.SLASH_REWRITE,
+        if (
+            disposition.kind
+            in (
+                InputDispositionKind.TASK,
+                InputDispositionKind.SLASH_REWRITE,
+            )
+            and task.strip()
         ):
-            if task.strip():
-                save_command_to_history(task)
-                return task
+            save_command_to_history(task)
+            return task
 
         # Shouldn't reach here, but if we do, loop again
         continue
+
 
 def _handle_agent_cancellation(terminal_session) -> None:
     """Reset terminal state after an agent task is cancelled."""

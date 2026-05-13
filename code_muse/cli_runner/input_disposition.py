@@ -1,7 +1,5 @@
 """Input disposition — typed classification of user input for the interactive loop."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from enum import Enum
 
@@ -71,6 +69,7 @@ def classify_input(task: str) -> InputDisposition:
 
     if cleaned.startswith("/"):
         from code_muse.messaging import emit_error
+
         try:
             command_result = handle_command(cleaned)
         except Exception as e:

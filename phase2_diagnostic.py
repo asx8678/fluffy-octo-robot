@@ -58,7 +58,7 @@ def check_tracking_db_singleton() -> None:
     record_py = TOKEN_TRACKING / "record.py"
     db_py = TOKEN_TRACKING / "database.py"
     record_src = record_py.read_text()
-    db_src = db_py.read_text()
+    db_py.read_text()
 
     # record_command should NOT instantiate TrackingDatabase inline
     instantiates_inline = "TrackingDatabase()" in record_src
@@ -84,7 +84,6 @@ def check_semantic_compression_mutation() -> None:
     has_post_tool = "post_tool_call" in src
     has_mutation = "compress_semantic" in src or "compressor.compress" in src
     # A safe implementation only injects a prompt via load_prompt, never mutates results
-    only_prompt_injection = "load_prompt" in src and not has_mutation
 
     if has_post_tool and has_mutation:
         log(
@@ -100,7 +99,7 @@ def check_semantic_compression_mutation() -> None:
 # ── Check 4: AST compressor language reach ───────────────────────────
 def check_ast_compressor_reach() -> None:
     code_py = FILTER_ENGINE / "strategies/code.py"
-    ast_py = FILTER_ENGINE / "strategies/ast_compressor.py"
+    FILTER_ENGINE / "strategies/ast_compressor.py"
     code_src = code_py.read_text()
 
     # _language_str_to_code_language should NOT artificially limit languages
@@ -155,7 +154,7 @@ def check_callback_priority() -> None:
 # ── Check 6: ContentTypeDetector CODE double-work ────────────────────
 def check_content_type_code_roundtrip() -> None:
     dispatcher_py = FILTER_ENGINE / "dispatcher.py"
-    content_py = FILTER_ENGINE / "content_detector.py"
+    FILTER_ENGINE / "content_detector.py"
     disp_src = dispatcher_py.read_text()
 
     # If CODE routes back to category 'code', the detector wasted a scan

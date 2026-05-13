@@ -9,6 +9,7 @@ from code_muse.pydantic_patches import apply_all_patches
 apply_all_patches()
 
 import asyncio
+import contextlib
 import os
 import sys
 import traceback
@@ -284,10 +285,8 @@ def main_entry():
             command_runner.shutdown()
         except Exception:
             pass
-        try:
+        with contextlib.suppress(Exception):
             callbacks._shutdown_executor()
-        except Exception:
-            pass
         # Reset terminal on Unix-like systems (not Windows)
         reset_unix_terminal()
     return exit_code
