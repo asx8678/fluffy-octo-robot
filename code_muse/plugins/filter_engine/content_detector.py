@@ -36,6 +36,19 @@ class ContentTypeDetector:
         re.compile(r"^\w+\s+\d+\s+\d{2}:\d{2}:\d{2}"),  # syslog style
         re.compile(r"^(ERROR|WARN|INFO|DEBUG|TRACE|FATAL)\b", re.IGNORECASE),
     ]
+    # Single combined log pattern for efficient matching
+    LOG_COMBINED: ClassVar[re.Pattern] = re.compile(
+        "|".join(
+            [
+                r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}",  # ISO timestamp
+                r"^\d{2}:\d{2}:\d{2}\.\d{3}",  # HH:MM:SS.mmm
+                r"^\[?\d{4}-\d{2}-\d{2}\]?",  # [YYYY-MM-DD] (brackets optional)
+                r"^\w+\s+\d+\s+\d{2}:\d{2}:\d{2}",  # syslog style
+                r"^(ERROR|WARN|INFO|DEBUG|TRACE|FATAL)\b",  # log levels
+            ]
+        ),
+        re.IGNORECASE,
+    )
     HTML_PATTERNS: ClassVar[list[re.Pattern]] = [
         re.compile(r"<html[\s>]", re.IGNORECASE),
         re.compile(r"<!DOCTYPE\s+html", re.IGNORECASE),
@@ -46,35 +59,6 @@ class ContentTypeDetector:
             r"</?(?:html|head|body|div|span|p|a|table|tr|td)[\s>]", re.IGNORECASE
         ),
     ]
-    CODE_KEYWORDS: ClassVar[set[str]] = {
-        "def",
-        "class",
-        "import",
-        "from",
-        "function",
-        "const",
-        "let",
-        "var",
-        "return",
-        "if",
-        "else",
-        "for",
-        "while",
-        "try",
-        "except",
-        "catch",
-        "public",
-        "private",
-        "protected",
-        "static",
-        "void",
-        "int",
-        "string",
-        "package",
-        "export",
-        "require",
-        "module",
-    }
     SEARCH_PATTERNS: ClassVar[list[re.Pattern]] = [
         re.compile(r"^Found\s+\d+\s+results?", re.IGNORECASE),
         re.compile(r"^\d+\s+matches?", re.IGNORECASE),
@@ -141,19 +125,31 @@ class ContentTypeDetector:
             return False
 
     @classmethod
-    def _is_log(cls, text: str) -> bool:
-        """Test if text looks like log output."""
+    def _is_log_fast(cls, text: str) -> bool:
+        """Test if text looks like log output using single combined pattern."""
         lines = text.splitlines()
         if not lines:
             return False
-        # Count lines matching log patterns
+        log_lines = sum(1 for line in lines[:50] if cls.LOG_COMBINED.search(line))
+        return log_lines > max(1, min(len(lines), 50) * 0.3)
+
+    @classmethod
+    def _is_log(cls, text: str) -> bool:
+        """Test if text looks like log output.
+
+        First tries the efficient single combined pattern.
+        Falls back to per-pattern matching for edge cases.
+        """
+        if cls._is_log_fast(text):
+            return True
+        # Fallback: keep the original multi-pattern approach for safety
+        lines = text.splitlines()
+        if not lines:
+            return False
         log_lines = 0
-        for line in lines[:50]:  # sample first 50 lines
-            for pat in cls.LOG_PATTERNS:
-                if pat.search(line):
-                    log_lines += 1
-                    break
-        # If > 30% of sampled lines match, treat as log
+        for line in lines[:50]:
+            if any(pat.search(line) for pat in cls.LOG_PATTERNS):
+                log_lines += 1
         return log_lines > max(1, min(len(lines), 50) * 0.3)
 
     @classmethod
@@ -163,16 +159,67 @@ class ContentTypeDetector:
 
     @classmethod
     def _is_code(cls, text: str) -> bool:
-        """Test if text looks like source code by keyword density."""
+        """Test if text looks like source code by structural detection."""
         lines = text.splitlines()
         if not lines:
             return False
-        words = text.lower().split()
-        if not words:
-            return False
-        code_words = sum(1 for w in words[:500] if w in cls.CODE_KEYWORDS)
-        # If > 5% of words are code keywords, treat as code
-        return code_words > max(3, min(len(words), 500) * 0.05)
+
+        # Structural signals — check first 100 non-empty lines
+        significant_lines = 0
+        code_signals = 0
+        brace_depth = 0
+        indent_depth = 0
+
+        for line in lines[:100]:
+            stripped = line.strip()
+            if not stripped or stripped.startswith(("#", "//", "/*", "*")):
+                continue
+
+            significant_lines += 1
+            if significant_lines > 30:
+                break
+
+            # Shebang detection
+            if stripped.startswith("#!"):
+                code_signals += 2
+                continue
+
+            # Leading structural keywords at start of line
+            if re.match(
+                r"^\s*(def |class |function |fn |const |let |var "
+                r"|import |from |package |export |interface |trait "
+                r"|impl |public |private |protected |static )",
+                line,
+            ):
+                code_signals += 2
+                continue
+
+            # Control flow at start of line
+            if re.match(
+                r"^\s*(if |for |while |try |catch |switch |return |elif|else:)",
+                line,
+            ):
+                code_signals += 1
+                continue
+
+            # Track brace depth for C-family languages
+            brace_depth += stripped.count("{") - stripped.count("}")
+
+            # Track indentation (meaningful indentation = Python/Ruby/YAML)
+            leading_spaces = len(line) - len(line.lstrip())
+            if leading_spaces > 0:
+                indent_depth += 1
+
+        # Signal: non-trivial brace nesting
+        if brace_depth > 2:
+            code_signals += 2
+
+        # Signal: consistent indentation
+        if indent_depth > significant_lines * 0.3:
+            code_signals += 1
+
+        # Combined signal: structural detection
+        return code_signals >= 3
 
     @classmethod
     def _is_search(cls, text: str) -> bool:
