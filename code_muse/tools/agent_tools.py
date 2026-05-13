@@ -141,9 +141,7 @@ def _save_session_history(
 ) -> None:
     """Save session history to filesystem as JSON with atomic private writes.
 
-    Writes a canonical ``.json`` file and a backward-compat ``.pkl`` file
-    (containing the same JSON payload) so old callers checking for
-    ``.pkl`` still find what they expect.
+    Writes a canonical ``.json`` file with the session message history.
 
     Args:
         session_id: The session identifier (must be kebab-case)
@@ -169,16 +167,6 @@ def _save_session_history(
     # Save canonical .json file
     json_path = sessions_dir / f"{session_id}.json"
     atomic_write_private_json(json_path, session_data)
-
-    # Save compat .pkl file (same JSON content, different extension)
-    pkl_path = sessions_dir / f"{session_id}.pkl"
-    try:
-        tmp_pkl = pkl_path.with_suffix(".tmp")
-        with open(tmp_pkl, "w", encoding="utf-8") as f:
-            json.dump(session_data, f, indent=2)
-        tmp_pkl.replace(pkl_path)
-    except OSError:
-        pass  # best-effort compat file
 
     # Save or update txt file with metadata
     txt_path = sessions_dir / f"{session_id}.txt"
