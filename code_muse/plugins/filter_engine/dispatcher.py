@@ -135,7 +135,12 @@ class FilterDispatcher:
                 ContentTypeDetector,
             )
 
-            content_type = ContentTypeDetector.detect(output.stdout or "")
+            # Sniff only the first ~8KB for content-type detection so
+            # strategy selection can begin before the full output is received.
+            _SNIFF_WINDOW = 8192
+            content_type = ContentTypeDetector.detect(
+                (output.stdout or "")[:_SNIFF_WINDOW]
+            )
             logger.debug(
                 "Detected content type: %s for command: %s", content_type.value, command
             )
@@ -146,7 +151,7 @@ class FilterDispatcher:
                 ContentType.LOG: "log",
                 ContentType.HTML: "html",
                 ContentType.SEARCH: "search",
-                ContentType.CODE: category,
+                ContentType.CODE: "code",  # route directly to code strategy
                 ContentType.UNKNOWN: category,
             }
 
@@ -214,10 +219,9 @@ class FilterDispatcher:
 
                 tee_dir = Path(tempfile.gettempdir()) / "muse_tee"
                 tee_dir.mkdir(exist_ok=True)
-                tee_path = (
-                    tee_dir
-                    / f"tee_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}_{hash(command) & 0xFFFF:04x}.txt"
-                )
+                ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+                cmd_hash = hash(command) & 0xFFFF
+                tee_path = tee_dir / f"tee_{ts}_{cmd_hash:04x}.txt"
                 tee_path.write_text(
                     f"# Raw output saved after filter error\n"
                     f"# Command: {command}\n"
@@ -226,7 +230,9 @@ class FilterDispatcher:
                     f"STDERR:\n{raw_stderr}\n"
                 )
                 tee_path.chmod(0o600)  # user-only readable
-                logger.info("Tee recovery: raw output saved to %s", tee_path)
+                logger.warning(
+                    "⚠ FilterDispatcher: tee recovery wrote raw output to %s", tee_path
+                )
                 # Return hint that includes the tee path
                 return {
                     "pre_executed": True,

@@ -97,6 +97,14 @@ class CommandClassifier:
             re.compile(r"^\s*diff\b"),
             re.compile(r"^\s*cmp\b"),
         ],
+        "json": [
+            re.compile(r"\.json\b"),
+            re.compile(r"^\s*curl\b"),
+            re.compile(r"^\s*wget\b"),
+            re.compile(r"^\s*http\b"),
+            re.compile(r"^\s*jq\b"),
+            re.compile(r"^\s*python\s+-m\s+json\.tool\b"),
+        ],
         "read": [
             re.compile(r"^\s*cat\b"),
             re.compile(r"^\s*head\b"),
@@ -110,7 +118,7 @@ class CommandClassifier:
     def classify(cls, command: str) -> str:
         """Classify a shell command into a category.
 
-        Categories are checked in priority order: git, test, lint, code, read.
+        Categories are checked in priority order: git, test, lint, json, read, code.
         The ``read`` category is a subset of ``code``; if a command matches both,
         it is classified as ``read`` because read is more specific.
 
@@ -118,7 +126,8 @@ class CommandClassifier:
             command: The raw shell command string.
 
         Returns:
-            One of ``git``, ``test``, ``lint``, ``code``, ``read``, or ``unknown``.
+            One of ``git``, ``test``, ``lint``, ``json``, ``code``,
+            ``read``, or ``unknown``.
         """
         if not command or not command.strip():
             return "unknown"
@@ -139,6 +148,11 @@ class CommandClassifier:
         for pattern in cls.PATTERNS["lint"]:
             if pattern.search(stripped):
                 return "lint"
+
+        # Check json (before read so `cat package.json` → json)
+        for pattern in cls.PATTERNS["json"]:
+            if pattern.search(stripped):
+                return "json"
 
         # Check read (subset of code, checked before code)
         for pattern in cls.PATTERNS["read"]:

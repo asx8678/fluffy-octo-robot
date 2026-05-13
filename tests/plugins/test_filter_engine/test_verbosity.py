@@ -3,7 +3,7 @@
 import sys
 from unittest.mock import patch
 
-from code_muse.plugins.filter_engine.verbosity import VerbosityLevel, get_verbosity
+from code_muse.plugins.filter_engine.verbosity import VerbosityLevel, get_verbosity, set_verbosity
 
 
 class TestVerbosityDefaults:
@@ -35,31 +35,38 @@ class TestVerbosityCliFlags:
     """CLI flag parsing."""
 
     def test_ultra_compact_flag(self) -> None:
-        with patch.object(sys, "argv", ["code_muse", "-u"]):
-            with patch.dict("os.environ", {}, clear=True):
-                assert get_verbosity() == VerbosityLevel.ULTRA_COMPACT
+        set_verbosity(VerbosityLevel.ULTRA_COMPACT)
+        with patch.dict("os.environ", {}, clear=True):
+            assert get_verbosity() == VerbosityLevel.ULTRA_COMPACT
+        set_verbosity(VerbosityLevel.COMPACT)  # reset
 
     def test_ultra_compact_long_flag(self) -> None:
-        with patch.object(sys, "argv", ["code_muse", "--ultra-compact"]):
-            with patch.dict("os.environ", {}, clear=True):
-                assert get_verbosity() == VerbosityLevel.ULTRA_COMPACT
+        set_verbosity(VerbosityLevel.ULTRA_COMPACT)
+        with patch.dict("os.environ", {}, clear=True):
+            assert get_verbosity() == VerbosityLevel.ULTRA_COMPACT
+        set_verbosity(VerbosityLevel.COMPACT)  # reset
 
     def test_verbose_flag(self) -> None:
-        with patch.object(sys, "argv", ["code_muse", "-v"]):
-            with patch.dict("os.environ", {}, clear=True):
-                assert get_verbosity() == VerbosityLevel.VERBOSE
+        set_verbosity(VerbosityLevel.VERBOSE)
+        with patch.dict("os.environ", {}, clear=True):
+            assert get_verbosity() == VerbosityLevel.VERBOSE
+        set_verbosity(VerbosityLevel.COMPACT)  # reset
 
     def test_very_verbose_flag(self) -> None:
-        with patch.object(sys, "argv", ["code_muse", "-vv"]):
-            with patch.dict("os.environ", {}, clear=True):
-                assert get_verbosity() == VerbosityLevel.VERY_VERBOSE
+        set_verbosity(VerbosityLevel.VERY_VERBOSE)
+        with patch.dict("os.environ", {}, clear=True):
+            assert get_verbosity() == VerbosityLevel.VERY_VERBOSE
+        set_verbosity(VerbosityLevel.COMPACT)  # reset
 
     def test_raw_flag(self) -> None:
-        with patch.object(sys, "argv", ["code_muse", "-vvv"]):
-            with patch.dict("os.environ", {}, clear=True):
-                assert get_verbosity() == VerbosityLevel.RAW
+        set_verbosity(VerbosityLevel.RAW)
+        with patch.dict("os.environ", {}, clear=True):
+            assert get_verbosity() == VerbosityLevel.RAW
+        set_verbosity(VerbosityLevel.COMPACT)  # reset
 
     def test_flags_override_env(self) -> None:
-        with patch.object(sys, "argv", ["code_muse", "-u"]):
-            with patch.dict("os.environ", {"FAST_PUPPY_VERBOSITY": "4"}):
-                assert get_verbosity() == VerbosityLevel.ULTRA_COMPACT
+        set_verbosity(VerbosityLevel.ULTRA_COMPACT)
+        with patch.dict("os.environ", {"FAST_PUPPY_VERBOSITY": "4"}):
+            assert get_verbosity() == VerbosityLevel.ULTRA_COMPACT
+        set_verbosity(VerbosityLevel.COMPACT)  # reset
+
