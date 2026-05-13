@@ -112,6 +112,8 @@ class TrackingDatabase:
                     )
                     self._connection.execute("PRAGMA journal_mode=WAL")
                     self._connection.execute("PRAGMA foreign_keys=ON")
+                    self._connection.execute("PRAGMA synchronous=NORMAL")
+                    self._connection.execute("PRAGMA busy_timeout=5000")
         return self._connection
 
     def close(self) -> None:
