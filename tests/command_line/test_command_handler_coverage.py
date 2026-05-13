@@ -4,46 +4,44 @@ from unittest.mock import MagicMock, patch
 
 
 class TestEnsurePluginsLoaded:
-    def test_already_loaded(self):
-        import code_muse.command_line.command_handler as ch
+    """Test that _ensure_plugins_loaded delegates to plugins.load_plugin_callbacks.
 
-        original = ch._PLUGINS_LOADED
-        try:
-            ch._PLUGINS_LOADED = True
-            ch._ensure_plugins_loaded()  # Should return immediately
-        finally:
-            ch._PLUGINS_LOADED = original
+    The local _PLUGINS_LOADED flag has been removed; all idempotency lives
+    inside plugins.load_plugin_callbacks().
+    """
 
-    @patch("code_muse.command_line.command_handler._PLUGINS_LOADED", False)
     @patch("code_muse.plugins.load_plugin_callbacks")
-    def test_loads_plugins(self, mock_load):
-        import code_muse.command_line.command_handler as ch
+    def test_calls_load_plugin_callbacks(self, mock_load):
+        from code_muse.command_line.command_handler import _ensure_plugins_loaded
 
-        ch._PLUGINS_LOADED = False
-        ch._ensure_plugins_loaded()
+        _ensure_plugins_loaded()
         mock_load.assert_called_once()
-        assert ch._PLUGINS_LOADED is True
 
-    @patch("code_muse.command_line.command_handler._PLUGINS_LOADED", False)
+    @patch("code_muse.plugins.load_plugin_callbacks")
+    def test_delegates_idempotency(self, mock_load):
+        """Calling twice invokes load_plugin_callbacks each time;
+        idempotency is handled inside load_plugin_callbacks itself.
+        """
+        from code_muse.command_line.command_handler import _ensure_plugins_loaded
+
+        _ensure_plugins_loaded()
+        _ensure_plugins_loaded()
+        assert mock_load.call_count == 2
+
     @patch("code_muse.plugins.load_plugin_callbacks", side_effect=Exception("boom"))
     @patch("code_muse.messaging.emit_warning")
     def test_plugin_load_error(self, mock_warn, mock_load):
-        import code_muse.command_line.command_handler as ch
+        from code_muse.command_line.command_handler import _ensure_plugins_loaded
 
-        ch._PLUGINS_LOADED = False
-        ch._ensure_plugins_loaded()
-        assert ch._PLUGINS_LOADED is True
+        _ensure_plugins_loaded()  # Should not raise
         mock_warn.assert_called_once()
 
-    @patch("code_muse.command_line.command_handler._PLUGINS_LOADED", False)
     @patch("code_muse.plugins.load_plugin_callbacks", side_effect=Exception("boom"))
     @patch("code_muse.messaging.emit_warning", side_effect=Exception("double boom"))
     def test_plugin_load_error_warning_fails(self, mock_warn, mock_load):
-        import code_muse.command_line.command_handler as ch
+        from code_muse.command_line.command_handler import _ensure_plugins_loaded
 
-        ch._PLUGINS_LOADED = False
-        ch._ensure_plugins_loaded()  # Should not raise
-        assert ch._PLUGINS_LOADED is True
+        _ensure_plugins_loaded()  # Should not raise even if warning fails
 
 
 class TestGetCommandsHelp:
