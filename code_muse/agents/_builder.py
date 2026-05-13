@@ -163,9 +163,8 @@ def build_pydantic_agent(
     - ``agent._last_model_name``      ← resolved model name
     - ``agent.pydantic_agent``        ← the final pydantic-ai agent
     - ``agent._code_generation_agent`` ← same as ``pydantic_agent``
-    The build happens in two passes: we construct once with ``toolsets=[]`` so
-    we can introspect registered tool names, then rebuild with the final
-    configuration.
+    The build happens in a single pass with the final toolsets and registered
+    tools.
     """
     from code_muse.tools import register_tools_for_agent
 
@@ -191,16 +190,9 @@ def build_pydantic_agent(
             model_settings=model_settings,
         )
 
-    # Pass 1: build with empty toolsets so we can see what pydantic-ai + our
-    # tool registry actually produced.
-    probe_agent = _new_pydantic_agent(toolsets=[])
     agent_tools = agent.get_available_tools()
-    register_tools_for_agent(probe_agent, agent_tools, model_name=resolved_model_name)
-
-    _existing_tool_names: set[str] = set(getattr(probe_agent, "_tools", {}) or {})  # noqa: F841
     final_toolsets = []
 
-    # Pass 2: real build with the final toolsets.
     final_pydantic = _new_pydantic_agent(toolsets=final_toolsets)
     register_tools_for_agent(
         final_pydantic, agent_tools, model_name=resolved_model_name
