@@ -95,6 +95,8 @@ _DANGEROUS_IMPORTS_BLOCK: set[str] = {
     "marshal",
     "socket",
     "ctypes",
+    "importlib",
+    "builtins",
 }
 
 _DANGEROUS_CALLS_BLOCK: set[str] = {
@@ -108,6 +110,11 @@ _DANGEROUS_CALLS_BLOCK: set[str] = {
     "fork",
     "globals",
     "locals",
+    "getattr",
+    "setattr",
+    "delattr",
+    "vars",
+    "dir",
 }
 
 # Additional dangerous patterns that require explicit approval
@@ -339,19 +346,28 @@ def check_code_safety(code: str) -> SafetyCheckResult:
     dangerous_found: list[str] = []
     approval_required: list[str] = []
 
+    # Track import aliases for attribute-call resolution
+    # E.g., "import subprocess as sp" creates alias sp -> subprocess
+    import_aliases: dict[str, str] = {}  # local_name -> module_name
+
     for node in ast.walk(tree):
-        # Check imports
+        # Track import aliases
         if isinstance(node, ast.Import):
             for alias in node.names:
+                local_name = alias.asname or alias.name
                 if alias.name in _DANGEROUS_IMPORTS_BLOCK:
                     dangerous_found.append(f"import {alias.name}")
                 elif alias.name in _DANGEROUS_IMPORTS_APPROVAL:
                     approval_required.append(f"import {alias.name}")
+                import_aliases[local_name] = alias.name
+                continue
 
         elif isinstance(node, ast.ImportFrom):
             module = node.module or ""
+            # Track from-import aliases
             for alias in node.names:
                 full_name = f"{module}.{alias.name}"
+                local_name = alias.asname or alias.name
                 if (
                     module in _DANGEROUS_IMPORTS_BLOCK
                     or full_name in _DANGEROUS_IMPORTS_BLOCK
@@ -362,8 +378,10 @@ def check_code_safety(code: str) -> SafetyCheckResult:
                     or full_name in _DANGEROUS_IMPORTS_APPROVAL
                 ):
                     approval_required.append(f"from {module} import {alias.name}")
+                import_aliases[local_name] = full_name
+            continue
 
-        # Check function calls
+        # Check function calls — includes alias-resolved attribute calls
         elif isinstance(node, ast.Call):
             func_name = _get_call_name(node)
             if func_name in _DANGEROUS_CALLS_BLOCK:
@@ -373,6 +391,21 @@ def check_code_safety(code: str) -> SafetyCheckResult:
                 if _is_dangerous_open_call(node):
                     line = getattr(node, "lineno", "?")
                     dangerous_found.append(f"open() with write mode at line {line}")
+            else:
+                # Check for attribute calls on aliased dangerous imports
+                # E.g., sp.run(...) where sp is an alias for subprocess
+                if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
+                    obj_name = node.func.value.id
+                    attr_name = node.func.attr
+                    module_name = import_aliases.get(obj_name)
+                    if module_name:
+                        safe_name = f"{module_name}.{attr_name}"
+                        if (
+                            module_name in _DANGEROUS_IMPORTS_BLOCK
+                            or safe_name in _DANGEROUS_IMPORTS_BLOCK
+                        ):
+                            line = getattr(node, "lineno", "?")
+                            dangerous_found.append(f"{obj_name}.{attr_name}() at line {line}")
 
     if dangerous_found:
         result.blocked = True
