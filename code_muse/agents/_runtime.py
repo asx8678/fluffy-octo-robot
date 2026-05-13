@@ -16,12 +16,15 @@ preserved verbatim:
 
 import asyncio
 import contextvars
+import dataclasses
 import signal
 import threading
+import time
 import uuid
 from collections.abc import Callable, Sequence
 from contextlib import AsyncExitStack, suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any
 
 import httpcore
@@ -370,6 +373,21 @@ class RunOutcome:
     error: BaseException | None = None
 
 
+@dataclass
+class RunStats:
+    """Per-run metrics passed to on_agent_run_end metadata."""
+
+    step_count: int = 0
+    tool_calls_made: int = 0
+    total_input_tokens: int = 0
+    total_output_tokens: int = 0
+    duration_seconds: float = 0.0
+    consecutive_errors: int = 0
+    was_retried: bool = False
+    was_streamed: bool = False
+    start_time: datetime = field(default_factory=datetime.now)
+
+
 # ---- The main entry point ---------------------------------------------------
 
 
@@ -396,6 +414,8 @@ async def run(
 
     prompt = _should_prepend_system_prompt(agent, prompt)
     prompt_payload = _build_prompt_payload(prompt, attachments, link_attachments)
+
+    run_stats: RunStats | None = None
 
     async def _do_run(prompt_to_use: Any) -> Any:
         """Run the agent once, then honour any plugin ``retry`` requests."""
@@ -441,6 +461,11 @@ async def run(
         # Plugins can render their own output and ask us to skip
         # the non-streaming fallback render.
         skip_fallback_render = on_should_skip_fallback_render(agent)
+
+        stats = RunStats()
+        stats.was_streamed = use_streaming
+        run_start = time.perf_counter()
+        was_retried = False
 
         async def _run_agent(
             prompt: Any,
@@ -513,6 +538,7 @@ async def run(
                 if not retry_req:
                     break
 
+                was_retried = True
                 retry_prompt = retry_req.get("prompt", "Please continue.")
                 retry_delay = retry_req.get("delay", 1.0)
                 if hasattr(result, "all_messages"):
@@ -532,6 +558,36 @@ async def run(
             # Restore the handler we cleared (non-streaming models).
             if handler_was_modified:
                 pydantic_agent._event_stream_handler = _saved_handler
+
+        # Populate run stats before returning.
+        if result is not None:
+            if hasattr(result, "all_messages"):
+                messages = list(result.all_messages())
+                stats.step_count = len(messages)
+                for msg in messages:
+                    if hasattr(msg, "parts"):
+                        for part in msg.parts:
+                            if hasattr(part, "tool_name"):
+                                stats.tool_calls_made += 1
+            usage = None
+            if hasattr(result, "usage") and callable(result.usage):
+                try:
+                    usage = result.usage()
+                except Exception:
+                    pass
+            elif hasattr(result, "usage"):
+                usage = result.usage
+            if usage is not None:
+                if hasattr(usage, "input_tokens"):
+                    stats.total_input_tokens = usage.input_tokens or 0
+                if hasattr(usage, "output_tokens"):
+                    stats.total_output_tokens = usage.output_tokens or 0
+
+        stats.duration_seconds = time.perf_counter() - run_start
+        stats.consecutive_errors = tracker.consecutive_errors
+        stats.was_retried = was_retried
+        nonlocal run_stats
+        run_stats = stats
 
         # Fallback render when streaming didn't surface any text to the user.
         if result is not None and should_render_fallback(
@@ -679,7 +735,7 @@ async def run(
                 success=run_success,
                 error=run_error,
                 response_text=run_response_text,
-                metadata={"model": agent.get_model_name()},
+                metadata={"stats": dataclasses.asdict(run_stats)} if run_stats else None,
             )
 
         if key_listener_stop_event is not None:
