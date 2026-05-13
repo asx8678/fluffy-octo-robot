@@ -20,8 +20,12 @@ from rich.text import Text
 
 from code_muse.agents._history import estimate_tokens
 from code_muse.config import get_banner_color, get_subagent_verbose
+from code_muse.messaging import get_session_context
 from code_muse.messaging.spinner import pause_all_spinners, resume_all_spinners
 from code_muse.tools.subagent_context import is_subagent
+
+# Module-level import avoids repeated import overhead in _fire_stream_event_sync
+from code_muse import callbacks
 
 logger = logging.getLogger(__name__)
 
@@ -47,16 +51,11 @@ def _fire_stream_event(event_type: str, event_data: Any) -> None:
         return
 
     try:
-        from code_muse import callbacks
-        from code_muse.messaging import get_session_context
-
         agent_session_id = get_session_context()
         task = asyncio.create_task(
             callbacks.on_stream_event(event_type, event_data, agent_session_id)
         )
         task.add_done_callback(_handle_stream_task_exception)
-    except ImportError:
-        logger.debug("callbacks or messaging module not available for stream event")
     except Exception as e:
         logger.debug("Error firing stream event callback: %s", e)
 
@@ -66,15 +65,16 @@ def _fire_stream_event_sync(event_type: str, event_data: Any) -> None:
 
     Used for high-frequency events like part_delta where creating 100+
     asyncio tasks per response would be wasteful.
-    """
-    try:
-        from code_muse import callbacks
-        from code_muse.messaging import get_session_context
 
+    Includes a no-listener fast path to skip empty callback lists.
+    """
+    # Fast path: skip if no listeners registered
+    if not callbacks.count_callbacks("stream_event"):
+        return
+
+    try:
         agent_session_id = get_session_context()
         callbacks.on_stream_event_sync(event_type, event_data, agent_session_id)
-    except ImportError:
-        logger.debug("callbacks or messaging module not available for stream event")
     except Exception as e:
         logger.debug("Error firing stream event callback: %s", e)
 
