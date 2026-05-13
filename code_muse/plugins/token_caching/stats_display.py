@@ -3,14 +3,39 @@
 from code_muse.plugins.token_caching.cache_hit_tracking import SessionCacheStats
 
 
+def format_cache_stats_short(stats: SessionCacheStats) -> str:
+    """Return a one-line cache summary suitable for status lines.
+
+    Returns an empty string when there is no cache activity.
+    """
+    reads = stats.total_read_tokens
+    writes = stats.total_write_tokens
+    if reads == 0 and writes == 0:
+        return ""
+    hit_rate = stats.hit_rate * 100
+    savings = stats.estimated_savings_usd
+    parts: list[str] = []
+    if reads > 0:
+        parts.append(f"{reads:,} read")
+    if writes > 0:
+        parts.append(f"{writes:,} write")
+    parts.append(f"{hit_rate:.0f}% hit")
+    if savings > 0:
+        parts.append(f"save ~${savings:.2f}")
+    return "Cache: " + " · ".join(parts)
+
+
 def format_cache_stats(stats: SessionCacheStats) -> str:
     """Return a compact, human-readable summary of cache stats.
 
-    Example:
-        ``"Cache: 42 hits (12,500 tokens read) · 3 writes (1,200 tokens written) · hit rate 78.3% · est. savings $0.12"``
+    Example::
 
-    If there has been no cache activity this session, returns:
-        ``"Cache: no activity this session"``
+        Cache: 42 hits (12,500 tokens read) · 3 writes (1,200 tokens
+        written) · hit rate 78.3% · est. savings $0.12
+
+    If there has been no cache activity this session, returns::
+
+        Cache: no activity this session
     """
     reads = stats.total_read_tokens
     writes = stats.total_write_tokens
