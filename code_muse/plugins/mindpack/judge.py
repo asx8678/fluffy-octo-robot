@@ -233,7 +233,9 @@ class JudgeAgentFactory:
 
         prompt_additions = callbacks.on_load_prompt()
         if prompt_additions:
-            instructions += "\n" + "\n".join(prompt_additions)
+            instructions += "\n" + "\n".join(
+                str(p) for p in prompt_additions if p is not None
+            )
 
         # Prepare for model (handles claude-code prepending etc.)
         prepared = prepare_prompt_for_model(

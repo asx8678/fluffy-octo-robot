@@ -76,7 +76,9 @@ async def _invoke_agent(agent_name: str, prompt: str) -> _AgentResult:
 
         prompt_additions = cb.on_load_prompt()
         if prompt_additions:
-            instructions += "\n" + "\n".join(prompt_additions)
+            instructions += "\n" + "\n".join(
+                str(p) for p in prompt_additions if p is not None
+            )
 
         # Prepare prompt for model (handles claude-code models etc.)
         prepared = prepare_prompt_for_model(

@@ -483,7 +483,9 @@ def register_invoke_agent(agent):
 
             prompt_additions = callbacks.on_load_prompt()
             if len(prompt_additions):
-                instructions += "\n" + "\n".join(prompt_additions)
+                instructions += "\n" + "\n".join(
+                    str(p) for p in prompt_additions if p is not None
+                )
 
             # Handle claude-code models: swap instructions, and prepend system prompt only on first message
             prepared = prepare_prompt_for_model(
