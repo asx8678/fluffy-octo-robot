@@ -230,7 +230,7 @@ async def _run_main_input_loop(message_renderer, terminal_session):
 
         if disposition.kind == InputDispositionKind.CLEAR:
             agent = get_current_agent()
-            new_session_id = finalize_autosave_session()
+            new_session_id = await asyncio.to_thread(finalize_autosave_session)
             agent.clear_message_history()
             emit_warning("Conversation history cleared!")
             emit_system_message("The agent will not remember previous interactions.")
@@ -325,7 +325,7 @@ async def _render_and_autosave(result, current_agent, display_console) -> None:
     _render_response(result, current_agent, display_console)
     # Brief pause to ensure all messages are rendered
     await asyncio.sleep(0.1)
-    auto_save_session_if_enabled()
+    await asyncio.to_thread(auto_save_session_if_enabled)
 
 
 async def _wiggum_loop(current_agent, message_renderer, display_console):
@@ -343,7 +343,7 @@ async def _wiggum_loop(current_agent, message_renderer, display_console):
         emit_warning(f"\n🍩 WIGGUM RELOOPING! (Loop #{loop_num})")
         emit_system_message(f"Re-running prompt: {wiggum_prompt}")
 
-        new_session_id = finalize_autosave_session()
+        new_session_id = await asyncio.to_thread(finalize_autosave_session)
         current_agent.clear_message_history()
         emit_system_message(f"Context cleared. Session rotated to: {new_session_id}")
 
@@ -414,7 +414,7 @@ async def interactive_mode(message_renderer, initial_command: str = None) -> Non
                 from code_muse.messaging.queue_console import get_queue_console
 
                 get_queue_console().print_exception()
-                auto_save_session_if_enabled()
+                await asyncio.to_thread(auto_save_session_if_enabled)
 
             current_agent = await _wiggum_loop(
                 current_agent, message_renderer, display_console
