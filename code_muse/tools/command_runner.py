@@ -146,8 +146,12 @@ def _register_process(proc: subprocess.Popen) -> None:
 
 
 def _unregister_process(proc: subprocess.Popen) -> None:
+    """Remove a process from tracking and prune any other stale processes."""
     with _RUNNING_PROCESSES_LOCK:
         _RUNNING_PROCESSES.discard(proc)
+        # Prune any other stale processes proactively
+        stale = {p for p in _RUNNING_PROCESSES if p.poll() is not None}
+        _RUNNING_PROCESSES.difference_update(stale)
 
 
 def _kill_process_group(proc: subprocess.Popen) -> None:
@@ -284,16 +288,7 @@ atexit.register(shutdown)
 def get_running_shell_process_count() -> int:
     """Return the number of currently-active shell processes being tracked."""
     with _RUNNING_PROCESSES_LOCK:
-        alive = 0
-        stale: set[subprocess.Popen] = set()
-        for proc in _RUNNING_PROCESSES:
-            if proc.poll() is None:
-                alive += 1
-            else:
-                stale.add(proc)
-        for proc in stale:
-            _RUNNING_PROCESSES.discard(proc)
-    return alive
+        return len(_RUNNING_PROCESSES)
 
 
 # Function to check if user input is awaited
