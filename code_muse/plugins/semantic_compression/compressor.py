@@ -147,18 +147,44 @@ _CLAUSE_TO_MODIFIER_RE = re.compile(
 # Code block handling
 # ---------------------------------------------------------------------------
 
-_FENCE_RE = re.compile(r"```[\s\S]*?```")
+# Fenced code blocks (``` ... ```) and inline code (` ... `)
+_CODE_SEGMENT_RE = re.compile(r"```[\s\S]*?```|`[^`]+`")
+
+# Quoted strings (double or single, with backslash-escape support)
+# Protects JSON values, XML attributes, and other structured data.
+_QUOTED_STRING_RE = re.compile(r'"(?:[^"\\]|\\.)*"|\'(?:[^\'\\\\]|\\.)*\'')
 
 
 def _split_code_blocks(text: str) -> list[tuple[bool, str]]:
     """Split *text* into (is_code, segment) tuples.
 
-    Code fences (``` ... ```) are marked as code and left untouched.
-    Everything else is non-code and eligible for compression.
+    Fenced code blocks (``` ... ```) and inline code (` ... `) are
+    marked as code and left untouched.  Everything else is non-code
+    and eligible for compression.
     """
     segments: list[tuple[bool, str]] = []
     pos = 0
-    for match in _FENCE_RE.finditer(text):
+    for match in _CODE_SEGMENT_RE.finditer(text):
+        start = match.start()
+        if start > pos:
+            segments.append((False, text[pos:start]))
+        segments.append((True, match.group()))
+        pos = match.end()
+    if pos < len(text):
+        segments.append((False, text[pos:]))
+    return segments
+
+
+def _split_quoted_strings(text: str) -> list[tuple[bool, str]]:
+    """Split *text* into (is_quoted, segment) tuples.
+
+    Quoted strings (double or single, with escape support) are marked
+    as quoted and left untouched.  Unquoted parts are eligible for
+    compression.
+    """
+    segments: list[tuple[bool, str]] = []
+    pos = 0
+    for match in _QUOTED_STRING_RE.finditer(text):
         start = match.start()
         if start > pos:
             segments.append((False, text[pos:start]))
@@ -209,12 +235,26 @@ def compress_semantic(text: str, aggressive: bool = False) -> str:
 def _compress_segment(segment: str, aggressive: bool) -> str:
     """Compress a single non-code text segment.
 
+    Quoted strings (double/single) are detected and preserved verbatim.
+    Only unquoted portions are eligible for compression.
+
     Order matters: structural transformations run *before* Tier 1
     deletions so patterns like passive→active can see the copulas
     before they are stripped.
     """
-    s = segment
+    # Protect quoted strings — only compress unquoted portions
+    parts = _split_quoted_strings(segment)
+    compressed_parts: list[str] = []
+    for is_quoted, part in parts:
+        if is_quoted:
+            compressed_parts.append(part)
+        else:
+            compressed_parts.append(_apply_compression_rules(part, aggressive))
+    return "".join(compressed_parts)
 
+
+def _apply_compression_rules(s: str, aggressive: bool) -> str:
+    """Apply all compression rules to an unquoted text fragment."""
     # --- Structural compression (before Tier 1) ---
 
     # Passive → active: "was eaten by dog" → "dog ate"

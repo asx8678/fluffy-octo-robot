@@ -212,7 +212,9 @@ def _handle_compress_command(command: str, name: str) -> bool | str | None:
 
         compressed = compress_semantic(text, aggressive=aggressive)
         mode = "aggressive" if aggressive else "safe"
-        return f"[Semantic compression ({mode}): {len(text)} → {len(compressed)} chars]\n{compressed}"
+        header = f"[Semantic compression ({mode}): "
+        header += f"{len(text)} → {len(compressed)} chars]"
+        return f"{header}\n{compressed}"
     except Exception as exc:
         logger.error("Compress command failed: %s", exc)
         return f"Compression error: {exc}"
@@ -304,7 +306,7 @@ def _show_semantic_compression_status() -> str:
     if allowlist:
         lines.append(f"  Allowlist: {', '.join(sorted(allowlist))}")
     else:
-        lines.append("  Allowlist: (none — all tools allowed)")
+        lines.append("  Allowlist: (empty — no tools eligible)")
     if blocklist:
         lines.append(f"  Blocklist: {', '.join(sorted(blocklist))}")
     else:

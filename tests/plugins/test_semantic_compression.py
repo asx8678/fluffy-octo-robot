@@ -2,6 +2,7 @@
 
 import pytest
 
+from code_muse.plugins.semantic_compression.compressor import compress_semantic
 from code_muse.plugins.semantic_compression.config import (
     get_compression_allowlist,
     get_compression_blocklist,
@@ -58,13 +59,15 @@ class TestSemanticCompressionConfig:
         assert get_compression_blocklist() == set()
 
     def test_is_tool_allowed_no_lists(self):
-        """When both lists are empty, every tool is allowed."""
+        """When both lists are empty, no tools are allowed (opt-in model)."""
         set_compression_allowlist(set())
         set_compression_blocklist(set())
-        assert is_tool_allowed("read_file") is True
-        assert is_tool_allowed("grep") is True
+        assert is_tool_allowed("read_file") is False
+        assert is_tool_allowed("grep") is False
 
     def test_is_tool_allowed_with_blocklist(self):
+        """Blocklist overrides allowlist; allowlist gates entry."""
+        set_compression_allowlist({"read_file", "run_shell_command"})
         set_compression_blocklist({"run_shell_command"})
         assert is_tool_allowed("run_shell_command") is False
         assert is_tool_allowed("read_file") is True
@@ -121,14 +124,34 @@ class TestPostToolCallGating:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_enabled_and_allowed_compresses(self):
+    async def test_enabled_but_empty_allowlist_returns_none(self):
+        """With empty allowlist, no tools get compressed (opt-in)."""
         set_semantic_compression_enabled(True)
+        set_compression_allowlist(set())
         text = (
             "This is a very long sentence that has many words in it. "
             "The quick brown fox jumps over the lazy dog. "
             "We need to make sure that this text is longer than the minimum threshold "
-            "so that the semantic compression callback actually processes it rather than "
-            "skipping due to the short length check. Here are some more filler words."
+            "so that the semantic compression callback actually "
+            "processes it rather than skipping due to the short "
+            "length check. Here are some more filler words."
+        )
+        assert len(text) > 200
+        result = await _on_post_tool_call("read_file", {}, text, 1.0, None)
+        assert result is None  # Not allowlisted → no compression
+
+    @pytest.mark.asyncio
+    async def test_enabled_and_allowed_compresses(self):
+        set_semantic_compression_enabled(True)
+        set_compression_allowlist({"read_file"})  # Opt-in read_file
+        text = (
+            "This is a very long sentence that has many words in it. "
+            "The quick brown fox jumps over the lazy dog. "
+            "We need to make sure that this text is longer than "
+            "the minimum threshold so that the semantic compression "
+            "callback actually processes it rather than skipping "
+            "due to the short length check. Here are some more "
+            "filler words."
         )
         assert len(text) > 200
         result = await _on_post_tool_call("read_file", {}, text, 1.0, None)
@@ -236,7 +259,7 @@ class TestShowStatus:
         set_compression_blocklist(set())
         status = _show_semantic_compression_status()
         assert "Enabled: no" in status
-        assert "Allowlist: (none" in status
+        assert "Allowlist: (empty" in status
         assert "Blocklist: (none)" in status
 
     def test_status_with_lists(self):
@@ -247,3 +270,55 @@ class TestShowStatus:
         assert "Enabled: yes" in status
         assert "read_file" in status
         assert "run_shell_command" in status
+
+
+# ---------------------------------------------------------------------------
+# Compressor — code identifier and quote protection
+# ---------------------------------------------------------------------------
+
+
+class TestCompressorCodeProtection:
+    """Verify the compressor does not mangle code identifiers or quoted strings."""
+
+    def test_passive_voice_in_quotes_preserved(self):
+        """Passive→active should not fire inside double-quoted strings."""
+        text = '{"status": "was closed by owner", "id": 1}'
+        result = compress_semantic(text, aggressive=False)
+        # "was closed by owner" should NOT be transformed to "owner closed"
+        assert "was closed by owner" in result
+
+    def test_passive_voice_in_single_quotes_preserved(self):
+        """Passive→active should not fire inside single-quoted strings."""
+        text = "status: 'was owned by admin', result: ok"
+        result = compress_semantic(text, aggressive=False)
+        assert "was owned by admin" in result
+
+    def test_passive_voice_in_prose_still_works(self):
+        """Passive→active should still work in natural language."""
+        text = "The bug was closed by the maintainer yesterday afternoon."
+        result = compress_semantic(text, aggressive=False)
+        # Should transform to something like "maintainer closed"
+        assert "closed" in result
+        assert "by the" not in result
+
+    def test_inline_code_preserved(self):
+        """Backtick-wrapped inline code should not be compressed."""
+        text = "The variable `was_closed_by_user` indicates the status."
+        result = compress_semantic(text, aggressive=False)
+        assert "`was_closed_by_user`" in result
+
+    def test_fenced_code_block_preserved(self):
+        """Fenced code blocks should not be compressed."""
+        text = (
+            "The result was processed by the system. "
+            "```python\nwas_closed_by = True\n```"
+        )
+        result = compress_semantic(text, aggressive=False)
+        assert "was_closed_by = True" in result
+
+    def test_json_keys_not_stripped(self):
+        """Articles/copulas in JSON values inside quotes should not be stripped."""
+        text = '{"msg": "The file was created by the admin", "ok": true}'
+        result = compress_semantic(text, aggressive=False)
+        # The JSON value inside quotes should be preserved
+        assert '"The file was created by the admin"' in result
