@@ -9,6 +9,7 @@ description = "Muse — eternal guide of creators in the arts and sciences. An e
 readme = "README.md"
 requires-python = ">=3.14,<3.16"
 dependencies = [
+    "orjson>=3.10.0",
     "pydantic-ai-slim[openai,anthropic]>=1.93.0",
     "typer>=0.25.1",
     "httpx[http2]>=0.28.1",

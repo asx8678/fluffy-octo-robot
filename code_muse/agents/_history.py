@@ -13,6 +13,7 @@ that retain message objects.
 import dataclasses
 import json
 import math
+import orjson
 import pathlib
 import weakref
 from collections import OrderedDict
@@ -24,11 +25,23 @@ from pydantic_ai import BinaryContent
 from pydantic_ai.messages import ModelMessage, ModelRequest, ToolReturnPart
 
 
-def _json_safe(obj):
-    """JSON serializer for objects not supported by default json.dumps."""
+def _prep_for_orjson(obj):
+    """Prepare object for orjson serialization by converting non-serializable types."""
     if isinstance(obj, pathlib.PurePath):
         return str(obj)
     raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+
+# PERF-0yj.1: Global LRU cache for stringify_part — parts are often identical
+# across messages (same tool results reused), so caching by object identity
+# eliminates redundant json/orjson work during compaction.
+_stringify_part_lru: OrderedDict[int, str] = OrderedDict()
+_STRINGIFY_PART_LRU_MAX = 2048
+
+
+def clear_stringify_part_cache() -> None:
+    """Clear the stringify_part LRU cache."""
+    _stringify_part_lru.clear()
 
 
 def stringify_part(part: Any) -> str:
@@ -38,6 +51,12 @@ def stringify_part(part: Any) -> str:
     otherwise-identical parts emitted at different times collapse to the same
     string, which is exactly what we want for dedup.
     """
+    msg_id = id(part)
+    cached = _stringify_part_lru.get(msg_id)
+    if cached is not None:
+        _stringify_part_lru.move_to_end(msg_id)
+        return cached
+
     attributes: list[str] = [part.__class__.__name__]
 
     if hasattr(part, "role") and part.role:
@@ -56,10 +75,10 @@ def stringify_part(part: Any) -> str:
     elif isinstance(content, str):
         attributes.append(f"content={content}")
     elif isinstance(content, pydantic.BaseModel):
-        dumped = json.dumps(content.model_dump(), sort_keys=True, default=_json_safe)
+        dumped = orjson.dumps(content.model_dump(), default=_prep_for_orjson).decode()
         attributes.append(f"content={dumped}")
     elif isinstance(content, dict):
-        dumped = json.dumps(content, sort_keys=True, default=_json_safe)
+        dumped = orjson.dumps(content, default=_prep_for_orjson).decode()
         attributes.append(f"content={dumped}")
     elif isinstance(content, list):
         for item in content:
@@ -70,7 +89,13 @@ def stringify_part(part: Any) -> str:
     else:
         attributes.append(f"content={repr(content)}")
 
-    return "|".join(attributes)
+    result = "|".join(attributes)
+
+    # Bounded LRU cache — evict oldest when full
+    if len(_stringify_part_lru) >= _STRINGIFY_PART_LRU_MAX:
+        _stringify_part_lru.popitem(last=False)
+    _stringify_part_lru[msg_id] = result
+    return result
 
 
 # PERF-07: Cache hash results by object identity.  A message that appears
