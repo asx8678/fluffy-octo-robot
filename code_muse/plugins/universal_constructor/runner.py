@@ -165,6 +165,22 @@ def _run_in_interpreter(
     )
 
 
+def _verify_file_integrity(
+    path: str, expected_inode: int, expected_dev: int
+) -> str | None:
+    """Verify a temp file hasn't been swapped (TOCTOU detection).
+
+    Returns None if OK, or an error string if the file was tampered with.
+    """
+    try:
+        st = os.stat(path)
+    except OSError as e:
+        return f"Temp file vanished: {e}"
+    if st.st_ino != expected_inode or st.st_dev != expected_dev:
+        return f"Temp file inode changed — possible TOCTOU attack on {path}"
+    return None
+
+
 def _should_use_interpreter_pool() -> bool:
     """Return True if the InterpreterPoolExecutor path should be used.
 
@@ -221,6 +237,24 @@ def run_tool_subprocess(
         stdout_path = stdout_file.name
         stderr_path = stderr_file.name
 
+    # Record inode/device for TOCTOU detection
+    _temp_inodes: dict[str, tuple[int, int]] = {}
+    try:
+        _temp_inodes["result"] = (
+            os.stat(result_path).st_ino,
+            os.stat(result_path).st_dev,
+        )
+        _temp_inodes["stdout"] = (
+            os.stat(stdout_path).st_ino,
+            os.stat(stdout_path).st_dev,
+        )
+        _temp_inodes["stderr"] = (
+            os.stat(stderr_path).st_ino,
+            os.stat(stderr_path).st_dev,
+        )
+    except OSError:
+        pass  # Will fail below if file missing
+
     start_time = time.time()
     process: multiprocessing.Process | None = None
 
@@ -242,6 +276,25 @@ def run_tool_subprocess(
 
             # Read results BEFORE cleanup
             execution_time = time.time() - start_time
+
+            # TOCTOU check: verify temp files haven't been swapped
+            for _key, _path in [
+                ("result", result_path),
+                ("stdout", stdout_path),
+                ("stderr", stderr_path),
+            ]:
+                if _key in _temp_inodes:
+                    ino, dev = _temp_inodes[_key]
+                    err = _verify_file_integrity(_path, ino, dev)
+                    if err:
+                        return {
+                            "success": False,
+                            "error": err,
+                            "stdout": "",
+                            "stderr": "",
+                            "execution_time": time.time() - start_time,
+                        }
+
             try:
                 with open(result_path, encoding="utf-8") as f:
                     result_data = json.load(f)
@@ -323,6 +376,24 @@ def run_tool_subprocess(
                 "stderr": "",
                 "execution_time": time.time() - start_time,
             }
+
+        # TOCTOU check: verify temp files haven't been swapped
+        for _key, _path in [
+            ("result", result_path),
+            ("stdout", stdout_path),
+            ("stderr", stderr_path),
+        ]:
+            if _key in _temp_inodes:
+                ino, dev = _temp_inodes[_key]
+                err = _verify_file_integrity(_path, ino, dev)
+                if err:
+                    return {
+                        "success": False,
+                        "error": err,
+                        "stdout": "",
+                        "stderr": "",
+                        "execution_time": time.time() - start_time,
+                    }
 
         # Read result
         try:
