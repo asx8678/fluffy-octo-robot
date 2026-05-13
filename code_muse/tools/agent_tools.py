@@ -6,6 +6,7 @@ import re
 import threading
 import traceback
 from contextlib import AsyncExitStack, suppress
+from contextvars import ContextVar
 from datetime import datetime
 from functools import partial
 from pathlib import Path
@@ -40,8 +41,12 @@ from code_muse.secret_storage import atomic_write_private_json
 from code_muse.tools.common import generate_group_id
 from code_muse.tools.subagent_context import subagent_context
 
-# Set to track active subagent invocation tasks
-_active_subagent_tasks: set[asyncio.Task] = set()
+# ContextVar to track active subagent invocation tasks per-parent agent.
+# Using a ContextVar ensures cancellation walks only the local subtree
+# instead of every sub-agent task in the process.
+_active_subagent_tasks_var: ContextVar[set[asyncio.Task]] = ContextVar(
+    "_active_subagent_tasks"
+)
 
 # PERF-08: Cache model instances by name to avoid rebuilding AsyncAnthropic
 # clients, ClaudeCacheAsyncClient, etc. on every invoke_agent call.
@@ -541,12 +546,17 @@ def register_invoke_agent(agent):
                             event_stream_handler=stream_handler,
                         )
                     )
-                    _active_subagent_tasks.add(task)
+                    try:
+                        tasks = _active_subagent_tasks_var.get()
+                    except LookupError:
+                        tasks = set()
+                        _active_subagent_tasks_var.set(tasks)
+                    tasks.add(task)
 
                     try:
                         result = await task
                     finally:
-                        _active_subagent_tasks.discard(task)
+                        tasks.discard(task)
                         if task.cancelled():
                             await on_agent_run_cancel(group_id)
 

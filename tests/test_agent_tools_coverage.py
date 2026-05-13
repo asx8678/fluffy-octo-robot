@@ -731,20 +731,25 @@ class TestInvokeAgentPartialSessionSaveOnCrash:
 class TestActiveSubagentTasks:
     """Test the _active_subagent_tasks tracking."""
 
-    def test_active_tasks_set_exists(self):
-        """Test that the active tasks set is accessible."""
-        from code_muse.tools.agent_tools import _active_subagent_tasks
+    def test_active_tasks_contextvar_exists(self):
+        """Test that the active tasks ContextVar is accessible."""
+        from contextvars import ContextVar
+        from code_muse.tools.agent_tools import _active_subagent_tasks_var
 
-        assert isinstance(_active_subagent_tasks, set)
+        assert isinstance(_active_subagent_tasks_var, ContextVar)
 
-    def test_active_tasks_initially_empty(self):
-        """Test that active tasks set starts empty (or becomes empty)."""
-        from code_muse.tools.agent_tools import _active_subagent_tasks
+    def test_active_tasks_contextvar_returns_set(self):
+        """Test that the ContextVar returns a set in a populated context."""
+        from code_muse.tools.agent_tools import _active_subagent_tasks_var
 
-        # After all tasks complete, should be empty
-        # (This is testing the cleanup behavior)
-        # In a fresh module load, it would be empty
-        assert isinstance(_active_subagent_tasks, set)
+        # In a fresh context with no value set, LookupError is raised
+        try:
+            tasks = _active_subagent_tasks_var.get()
+        except LookupError:
+            tasks = set()
+            _active_subagent_tasks_var.set(tasks)
+
+        assert isinstance(tasks, set)
 
 
 class TestSessionIdValidationInInvokeAgent:

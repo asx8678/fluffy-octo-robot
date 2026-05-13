@@ -82,7 +82,7 @@ from code_muse.config import (
 from code_muse.keymap import cancel_agent_uses_signal
 from code_muse.messaging import emit_error, emit_info, emit_warning
 from code_muse.model_factory import ModelFactory
-from code_muse.tools.agent_tools import _active_subagent_tasks
+from code_muse.tools.agent_tools import _active_subagent_tasks_var
 from code_muse.tools.command_runner import is_awaiting_user_input
 
 # ---- Streaming retry helpers ------------------------------------------------
@@ -609,11 +609,15 @@ async def run(
             return
         if agent_task.done():
             return
-        if _active_subagent_tasks:
+        try:
+            active_tasks = _active_subagent_tasks_var.get()
+        except LookupError:
+            active_tasks = set()
+        if active_tasks:
             emit_warning(
-                f"Cancelling {len(_active_subagent_tasks)} active subagent task(s)..."
+                f"Cancelling {len(active_tasks)} active subagent task(s)..."
             )
-            for task in list(_active_subagent_tasks):
+            for task in list(active_tasks):
                 if not task.done():
                     loop.call_soon_threadsafe(task.cancel)
         loop.call_soon_threadsafe(agent_task.cancel)
