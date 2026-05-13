@@ -14,6 +14,7 @@ import json
 import os
 import traceback
 import warnings
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -47,6 +48,43 @@ MAX_DIFF_BYTES = 512_000
 MAX_FUZZY_FILE_LINES = 20_000  # Skip fuzzy on files with more lines
 MAX_FUZZY_OLD_SNIPPET_CHARS = 20_000  # Skip fuzzy when old snippet exceeds this
 MAX_FUZZY_REPLACEMENT_COUNT = 20  # Reject replacements list above this
+
+
+def _fast_unified_diff(
+    a: list[str],
+    b: list[str],
+    fromfile: str = "",
+    tofile: str = "",
+    n: int = 3,
+    lineterm: str = "\n",
+) -> Iterator[str]:
+    """Wrapper around difflib.unified_diff with fast paths for create/delete.
+
+    Fast paths:
+    - Create (a empty): generate headers + all lines from b as additions
+    - Delete (b empty): generate headers + all lines from a as removals
+    - Otherwise: delegate to difflib.unified_diff
+    """
+    if not a and b:
+        # Create: all lines new - O(N) instead of O(N²)
+        yield f"--- {fromfile}{lineterm}"
+        yield f"+++ {tofile}{lineterm}"
+        yield f"@@ -0,0 +1,{len(b)} @@{lineterm}"
+        for line in b:
+            yield f"+{line}{lineterm}"
+        return
+
+    if not b and a:
+        # Delete: all lines removed - O(N) instead of O(N²)
+        yield f"--- {fromfile}{lineterm}"
+        yield f"+++ {tofile}{lineterm}"
+        yield f"@@ -1,{len(a)} +0,0 @@{lineterm}"
+        for line in a:
+            yield f"-{line}{lineterm}"
+        return
+
+    # General case: delegate to standard difflib
+    yield from difflib.unified_diff(a, b, fromfile, tofile, n=n, lineterm=lineterm)
 
 
 def _create_rejection_response(file_path: str) -> dict[str, Any]:
@@ -287,7 +325,7 @@ def _delete_snippet_from_file(
         from code_muse.config import get_diff_context_lines
 
         diff_text = "".join(
-            difflib.unified_diff(
+            _fast_unified_diff(
                 original.splitlines(keepends=True),
                 modified.splitlines(keepends=True),
                 fromfile=f"a/{file_path.name}",
@@ -447,7 +485,7 @@ def _replace_in_file(
         from code_muse.config import get_diff_context_lines
 
         diff_text = "".join(
-            difflib.unified_diff(
+            _fast_unified_diff(
                 original.splitlines(keepends=True),
                 modified.splitlines(keepends=True),
                 fromfile=f"a/{file_path.name}",
@@ -513,7 +551,7 @@ def _write_to_file(
         else:
             old_lines = []
 
-        diff_lines = difflib.unified_diff(
+        diff_lines = _fast_unified_diff(
             old_lines,
             content.splitlines(keepends=True),
             fromfile="/dev/null" if not exists else f"a/{file_path.name}",
