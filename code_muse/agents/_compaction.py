@@ -183,7 +183,7 @@ def truncate(
     while not stack.empty():
         result.append(stack.get())
 
-    return prune_interrupted_tool_calls(result)
+    return result
 
 
 def _run_summarization_core(
@@ -214,14 +214,10 @@ def _run_summarization_core(
     system_message = messages[0]
 
     if not messages_to_summarize:
-        return prune_interrupted_tool_calls(messages), []
-
-    pruned = prune_interrupted_tool_calls(messages_to_summarize)
-    if not pruned:
-        return prune_interrupted_tool_calls(messages), []
+        return messages, []
 
     new_messages = run_summarization_sync(
-        _SUMMARIZATION_INSTRUCTIONS, message_history=pruned
+        _SUMMARIZATION_INSTRUCTIONS, message_history=messages_to_summarize
     )
 
     if not isinstance(new_messages, list):
@@ -233,7 +229,7 @@ def _run_summarization_core(
 
     compacted: list[ModelMessage] = [system_message] + list(new_messages)
     compacted.extend(msg for msg in protected_messages if msg is not system_message)
-    return prune_interrupted_tool_calls(compacted), messages_to_summarize
+    return compacted, messages_to_summarize
 
 
 def _log_summarization_failure(error: Exception, fallback_note: str = "") -> None:
@@ -339,12 +335,12 @@ def compact(
     protected_tokens = get_protected_token_count()
     filtered = filter_huge_messages(messages, model_name, cache=cache)
 
-    # filter_huge_messages() already runs prune_interrupted_tool_calls(),
-    # so by this point any orphaned tool_call / tool_return pairs (from
-    # cancelled runs, Ctrl-C interrupts, etc.) have been stripped out. The
-    # check below only trips on a genuine mid-execution state, which
-    # shouldn't happen when the history_processor is invoked — but we keep
-    # it as a defensive safety net.
+    # The authoritative prune_interrupted_tool_calls() runs once at the
+    # end of the history processor, so any orphaned tool_call / tool_return
+    # pairs (from cancelled runs, Ctrl-C interrupts, etc.) are stripped out
+    # there. The check below only trips on a genuine mid-execution state,
+    # which shouldn't happen when the history_processor is invoked — but we
+    # keep it as a defensive safety net.
     #
     # Previously this check ran on the raw `messages` list, which meant a
     # single orphaned tool_call (e.g., from one cancelled command weeks ago)

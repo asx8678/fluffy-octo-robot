@@ -548,10 +548,6 @@ async def run(
     async def run_agent_task() -> RunOutcome:
         outcome: RunOutcome | None = None
         try:
-            agent._message_history = _history.prune_interrupted_tool_calls(
-                agent._message_history
-            )
-
             run_ctxs = on_agent_run_context(agent, pydantic_agent, group_id)
             async with AsyncExitStack() as stack:
                 for cm in run_ctxs:
@@ -576,10 +572,6 @@ async def run(
             for exc in unexpected:
                 emit_exception_diagnostics(exc, group_id=group_id)
             outcome = RunOutcome(False, error=other)
-        finally:
-            agent._message_history = _history.prune_interrupted_tool_calls(
-                agent._message_history
-            )
         if outcome is None:
             return RunOutcome(False)
         return outcome
