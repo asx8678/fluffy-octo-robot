@@ -11,6 +11,7 @@ import re
 from typing import Any
 
 from code_muse.callbacks import register_callback
+from code_muse.config import get_value
 from code_muse.messaging import emit_error, emit_success
 
 from .config import (
@@ -123,6 +124,10 @@ def _get_compression_prompt() -> str | None:
     Tells the LLM it may use compressed/telegraphic communication style,
     referencing the same rules the compressor uses.
     """
+    # Gate compression prompt on config flag (default: off)
+    cfg_val = get_value("semantic_compression_enabled")
+    if not cfg_val or str(cfg_val).strip().lower() not in ("1", "true", "yes"):
+        return None  # Don't inject compression instructions
     return """\
 ## Semantic Compression Format
 
@@ -311,7 +316,7 @@ def _show_semantic_compression_status() -> str:
 # Register callbacks
 # ---------------------------------------------------------------------------
 
-register_callback("post_tool_call", _on_post_tool_call)
+register_callback("post_tool_call", _on_post_tool_call, priority=0)
 register_callback("load_prompt", _get_compression_prompt)
 register_callback("custom_command_help", _compress_command_help)
 register_callback("custom_command", _handle_compress_command)

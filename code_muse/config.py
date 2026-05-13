@@ -227,6 +227,10 @@ def get_agent_name():
     return get_value("agent_name") or "Muse"
 
 
+def get_puppy_name():
+    return get_agent_name()
+
+
 def get_owner_name():
     return get_value("owner_name") or "Creator"
 
@@ -1119,17 +1123,17 @@ from code_muse.config_model import (  # noqa: E402,F401
     get_effective_temperature,
     get_effective_top_p,
     get_model_setting,
+    get_muse_token,
     get_openai_reasoning_effort,
     get_openai_reasoning_summary,
     get_openai_verbosity,
-    get_muse_token,
     get_summarization_model_name,
     get_temperature,
     set_model_setting,
+    set_muse_token,
     set_openai_reasoning_effort,
     set_openai_reasoning_summary,
     set_openai_verbosity,
-    set_muse_token,
     set_summarization_model_name,
     set_temperature,
 )

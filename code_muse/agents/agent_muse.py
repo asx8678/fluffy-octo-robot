@@ -1,12 +1,17 @@
 """Muse — The default code generation agent."""
 
-from code_muse.config import get_owner_name, get_agent_name
+from code_muse.config import get_puppy_name, get_owner_name
 
 from .base_agent import BaseAgent
 
 
 class MuseAgent(BaseAgent):
     """Muse — The default creative coding agent."""
+
+    def __init__(self, puppy_name: str | None = None, owner_name: str | None = None):
+        super().__init__()
+        self._puppy_name = puppy_name or get_puppy_name()
+        self._owner_name = owner_name or get_owner_name()
 
     @property
     def name(self) -> str:
@@ -57,8 +62,8 @@ class MuseAgent(BaseAgent):
 
     def get_system_prompt(self) -> str:
         """Get Muse's full system prompt."""
-        agent_name = get_agent_name()
-        owner_name = get_owner_name()
+        agent_name = self._puppy_name
+        owner_name = self._owner_name
         r = self._get_reasoning_prompt_sections()
 
         return f"""
