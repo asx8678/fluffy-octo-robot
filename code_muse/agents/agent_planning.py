@@ -9,6 +9,8 @@ from .prompt_v3 import autonomy_base_prompt, planning_overlay
 class PlanningAgent(BaseAgent):
     """Planning Agent - Analyzes requirements and creates detailed execution plans."""
 
+    _agent_name = "planning-agent"
+
     @property
     def name(self) -> str:
         return "planning-agent"

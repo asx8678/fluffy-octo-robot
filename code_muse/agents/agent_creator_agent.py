@@ -14,6 +14,8 @@ from .prompt_v3 import agent_creator_overlay, autonomy_base_prompt, repository_a
 class AgentCreatorAgent(BaseAgent):
     """Specialized agent for creating JSON agent configurations."""
 
+    _agent_name = "agent-creator"
+
     @property
     def name(self) -> str:
         return "agent-creator"

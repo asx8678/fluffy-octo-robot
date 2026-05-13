@@ -52,7 +52,7 @@ def get_terminal_session_id() -> str:
     try:
         ppid = os.getppid()
         return f"session_{ppid}"
-    except (OSError, AttributeError):
+    except OSError, AttributeError:
         # Fallback to current process ID if PPID unavailable
         return f"fallback_{os.getpid()}"
 
@@ -126,7 +126,7 @@ def _cleanup_dead_sessions(sessions: dict[str, str]) -> dict[str, str]:
                 if _is_process_alive(pid):
                     cleaned[session_id] = agent_name
                 # else: skip dead session
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 # Invalid session ID format, keep it anyway
                 cleaned[session_id] = agent_name
         else:
@@ -232,9 +232,22 @@ def _discover_agents(message_group_id: str | None = None):
                     and issubclass(attr, BaseAgent)
                     and attr not in [BaseAgent, JSONAgent]
                 ):
-                    # Create an instance to get the name
-                    agent_instance = attr()
-                    _AGENT_REGISTRY[agent_instance.name] = attr
+                    # Prefer class-level _agent_name to avoid instantiation
+                    agent_class_name = getattr(attr, "_agent_name", None)
+                    if agent_class_name:
+                        _AGENT_REGISTRY[agent_class_name] = attr
+                        continue
+
+                    # Fallback: create an instance to get the name
+                    try:
+                        agent_instance = attr()
+                        _AGENT_REGISTRY[agent_instance.name] = attr
+                    except Exception as e:
+                        emit_warning(
+                            f"Warning: Could not instantiate agent class {attr.__name__}: {e}",
+                            message_group=message_group_id,
+                        )
+                        continue
 
         except Exception as e:
             # Skip problematic modules
@@ -275,9 +288,22 @@ def _discover_agents(message_group_id: str | None = None):
                             and issubclass(attr, BaseAgent)
                             and attr not in [BaseAgent, JSONAgent]
                         ):
-                            # Create an instance to get the name
-                            agent_instance = attr()
-                            _AGENT_REGISTRY[agent_instance.name] = attr
+                            # Prefer class-level _agent_name to avoid instantiation
+                            agent_class_name = getattr(attr, "_agent_name", None)
+                            if agent_class_name:
+                                _AGENT_REGISTRY[agent_class_name] = attr
+                                continue
+
+                            # Fallback: create an instance to get the name
+                            try:
+                                agent_instance = attr()
+                                _AGENT_REGISTRY[agent_instance.name] = attr
+                            except Exception as e:
+                                emit_warning(
+                                    f"Warning: Could not instantiate agent class {attr.__name__}: {e}",
+                                    message_group=message_group_id,
+                                )
+                                continue
 
                 except Exception as e:
                     emit_warning(

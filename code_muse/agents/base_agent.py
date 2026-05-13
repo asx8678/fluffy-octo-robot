@@ -14,7 +14,7 @@ belongs in one of the helpers above (or a new one).
 import asyncio
 import uuid
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, ClassVar
 
 import pydantic_ai.models
 
@@ -43,6 +43,9 @@ __all__ = ["BaseAgent", "should_retry_streaming_exception"]
 
 class BaseAgent(ABC):
     """Abstract base for all Muse agents."""
+
+    # Class-level agent name metadata for zero-instantiation discovery
+    _agent_name: ClassVar[str | None] = None
 
     def __init__(self) -> None:
         self.id: str = str(uuid.uuid4())

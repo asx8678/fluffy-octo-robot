@@ -6,6 +6,8 @@ from .base_agent import BaseAgent
 class QualityAssuranceIrisAgent(BaseAgent):
     """QA Iris — Advanced browser automation with Playwright."""
 
+    _agent_name = "qa-iris"
+
     @property
     def name(self) -> str:
         return "qa-iris"

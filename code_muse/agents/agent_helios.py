@@ -7,6 +7,8 @@ from .prompt_v3 import autonomy_base_prompt, helios_overlay
 class HeliosAgent(BaseAgent):
     """Helios - The Universal Constructor, a transcendent agent that creates tools."""
 
+    _agent_name = "helios"
+
     @property
     def name(self) -> str:
         return "helios"

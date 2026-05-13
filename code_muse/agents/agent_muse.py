@@ -8,6 +8,8 @@ from .base_agent import BaseAgent
 class MuseAgent(BaseAgent):
     """Muse — The default creative coding agent."""
 
+    _agent_name = "muse"
+
     def __init__(self, puppy_name: str | None = None, owner_name: str | None = None):
         super().__init__()
         self._puppy_name = puppy_name or get_puppy_name()
