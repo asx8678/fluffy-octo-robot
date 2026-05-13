@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 
@@ -6,6 +6,7 @@ from code_muse.version_checker import (
     default_version_mismatch_behavior,
     fetch_latest_version,
     normalize_version,
+    start_version_check,
     versions_are_equal,
 )
 
@@ -45,67 +46,87 @@ def test_versions_are_equal():
     assert versions_are_equal("", "1.2.3") is False
 
 
+def _make_async_client_mock(get_return_value=None, get_side_effect=None):
+    """Helper to build a mock httpx.AsyncClient with async context-manager support."""
+    mock_client = AsyncMock()
+    if get_side_effect is not None:
+        mock_client.get = AsyncMock(side_effect=get_side_effect)
+    else:
+        mock_response = get_return_value
+        mock_client.get = AsyncMock(return_value=mock_response)
+    mock_client.__aenter__.return_value = mock_client
+    mock_client.__aexit__.return_value = None
+    return mock_client
+
+
 class TestFetchLatestVersion:
     """Test fetch_latest_version function."""
 
-    @patch("code_muse.version_checker.httpx.get")
-    def test_fetch_latest_version_success(self, mock_get):
+    @patch("code_muse.version_checker.httpx.AsyncClient")
+    async def test_fetch_latest_version_success(self, mock_client_cls):
         """Test successful version fetch from PyPI."""
         mock_response = MagicMock()
         mock_response.json.return_value = {"info": {"version": "1.2.3"}}
         mock_response.raise_for_status = MagicMock()
-        mock_get.return_value = mock_response
-
-        version = fetch_latest_version("test-package")
-
-        assert version == "1.2.3"
-        mock_get.assert_called_once_with(
-            "https://pypi.org/pypi/test-package/json", timeout=5.0
+        mock_client_cls.return_value = _make_async_client_mock(
+            get_return_value=mock_response
         )
 
-    @patch("code_muse.version_checker.httpx.get")
-    def test_fetch_latest_version_http_error(self, mock_get):
-        """Test version fetch with HTTP error."""
-        mock_get.side_effect = httpx.HTTPError("Connection failed")
+        version = await fetch_latest_version("test-package")
 
-        version = fetch_latest_version("test-package")
+        assert version == "1.2.3"
+
+    @patch("code_muse.version_checker.httpx.AsyncClient")
+    async def test_fetch_latest_version_http_error(self, mock_client_cls):
+        """Test version fetch with HTTP error."""
+        mock_client_cls.return_value = _make_async_client_mock(
+            get_side_effect=httpx.HTTPError("Connection failed")
+        )
+
+        version = await fetch_latest_version("test-package")
 
         assert version is None
 
-    @patch("code_muse.version_checker.httpx.get")
-    def test_fetch_latest_version_invalid_json(self, mock_get):
+    @patch("code_muse.version_checker.httpx.AsyncClient")
+    async def test_fetch_latest_version_invalid_json(self, mock_client_cls):
         """Test version fetch with invalid JSON response."""
         mock_response = MagicMock()
         mock_response.json.side_effect = ValueError("Invalid JSON")
         mock_response.raise_for_status = MagicMock()
-        mock_get.return_value = mock_response
+        mock_client_cls.return_value = _make_async_client_mock(
+            get_return_value=mock_response
+        )
 
-        version = fetch_latest_version("test-package")
+        version = await fetch_latest_version("test-package")
 
         assert version is None
 
-    @patch("code_muse.version_checker.httpx.get")
-    def test_fetch_latest_version_missing_info_key(self, mock_get):
+    @patch("code_muse.version_checker.httpx.AsyncClient")
+    async def test_fetch_latest_version_missing_info_key(self, mock_client_cls):
         """Test version fetch with missing 'info' key."""
         mock_response = MagicMock()
         mock_response.json.return_value = {"releases": {}}
         mock_response.raise_for_status = MagicMock()
-        mock_get.return_value = mock_response
+        mock_client_cls.return_value = _make_async_client_mock(
+            get_return_value=mock_response
+        )
 
-        version = fetch_latest_version("test-package")
+        version = await fetch_latest_version("test-package")
 
         assert version is None
 
-    @patch("code_muse.version_checker.httpx.get")
-    def test_fetch_latest_version_status_error(self, mock_get):
+    @patch("code_muse.version_checker.httpx.AsyncClient")
+    async def test_fetch_latest_version_status_error(self, mock_client_cls):
         """Test version fetch with HTTP status error."""
         mock_response = MagicMock()
         mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
             "404 Not Found", request=MagicMock(), response=MagicMock()
         )
-        mock_get.return_value = mock_response
+        mock_client_cls.return_value = _make_async_client_mock(
+            get_return_value=mock_response
+        )
 
-        version = fetch_latest_version("nonexistent-package")
+        version = await fetch_latest_version("nonexistent-package")
 
         assert version is None
 
@@ -117,14 +138,14 @@ class TestDefaultVersionMismatchBehavior:
     @patch("code_muse.version_checker.emit_success")
     @patch("code_muse.version_checker.emit_warning")
     @patch("code_muse.version_checker.emit_info")
-    @patch("code_muse.version_checker.fetch_latest_version")
-    def test_version_mismatch_shows_update_message(
+    @patch("code_muse.version_checker.fetch_latest_version", new_callable=AsyncMock)
+    async def test_version_mismatch_shows_update_message(
         self, mock_fetch, mock_emit_info, mock_emit_warning, mock_emit_success, mock_bus
     ):
         """Test that update message is shown when versions differ."""
         mock_fetch.return_value = "2.0.0"
 
-        default_version_mismatch_behavior("1.0.0")
+        await default_version_mismatch_behavior("1.0.0")
 
         # Should emit current version info
         mock_emit_info.assert_any_call("Current version: 1.0.0")
@@ -141,14 +162,14 @@ class TestDefaultVersionMismatchBehavior:
     @patch("code_muse.version_checker.emit_success")
     @patch("code_muse.version_checker.emit_warning")
     @patch("code_muse.version_checker.emit_info")
-    @patch("code_muse.version_checker.fetch_latest_version")
-    def test_version_match_still_shows_current_version(
+    @patch("code_muse.version_checker.fetch_latest_version", new_callable=AsyncMock)
+    async def test_version_match_still_shows_current_version(
         self, mock_fetch, mock_emit_info, mock_emit_warning, mock_emit_success, mock_bus
     ):
         """Test that current version is still shown when versions match."""
         mock_fetch.return_value = "1.0.0"
 
-        default_version_mismatch_behavior("1.0.0")
+        await default_version_mismatch_behavior("1.0.0")
 
         # Should emit current version info
         mock_emit_info.assert_called_once_with("Current version: 1.0.0")
@@ -160,14 +181,14 @@ class TestDefaultVersionMismatchBehavior:
     @patch("code_muse.version_checker.emit_success")
     @patch("code_muse.version_checker.emit_warning")
     @patch("code_muse.version_checker.emit_info")
-    @patch("code_muse.version_checker.fetch_latest_version")
-    def test_version_fetch_failure_still_shows_current(
+    @patch("code_muse.version_checker.fetch_latest_version", new_callable=AsyncMock)
+    async def test_version_fetch_failure_still_shows_current(
         self, mock_fetch, mock_emit_info, mock_emit_warning, mock_emit_success, mock_bus
     ):
         """Test behavior when fetch_latest_version returns None."""
         mock_fetch.return_value = None
 
-        default_version_mismatch_behavior("1.0.0")
+        await default_version_mismatch_behavior("1.0.0")
 
         # Should still emit current version info even when fetch fails
         mock_emit_info.assert_called_once_with("Current version: 1.0.0")
@@ -179,14 +200,14 @@ class TestDefaultVersionMismatchBehavior:
     @patch("code_muse.version_checker.emit_success")
     @patch("code_muse.version_checker.emit_warning")
     @patch("code_muse.version_checker.emit_info")
-    @patch("code_muse.version_checker.fetch_latest_version")
-    def test_update_message_content(
+    @patch("code_muse.version_checker.fetch_latest_version", new_callable=AsyncMock)
+    async def test_update_message_content(
         self, mock_fetch, mock_emit_info, mock_emit_warning, mock_emit_success, mock_bus
     ):
         """Test the exact content of update messages."""
         mock_fetch.return_value = "2.5.0"
 
-        default_version_mismatch_behavior("2.0.0")
+        await default_version_mismatch_behavior("2.0.0")
 
         # Check warning contains new version info
         warning_calls = [str(call) for call in mock_emit_warning.call_args_list]
@@ -196,15 +217,15 @@ class TestDefaultVersionMismatchBehavior:
     @patch("code_muse.version_checker.emit_success")
     @patch("code_muse.version_checker.emit_warning")
     @patch("code_muse.version_checker.emit_info")
-    @patch("code_muse.version_checker.fetch_latest_version")
-    def test_none_current_version_handled_gracefully(
+    @patch("code_muse.version_checker.fetch_latest_version", new_callable=AsyncMock)
+    async def test_none_current_version_handled_gracefully(
         self, mock_fetch, mock_emit_info, mock_emit_warning, mock_emit_success, mock_bus
     ):
         """Test that None current_version is handled gracefully."""
         mock_fetch.return_value = "1.0.0"
 
         # This should not raise an exception
-        default_version_mismatch_behavior(None)
+        await default_version_mismatch_behavior(None)
 
         # Should emit warning about unknown version
         mock_emit_warning.assert_any_call(
@@ -212,3 +233,23 @@ class TestDefaultVersionMismatchBehavior:
         )
         # Should use fallback version in info message
         mock_emit_info.assert_any_call("Current version: 0.0.0-unknown")
+
+
+class TestStartVersionCheck:
+    """Test start_version_check fire-and-forget function."""
+
+    @patch(
+        "code_muse.version_checker.default_version_mismatch_behavior",
+        new_callable=AsyncMock,
+    )
+    @patch("code_muse.version_checker.asyncio.create_task")
+    def test_start_version_check_creates_background_task(
+        self, mock_create_task, mock_behavior
+    ):
+        """Test that start_version_check fires a background task."""
+        start_version_check("1.0.0")
+
+        mock_create_task.assert_called_once()
+        # The argument to create_task should be the coroutine
+        call_args = mock_create_task.call_args
+        assert call_args is not None

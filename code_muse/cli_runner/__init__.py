@@ -29,7 +29,7 @@ from code_muse.http_utils import find_available_port
 from code_muse.keymap import KeymapError, validate_cancel_agent_key
 from code_muse.messaging import emit_error, emit_system_message
 from code_muse.terminal_utils import reset_unix_terminal, reset_windows_terminal_full
-from code_muse.version_checker import default_version_mismatch_behavior
+from code_muse.version_checker import start_version_check
 
 plugins.load_plugin_callbacks()
 
@@ -229,7 +229,7 @@ async def main():
         if len(callbacks.get_callbacks("version_check")):
             await callbacks.on_version_check(current_version)
         else:
-            default_version_mismatch_behavior(current_version)
+            start_version_check(current_version)
 
     await callbacks.on_startup()
 
