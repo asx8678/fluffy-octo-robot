@@ -7,6 +7,7 @@ from pathlib import Path
 
 from code_muse.agents import get_current_agent
 from code_muse.cli_runner.runner import _render_response, run_prompt_with_attachments
+from code_muse.cli_runner.terminal_session import TerminalSession
 from code_muse.command_line.attachments import parse_prompt_attachments
 from code_muse.command_line.clipboard import get_clipboard_manager
 from code_muse.command_line.command_handler import handle_command
@@ -34,11 +35,7 @@ from code_muse.messaging import (
     emit_system_message,
     emit_warning,
 )
-from code_muse.terminal_utils import (
-    print_truecolor_warning,
-    reset_windows_terminal_ansi,
-    reset_windows_terminal_full,
-)
+from code_muse.terminal_utils import print_truecolor_warning
 
 
 def _show_startup_info(display_console) -> None:
@@ -116,28 +113,6 @@ async def _handle_initial_command(initial_command: str, agent, display_console) 
     return True
 
 
-def _ensure_prompt_toolkit() -> None:
-    """Ensure prompt_toolkit is installed, installing it if missing."""
-    try:
-        from code_muse.command_line.prompt_toolkit_completion import (
-            get_input_with_combined_completion,  # noqa: F401
-            get_prompt_with_active_model,  # noqa: F401
-        )
-    except ImportError:
-        emit_warning("Warning: prompt_toolkit not installed. Installing now...")
-        try:
-            import subprocess
-
-            subprocess.check_call(
-                [sys.executable, "-m", "pip", "install", "--quiet", "prompt_toolkit"]
-            )
-
-            emit_success("Successfully installed prompt_toolkit")
-        except Exception as e:
-            emit_error(f"Error installing prompt_toolkit: {e}")
-            emit_warning("Falling back to basic input without tab completion")
-
-
 def _maybe_run_onboarding() -> None:
     """Run the onboarding tutorial on first startup if needed."""
     try:
@@ -176,7 +151,7 @@ def _maybe_run_onboarding() -> None:
         emit_warning(f"Tutorial auto-start failed: {e}")
 
 
-async def _read_user_input(message_renderer, display_console) -> str:
+async def _read_user_input(message_renderer, terminal_session) -> str:
     """Read user input via prompt_toolkit or fallback to basic input."""
     try:
         from code_muse.command_line.prompt_toolkit_completion import (
@@ -184,24 +159,19 @@ async def _read_user_input(message_renderer, display_console) -> str:
             get_prompt_with_active_model,
         )
 
-        reset_windows_terminal_ansi()
+        terminal_session.reset_before_input()
         task = await get_input_with_combined_completion(
             get_prompt_with_active_model(), history_file=COMMAND_HISTORY_FILE
         )
-        try:
-            from code_muse.terminal_utils import ensure_ctrl_c_disabled
-
-            ensure_ctrl_c_disabled()
-        except ImportError:
-            pass
+        terminal_session.ensure_ctrl_c_disabled()
         return task
     except ImportError:
         return input(">>> ")
 
 
-def _handle_keyboard_interrupt(display_console) -> None:
+def _handle_keyboard_interrupt(terminal_session) -> None:
     """Handle Ctrl+C during input by resetting terminal and stopping wiggum."""
-    reset_windows_terminal_full()
+    terminal_session.handle_interrupt()
 
     if is_wiggum_active():
         stop_wiggum()
@@ -324,7 +294,7 @@ async def _handle_slash_command(cleaned: str):
     return None
 
 
-async def _run_main_input_loop(message_renderer, display_console):
+async def _run_main_input_loop(message_renderer, terminal_session):
     """Gather and process user input until a non-command task is ready."""
     while True:
         current_agent = get_current_agent()
@@ -332,9 +302,9 @@ async def _run_main_input_loop(message_renderer, display_console):
         emit_info(f"{user_prompt}\n")
 
         try:
-            task = await _read_user_input(message_renderer, display_console)
+            task = await _read_user_input(message_renderer, terminal_session)
         except KeyboardInterrupt, asyncio.CancelledError:
-            _handle_keyboard_interrupt(display_console)
+            _handle_keyboard_interrupt(terminal_session)
             continue
         except EOFError:
             await _handle_eof()
@@ -361,15 +331,10 @@ async def _run_main_input_loop(message_renderer, display_console):
             return task
 
 
-def _handle_agent_cancellation(display_console) -> None:
+def _handle_agent_cancellation(terminal_session) -> None:
     """Reset terminal state after an agent task is cancelled."""
-    reset_windows_terminal_ansi()
-    try:
-        from code_muse.terminal_utils import ensure_ctrl_c_disabled
-
-        ensure_ctrl_c_disabled()
-    except ImportError:
-        pass
+    terminal_session.reset_before_input()
+    terminal_session.ensure_ctrl_c_disabled()
 
     if is_wiggum_active():
         stop_wiggum()
@@ -442,48 +407,40 @@ async def interactive_mode(message_renderer, initial_command: str = None) -> Non
     if initial_command:
         await _handle_initial_command(initial_command, current_agent, display_console)
 
-    _ensure_prompt_toolkit()
-
-    # Autosave loading is now manual - use /autosave_load command
-
     _maybe_run_onboarding()
 
-    # Track the current agent task for cancellation on quit
-    current_agent_task = None
+    async with TerminalSession(display_console) as terminal_session:
+        # Track the current agent task for cancellation on quit
+        current_agent_task = None
 
-    while True:
-        task = await _run_main_input_loop(message_renderer, display_console)
-        if task is None:
-            await _cancel_agent_task_if_running(current_agent_task)
-            break
+        while True:
+            task = await _run_main_input_loop(message_renderer, terminal_session)
+            if task is None:
+                await _cancel_agent_task_if_running(current_agent_task)
+                break
 
-        current_agent = get_current_agent()
+            current_agent = get_current_agent()
 
-        try:
-            result, current_agent_task = await run_prompt_with_attachments(
-                current_agent,
-                task,
-                spinner_console=message_renderer.console,
+            try:
+                result, current_agent_task = await run_prompt_with_attachments(
+                    current_agent,
+                    task,
+                    spinner_console=message_renderer.console,
+                )
+                if result is None:
+                    _handle_agent_cancellation(terminal_session)
+                    continue
+                await _render_and_autosave(result, current_agent, display_console)
+            except Exception:
+                from code_muse.messaging.queue_console import get_queue_console
+
+                get_queue_console().print_exception()
+                auto_save_session_if_enabled()
+
+            current_agent = await _wiggum_loop(
+                current_agent, message_renderer, display_console
             )
-            if result is None:
-                _handle_agent_cancellation(display_console)
-                continue
-            await _render_and_autosave(result, current_agent, display_console)
-        except Exception:
-            from code_muse.messaging.queue_console import get_queue_console
 
-            get_queue_console().print_exception()
-            auto_save_session_if_enabled()
-
-        current_agent = await _wiggum_loop(
-            current_agent, message_renderer, display_console
-        )
-
-        # Re-disable Ctrl+C if needed (uvx mode) - must be done after
-        # each iteration as various operations may restore console mode
-        try:
-            from code_muse.terminal_utils import ensure_ctrl_c_disabled
-
-            ensure_ctrl_c_disabled()
-        except ImportError:
-            pass
+            # Re-disable Ctrl+C after each iteration — various operations
+            # may restore console mode. TerminalSession owns this concern.
+            terminal_session.ensure_ctrl_c_disabled()
