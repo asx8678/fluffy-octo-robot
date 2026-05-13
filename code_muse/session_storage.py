@@ -20,7 +20,9 @@ Backward compatibility:
 """
 
 import hashlib
+import hmac
 import json
+import os
 import pickle
 import warnings
 from collections.abc import Callable
@@ -72,12 +74,101 @@ def _unsafe_pickle_loads_for_explicit_legacy_migration_only(data: bytes) -> Any:
     return pickle.loads(data)  # noqa: S301
 
 
-def _extract_pickle_payload(raw: bytes) -> bytes:
-    """Return the pickle payload from raw session file bytes.
+def _get_legacy_hmac_key() -> bytes | None:
+    """Return the HMAC key for legacy pickle session verification.
 
-    Legacy format was: header + 32-byte signature + pickle payload.
-    We no longer verify or generate signatures.
+    The key is read from the ``MUSE_LEGACY_HMAC_KEY`` environment variable
+    or from the ``legacy_hmac_key`` config setting (loaded lazily).
+    Returns ``None`` if neither is set.
     """
+    # Try environment variable first
+    env_key = os.environ.get("MUSE_LEGACY_HMAC_KEY")
+    if env_key:
+        return env_key.encode("utf-8")
+    # Try config
+    try:
+        from code_muse.config import get_config_value
+
+        key = get_config_value("legacy_hmac_key")
+        if key:
+            return key.encode("utf-8") if isinstance(key, str) else key
+    except Exception:
+        pass
+    return None
+
+
+def _verify_legacy_signature(raw: bytes, key: bytes) -> bytes:
+    """Verify the HMAC-SHA256 signature on a legacy pickle session file.
+
+    Legacy format: ``CPSESSION\\x01`` (12-byte magic) + 32-byte HMAC-SHA256
+    signature + pickle payload.
+
+    Args:
+        raw: Full file contents.
+        key: HMAC key used to verify the signature.
+
+    Returns:
+        The raw pickle payload (bytes after the signature).
+
+    Raises:
+        ValueError: If the signature is missing, malformed, or does not match.
+    """
+    if not raw.startswith(_LEGACY_SIGNED_HEADER):
+        raise ValueError(
+            f"File does not start with legacy session header {_LEGACY_SIGNED_HEADER!r}"
+        )
+
+    header_len = len(_LEGACY_SIGNED_HEADER)
+    expected_min_len = header_len + _LEGACY_SIGNATURE_SIZE + 1
+    if len(raw) < expected_min_len:
+        raise ValueError(
+            f"Legacy session file too short: {len(raw)} bytes, "
+            f"expected at least {expected_min_len}"
+        )
+
+    stored_sig = raw[header_len : header_len + _LEGACY_SIGNATURE_SIZE]
+    payload = raw[header_len + _LEGACY_SIGNATURE_SIZE :]
+
+    # Compute expected HMAC-SHA256 of the payload
+    expected_sig = hmac.new(key, payload, "sha256").digest()
+
+    if not hmac.compare_digest(stored_sig, expected_sig):
+        raise ValueError(
+            "HMAC signature verification FAILED for legacy pickle session. "
+            "The file may have been tampered with or was saved with a "
+            "different key. Refusing to load."
+        )
+
+    return payload
+
+
+def _extract_pickle_payload(raw: bytes) -> bytes:
+    """Return the pickle payload from raw session file bytes, verifying HMAC.
+
+    Legacy format was: header + 32-byte HMAC-SHA256 signature + pickle payload.
+
+    If a legacy HMAC key is configured (via ``MUSE_LEGACY_HMAC_KEY`` env var
+    or ``legacy_hmac_key`` config), the signature is cryptographically verified
+    before the payload is returned.
+
+    If no key is configured, the payload is returned without verification
+    (backward compatibility for users who never set up signing).
+
+    Args:
+        raw: Raw file contents.
+
+    Returns:
+        The pickle payload bytes.
+
+    Raises:
+        ValueError: If signature verification is enabled and fails, or if
+            the file format is invalid.
+    """
+    key = _get_legacy_hmac_key()
+    if key is not None:
+        return _verify_legacy_signature(raw, key)
+
+    # No key configured — extract without verification (legacy behavior)
     if raw.startswith(_LEGACY_SIGNED_HEADER):
         offset = len(_LEGACY_SIGNED_HEADER) + _LEGACY_SIGNATURE_SIZE
         return raw[offset:]
@@ -211,11 +302,13 @@ def _try_load_pkl(path: Path, *, allow_legacy: bool = False) -> Any:
     - JSON-format .pkl files (written by current save_session) are always
       loaded.
     - Binary pickle files (with or without the ``_LEGACY_SIGNED_HEADER``
-      prefix) require ``allow_legacy=True``.  The legacy header provides
-      **no** security guarantee — it is an unverified magic prefix, not
-      a cryptographic signature.  Any file starting with the header + 32
-      arbitrary bytes + pickle payload would previously bypass the
-      ``allow_legacy`` guard (CVE-class RCE).
+      prefix) require ``allow_legacy=True``.
+    - When ``allow_legacy=True`` and an HMAC key is configured, the legacy
+      HMAC-SHA256 signature is **verified** before deserialization. If
+      verification fails, the file is rejected with a clear error.
+    - When ``allow_legacy=True`` and no HMAC key is configured, the payload
+      is extracted without verification and a warning is emitted (legacy
+      behavior).
     """
     raw = path.read_bytes()
 
@@ -229,6 +322,14 @@ def _try_load_pkl(path: Path, *, allow_legacy: bool = False) -> Any:
 
     # Binary pickle — only with explicit legacy flag
     if allow_legacy:
+        if _get_legacy_hmac_key() is None:
+            warnings.warn(
+                "Loading legacy pickle session WITHOUT HMAC verification. "
+                "Set MUSE_LEGACY_HMAC_KEY or legacy_hmac_key config to "
+                "enable cryptographic signature verification.",
+                RuntimeWarning,
+                stacklevel=3,
+            )
         pickle_data = _extract_pickle_payload(raw)
         return _unsafe_pickle_loads_for_explicit_legacy_migration_only(pickle_data)
 
@@ -489,7 +590,7 @@ async def restore_autosave_interactively(base_dir: Path) -> None:
             emit_system_message(
                 f"  [{idx}] {name} ({message_display}, saved at {timestamp_display})"
             )
-        # If there are more pages, offer next-page; show 'Return to first page' on last page
+        # If more pages: show next-page; on last page show 'Return to first page'
         if total > PAGE_SIZE:
             page_count = (total + PAGE_SIZE - 1) // PAGE_SIZE
             is_last_page = (page + 1) >= page_count
