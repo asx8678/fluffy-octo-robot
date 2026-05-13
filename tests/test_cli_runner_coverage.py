@@ -20,8 +20,8 @@ class TestRunPromptWithAttachments:
         # A prompt that becomes empty after attachment parsing
         mock_agent = MagicMock()
         with (
-            patch("code_muse.cli_runner.parse_prompt_attachments") as mock_parse,
-            patch("code_muse.cli_runner.get_clipboard_manager") as mock_clip,
+            patch("code_muse.cli_runner.runner.parse_prompt_attachments") as mock_parse,
+            patch("code_muse.cli_runner.runner.get_clipboard_manager") as mock_clip,
         ):
             mock_parse.return_value = MagicMock(
                 prompt="",
@@ -52,8 +52,8 @@ class TestRunPromptWithAttachments:
         mock_link.url_part = "https://example.com"
 
         with (
-            patch("code_muse.cli_runner.parse_prompt_attachments") as mock_parse,
-            patch("code_muse.cli_runner.get_clipboard_manager") as mock_clip,
+            patch("code_muse.cli_runner.runner.parse_prompt_attachments") as mock_parse,
+            patch("code_muse.cli_runner.runner.get_clipboard_manager") as mock_clip,
             patch("code_muse.agents.event_stream_handler.set_streaming_console"),
             patch("code_muse.messaging.spinner.ConsoleSpinner") as mock_spinner,
         ):
@@ -85,8 +85,8 @@ class TestRunPromptWithAttachments:
         mock_agent.run = AsyncMock(side_effect=asyncio.CancelledError)
 
         with (
-            patch("code_muse.cli_runner.parse_prompt_attachments") as mock_parse,
-            patch("code_muse.cli_runner.get_clipboard_manager") as mock_clip,
+            patch("code_muse.cli_runner.runner.parse_prompt_attachments") as mock_parse,
+            patch("code_muse.cli_runner.runner.get_clipboard_manager") as mock_clip,
             patch("code_muse.agents.event_stream_handler.set_streaming_console"),
             patch("code_muse.messaging.spinner.ConsoleSpinner") as mock_spinner,
         ):
@@ -118,8 +118,8 @@ class TestRunPromptWithAttachments:
         mock_agent.run = AsyncMock(side_effect=asyncio.CancelledError)
 
         with (
-            patch("code_muse.cli_runner.parse_prompt_attachments") as mock_parse,
-            patch("code_muse.cli_runner.get_clipboard_manager") as mock_clip,
+            patch("code_muse.cli_runner.runner.parse_prompt_attachments") as mock_parse,
+            patch("code_muse.cli_runner.runner.get_clipboard_manager") as mock_clip,
             patch("code_muse.agents.event_stream_handler.set_streaming_console"),
         ):
             mock_parse.return_value = MagicMock(
@@ -147,8 +147,8 @@ class TestRunPromptWithAttachments:
         mock_agent.run = AsyncMock(return_value=mock_result)
 
         with (
-            patch("code_muse.cli_runner.parse_prompt_attachments") as mock_parse,
-            patch("code_muse.cli_runner.get_clipboard_manager") as mock_clip,
+            patch("code_muse.cli_runner.runner.parse_prompt_attachments") as mock_parse,
+            patch("code_muse.cli_runner.runner.get_clipboard_manager") as mock_clip,
             patch("code_muse.agents.event_stream_handler.set_streaming_console"),
         ):
             mock_parse.return_value = MagicMock(
@@ -182,12 +182,12 @@ class TestExecuteSinglePrompt:
         mock_result.output = "done!"
 
         with (
-            patch("code_muse.cli_runner.get_current_agent"),
+            patch("code_muse.cli_runner.runner.get_current_agent"),
             patch(
                 "code_muse.cli_runner.run_prompt_with_attachments",
                 new_callable=AsyncMock,
             ) as mock_run,
-            patch("code_muse.cli_runner.emit_info"),
+            patch("code_muse.cli_runner.runner.emit_info"),
         ):
             mock_run.return_value = (mock_result, MagicMock())
             await execute_single_prompt("hello", mock_renderer)
@@ -200,12 +200,12 @@ class TestExecuteSinglePrompt:
         mock_renderer.console = MagicMock()
 
         with (
-            patch("code_muse.cli_runner.get_current_agent"),
+            patch("code_muse.cli_runner.runner.get_current_agent"),
             patch(
                 "code_muse.cli_runner.run_prompt_with_attachments",
                 new_callable=AsyncMock,
             ) as mock_run,
-            patch("code_muse.cli_runner.emit_info"),
+            patch("code_muse.cli_runner.runner.emit_info"),
         ):
             mock_run.return_value = None
             await execute_single_prompt("hello", mock_renderer)
@@ -218,13 +218,13 @@ class TestExecuteSinglePrompt:
         mock_renderer.console = MagicMock()
 
         with (
-            patch("code_muse.cli_runner.get_current_agent"),
+            patch("code_muse.cli_runner.runner.get_current_agent"),
             patch(
                 "code_muse.cli_runner.run_prompt_with_attachments",
                 new_callable=AsyncMock,
                 side_effect=asyncio.CancelledError,
             ),
-            patch("code_muse.cli_runner.emit_info"),
+            patch("code_muse.cli_runner.runner.emit_info"),
         ):
             await execute_single_prompt("hello", mock_renderer)
 
@@ -236,13 +236,13 @@ class TestExecuteSinglePrompt:
         mock_renderer.console = MagicMock()
 
         with (
-            patch("code_muse.cli_runner.get_current_agent"),
+            patch("code_muse.cli_runner.runner.get_current_agent"),
             patch(
                 "code_muse.cli_runner.run_prompt_with_attachments",
                 new_callable=AsyncMock,
                 side_effect=RuntimeError("boom"),
             ),
-            patch("code_muse.cli_runner.emit_info"),
+            patch("code_muse.cli_runner.runner.emit_info"),
         ):
             await execute_single_prompt("hello", mock_renderer)
 

@@ -61,8 +61,8 @@ def _base_main_patches():
         "code_muse.cli_runner.start_version_check": MagicMock(),
         "code_muse.cli_runner.loop.print_truecolor_warning": MagicMock(),
         "code_muse.cli_runner.reset_unix_terminal": MagicMock(),
-        "code_muse.cli_runner.reset_windows_terminal_ansi": MagicMock(),
-        "code_muse.cli_runner.reset_windows_terminal_full": MagicMock(),
+        "code_muse.terminal_utils.reset_windows_terminal_ansi": MagicMock(),
+        "code_muse.terminal_utils.reset_windows_terminal_full": MagicMock(),
         "code_muse.cli_runner.callbacks": MagicMock(
             on_startup=AsyncMock(),
             on_shutdown=AsyncMock(),
@@ -77,11 +77,11 @@ def _base_main_patches():
 def _interactive_patches():
     return {
         "code_muse.cli_runner.loop.print_truecolor_warning": MagicMock(),
-        "code_muse.cli_runner.loop.get_cancel_agent_display_name": MagicMock(
+        "code_muse.keymap.get_cancel_agent_display_name": MagicMock(
             return_value="Ctrl+C"
         ),
-        "code_muse.cli_runner.loop.reset_windows_terminal_ansi": MagicMock(),
-        "code_muse.cli_runner.loop.reset_windows_terminal_full": MagicMock(),
+        "code_muse.terminal_utils.reset_windows_terminal_ansi": MagicMock(),
+        "code_muse.terminal_utils.reset_windows_terminal_full": MagicMock(),
         "code_muse.cli_runner.loop.save_command_to_history": MagicMock(),
         "code_muse.cli_runner.loop.finalize_autosave_session": MagicMock(
             return_value="session-1"
@@ -519,7 +519,7 @@ class TestInteractiveMode:
                 "code_muse.cli_runner.loop.get_current_agent": MagicMock(
                     return_value=agent
                 ),
-                "code_muse.cli_runner.get_clipboard_manager": MagicMock(
+                "code_muse.command_line.clipboard.get_clipboard_manager": MagicMock(
                     return_value=_mock_clipboard([b"img"])
                 ),
             },
@@ -543,7 +543,7 @@ class TestInteractiveMode:
                 "code_muse.command_line.command_handler.handle_command": MagicMock(
                     return_value=True
                 ),
-                "code_muse.cli_runner.parse_prompt_attachments": MagicMock(
+                "code_muse.command_line.attachments.parse_prompt_attachments": MagicMock(
                     return_value=_mock_parse_result("/help")
                 ),
             },
@@ -569,7 +569,7 @@ class TestInteractiveMode:
                 "code_muse.command_line.command_handler.handle_command": MagicMock(
                     return_value="run this"
                 ),
-                "code_muse.cli_runner.parse_prompt_attachments": MagicMock(
+                "code_muse.command_line.attachments.parse_prompt_attachments": MagicMock(
                     return_value=_mock_parse_result("/custom")
                 ),
                 "code_muse.cli_runner.run_prompt_with_attachments": AsyncMock(
@@ -598,7 +598,7 @@ class TestInteractiveMode:
                 "code_muse.command_line.command_handler.handle_command": MagicMock(
                     side_effect=RuntimeError("cmd error")
                 ),
-                "code_muse.cli_runner.parse_prompt_attachments": MagicMock(
+                "code_muse.command_line.attachments.parse_prompt_attachments": MagicMock(
                     return_value=_mock_parse_result("/bad")
                 ),
             },
@@ -627,7 +627,7 @@ class TestInteractiveMode:
                 "code_muse.cli_runner.loop.is_wiggum_active": MagicMock(
                     return_value=False
                 ),
-                "code_muse.cli_runner.parse_prompt_attachments": MagicMock(
+                "code_muse.command_line.attachments.parse_prompt_attachments": MagicMock(
                     return_value=_mock_parse_result("write hello")
                 ),
             },
@@ -653,7 +653,7 @@ class TestInteractiveMode:
                 "code_muse.cli_runner.loop.is_wiggum_active": MagicMock(
                     return_value=False
                 ),
-                "code_muse.cli_runner.parse_prompt_attachments": MagicMock(
+                "code_muse.command_line.attachments.parse_prompt_attachments": MagicMock(
                     return_value=_mock_parse_result("write hello")
                 ),
             },
@@ -681,7 +681,7 @@ class TestInteractiveMode:
                     return_value=True
                 ),
                 "code_muse.cli_runner.loop.stop_wiggum": mock_stop,
-                "code_muse.cli_runner.parse_prompt_attachments": MagicMock(
+                "code_muse.command_line.attachments.parse_prompt_attachments": MagicMock(
                     return_value=_mock_parse_result("write hello")
                 ),
             },
@@ -708,7 +708,7 @@ class TestInteractiveMode:
                 "code_muse.cli_runner.loop.is_wiggum_active": MagicMock(
                     return_value=False
                 ),
-                "code_muse.cli_runner.parse_prompt_attachments": MagicMock(
+                "code_muse.command_line.attachments.parse_prompt_attachments": MagicMock(
                     return_value=_mock_parse_result("write hello")
                 ),
                 "code_muse.messaging.queue_console.get_queue_console": MagicMock(
@@ -731,7 +731,7 @@ class TestInteractiveMode:
             _interactive_patches(),
             fake_input,
             extra_patches={
-                "code_muse.cli_runner.parse_prompt_attachments": MagicMock(
+                "code_muse.command_line.attachments.parse_prompt_attachments": MagicMock(
                     return_value=_mock_parse_result("   ")
                 ),
             },
@@ -824,7 +824,7 @@ class TestInteractiveMode:
                 "code_muse.command_line.command_handler.handle_command": MagicMock(
                     return_value="__AUTOSAVE_LOAD__"
                 ),
-                "code_muse.cli_runner.parse_prompt_attachments": MagicMock(
+                "code_muse.command_line.attachments.parse_prompt_attachments": MagicMock(
                     return_value=_mock_parse_result("/autosave_load")
                 ),
                 "sys.stdin": mock_stdin,
@@ -856,7 +856,7 @@ class TestInteractiveMode:
                     "code_muse.command_line.command_handler.handle_command": MagicMock(
                         return_value="__AUTOSAVE_LOAD__"
                     ),
-                    "code_muse.cli_runner.parse_prompt_attachments": MagicMock(
+                    "code_muse.command_line.attachments.parse_prompt_attachments": MagicMock(
                         return_value=_mock_parse_result("/autosave_load")
                     ),
                     "sys.stdin": mock_stdin,
@@ -895,7 +895,7 @@ class TestInteractiveMode:
                     "code_muse.command_line.command_handler.handle_command": MagicMock(
                         return_value="__AUTOSAVE_LOAD__"
                     ),
-                    "code_muse.cli_runner.parse_prompt_attachments": MagicMock(
+                    "code_muse.command_line.attachments.parse_prompt_attachments": MagicMock(
                         return_value=_mock_parse_result("/autosave_load")
                     ),
                     "sys.stdin": mock_stdin,
@@ -936,7 +936,7 @@ class TestInteractiveMode:
                 "code_muse.command_line.command_handler.handle_command": MagicMock(
                     return_value="__AUTOSAVE_LOAD__"
                 ),
-                "code_muse.cli_runner.parse_prompt_attachments": MagicMock(
+                "code_muse.command_line.attachments.parse_prompt_attachments": MagicMock(
                     return_value=_mock_parse_result("/autosave_load")
                 ),
                 "sys.stdin": mock_stdin,
@@ -968,7 +968,7 @@ class TestInteractiveMode:
                 "code_muse.command_line.command_handler.handle_command": MagicMock(
                     return_value=False
                 ),
-                "code_muse.cli_runner.parse_prompt_attachments": MagicMock(
+                "code_muse.command_line.attachments.parse_prompt_attachments": MagicMock(
                     return_value=_mock_parse_result("/unknown")
                 ),
                 "code_muse.cli_runner.run_prompt_with_attachments": AsyncMock(
@@ -1007,7 +1007,7 @@ class TestInteractiveMode:
                 "code_muse.cli_runner.run_prompt_with_attachments": AsyncMock(
                     return_value=(mock_result, MagicMock())
                 ),
-                "code_muse.cli_runner.parse_prompt_attachments": MagicMock(
+                "code_muse.command_line.attachments.parse_prompt_attachments": MagicMock(
                     return_value=_mock_parse_result("write hello")
                 ),
                 "code_muse.cli_runner.loop.is_wiggum_active": fake_wiggum,
@@ -1054,7 +1054,7 @@ class TestInteractiveMode:
             fake_input,
             extra_patches={
                 "code_muse.cli_runner.run_prompt_with_attachments": fake_run,
-                "code_muse.cli_runner.parse_prompt_attachments": MagicMock(
+                "code_muse.command_line.attachments.parse_prompt_attachments": MagicMock(
                     return_value=_mock_parse_result("write hello")
                 ),
                 "code_muse.cli_runner.loop.is_wiggum_active": fake_wiggum,
@@ -1096,7 +1096,7 @@ class TestInteractiveMode:
                 "code_muse.cli_runner.run_prompt_with_attachments": AsyncMock(
                     return_value=(mock_result, MagicMock())
                 ),
-                "code_muse.cli_runner.parse_prompt_attachments": MagicMock(
+                "code_muse.command_line.attachments.parse_prompt_attachments": MagicMock(
                     return_value=_mock_parse_result("write hello")
                 ),
                 "code_muse.cli_runner.loop.is_wiggum_active": fake_wiggum,
@@ -1141,7 +1141,7 @@ class TestInteractiveMode:
             fake_input,
             extra_patches={
                 "code_muse.cli_runner.run_prompt_with_attachments": fake_run,
-                "code_muse.cli_runner.parse_prompt_attachments": MagicMock(
+                "code_muse.command_line.attachments.parse_prompt_attachments": MagicMock(
                     return_value=_mock_parse_result("write hello")
                 ),
                 "code_muse.cli_runner.loop.is_wiggum_active": fake_wiggum,
@@ -1301,7 +1301,7 @@ class TestInteractiveMode:
                 "code_muse.cli_runner.loop.get_current_agent": MagicMock(
                     return_value=agent
                 ),
-                "code_muse.cli_runner.get_clipboard_manager": MagicMock(
+                "code_muse.command_line.clipboard.get_clipboard_manager": MagicMock(
                     return_value=_mock_clipboard()
                 ),
             },
@@ -1353,7 +1353,7 @@ class TestInteractiveModeEdgeCases:
             agent=agent,
             extra_patches={
                 "code_muse.cli_runner.run_prompt_with_attachments": fake_run,
-                "code_muse.cli_runner.parse_prompt_attachments": MagicMock(
+                "code_muse.command_line.attachments.parse_prompt_attachments": MagicMock(
                     return_value=_mock_parse_result("do work")
                 ),
                 "code_muse.cli_runner.loop.is_wiggum_active": MagicMock(
@@ -1392,7 +1392,7 @@ class TestInteractiveModeEdgeCases:
             agent=agent,
             extra_patches={
                 "code_muse.cli_runner.run_prompt_with_attachments": fake_run,
-                "code_muse.cli_runner.parse_prompt_attachments": MagicMock(
+                "code_muse.command_line.attachments.parse_prompt_attachments": MagicMock(
                     return_value=_mock_parse_result("do work")
                 ),
                 "code_muse.cli_runner.loop.is_wiggum_active": MagicMock(
@@ -1454,7 +1454,7 @@ class TestInteractiveModeEdgeCases:
                     "code_muse.command_line.command_handler.handle_command": MagicMock(
                         return_value="__AUTOSAVE_LOAD__"
                     ),
-                    "code_muse.cli_runner.parse_prompt_attachments": MagicMock(
+                    "code_muse.command_line.attachments.parse_prompt_attachments": MagicMock(
                         return_value=_mock_parse_result("/autosave_load")
                     ),
                     "sys.stdin": mock_stdin,
@@ -1497,7 +1497,7 @@ class TestInteractiveModeEdgeCases:
             fake_input,
             extra_patches={
                 "code_muse.cli_runner.run_prompt_with_attachments": fake_run,
-                "code_muse.cli_runner.parse_prompt_attachments": MagicMock(
+                "code_muse.command_line.attachments.parse_prompt_attachments": MagicMock(
                     return_value=_mock_parse_result("write hello")
                 ),
                 "code_muse.cli_runner.loop.is_wiggum_active": fake_wiggum,
@@ -1671,7 +1671,7 @@ class TestRemainingEdgeCases:
                 "code_muse.cli_runner.run_prompt_with_attachments": AsyncMock(
                     return_value=(None, MagicMock())
                 ),
-                "code_muse.cli_runner.parse_prompt_attachments": MagicMock(
+                "code_muse.command_line.attachments.parse_prompt_attachments": MagicMock(
                     return_value=_mock_parse_result("write hello")
                 ),
                 "code_muse.cli_runner.loop.is_wiggum_active": fake_wiggum,
@@ -1699,7 +1699,7 @@ class TestRemainingEdgeCases:
                     return_value=mock_response,
                 )
             )
-            stack.enter_context(patch("code_muse.cli_runner.emit_info"))
+            stack.enter_context(patch("code_muse.messaging.emit_info"))
             await execute_single_prompt("test", mock_renderer)
 
 

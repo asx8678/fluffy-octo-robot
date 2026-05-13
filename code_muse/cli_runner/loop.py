@@ -8,9 +8,12 @@ from pathlib import Path
 from code_muse.agents import get_current_agent
 from code_muse.cli_runner.runner import _render_response, run_prompt_with_attachments
 from code_muse.cli_runner.terminal_session import TerminalSession
-from code_muse.command_line.attachments import parse_prompt_attachments
+from code_muse.cli_runner.input_disposition import (
+    InputDisposition,
+    InputDispositionKind,
+    classify_input,
+)
 from code_muse.command_line.clipboard import get_clipboard_manager
-from code_muse.command_line.command_handler import handle_command
 from code_muse.command_line.shell_passthrough import (
     execute_shell_passthrough,
     is_shell_passthrough,
@@ -196,104 +199,6 @@ async def _handle_eof() -> None:
     emit_success("\nGoodbye! (Ctrl+D)")
 
 
-def _is_shell_passthrough_and_execute(task: str) -> bool:
-    """If the task is a shell passthrough, execute it and return True."""
-
-    if is_shell_passthrough(task):
-        execute_shell_passthrough(task)
-        return True
-    return False
-
-
-async def _is_exit_command(task: str) -> bool:
-    """Check for exit commands and return True if exiting."""
-    if task.strip().lower() in ["exit", "quit"] or task.strip().lower() in [
-        "/exit",
-        "/quit",
-    ]:
-        emit_success("Goodbye!")
-        return True
-    return False
-
-
-def _is_clear_command(task: str) -> bool:
-    """Check for clear commands, rotate session and clear history if matched."""
-    if task.strip().lower() in ("clear", "/clear"):
-        agent = get_current_agent()
-        new_session_id = finalize_autosave_session()
-        agent.clear_message_history()
-        emit_warning("Conversation history cleared!")
-        emit_system_message("The agent will not remember previous interactions.")
-        emit_info(f"Auto-save session rotated to: {new_session_id}")
-        clipboard_manager = get_clipboard_manager()
-        clipboard_count = clipboard_manager.get_pending_count()
-        clipboard_manager.clear_pending()
-        if clipboard_count > 0:
-            emit_info(f"Cleared {clipboard_count} pending clipboard image(s)")
-        return True
-    return False
-
-
-async def _handle_slash_command(cleaned: str):
-    """Route a slash command and return a sentinel or the prompt to execute."""
-
-    try:
-        command_result = handle_command(cleaned)
-    except Exception as e:
-        emit_error(f"Command error: {e}")
-        return "__CONTINUE__"
-    if command_result is True:
-        return "__CONTINUE__"
-    elif isinstance(command_result, str):
-        if command_result == "__AUTOSAVE_LOAD__":
-            try:
-                use_interactive_picker = sys.stdin.isatty() and sys.stdout.isatty()
-                if os.getenv("MUSE_NO_TUI") == "1":
-                    use_interactive_picker = False
-                if use_interactive_picker:
-                    from code_muse.command_line.autosave_menu import (
-                        interactive_autosave_picker,
-                    )
-                    from code_muse.config import set_current_autosave_from_session_name
-                    from code_muse.session_storage import (
-                        load_session,
-                        restore_autosave_interactively,
-                    )
-
-                    chosen_session = await interactive_autosave_picker()
-                    if not chosen_session:
-                        emit_warning("Autosave load cancelled")
-                        return "__CONTINUE__"
-                    base_dir = Path(AUTOSAVE_DIR)
-                    history = load_session(chosen_session, base_dir)
-                    agent = get_current_agent()
-                    agent.set_message_history(history)
-                    set_current_autosave_from_session_name(chosen_session)
-                    total_tokens = sum(
-                        agent.estimate_tokens_for_message(msg) for msg in history
-                    )
-                    session_path = base_dir / f"{chosen_session}.json"
-                    emit_success(
-                        f"✅ Autosave loaded: {len(history)} messages "
-                        f"({total_tokens} tokens)\n📁 From: {session_path}"
-                    )
-                    from code_muse.command_line.autosave_menu import (
-                        display_resumed_history,
-                    )
-
-                    display_resumed_history(history)
-                else:
-                    await restore_autosave_interactively(Path(AUTOSAVE_DIR))
-            except Exception as e:
-                emit_error(f"Failed to load autosave: {e}")
-            return "__CONTINUE__"
-        else:
-            return command_result
-    elif command_result is False:
-        return None
-    return None
-
-
 async def _run_main_input_loop(message_renderer, terminal_session):
     """Gather and process user input until a non-command task is ready."""
     while True:
@@ -303,33 +208,105 @@ async def _run_main_input_loop(message_renderer, terminal_session):
 
         try:
             task = await _read_user_input(message_renderer, terminal_session)
-        except KeyboardInterrupt, asyncio.CancelledError:
+        except (KeyboardInterrupt, asyncio.CancelledError):
             _handle_keyboard_interrupt(terminal_session)
             continue
         except EOFError:
             await _handle_eof()
             return None
 
-        if _is_shell_passthrough_and_execute(task):
+        disposition = classify_input(task)
+
+        if disposition.kind == InputDispositionKind.SHELL:
+            from code_muse.command_line.shell_passthrough import (
+                execute_shell_passthrough,
+            )
+            execute_shell_passthrough(task)
             continue
-        if await _is_exit_command(task):
+
+        if disposition.kind == InputDispositionKind.EXIT:
+            emit_success("Goodbye!")
             return None
-        if _is_clear_command(task):
+
+        if disposition.kind == InputDispositionKind.CLEAR:
+            agent = get_current_agent()
+            new_session_id = finalize_autosave_session()
+            agent.clear_message_history()
+            emit_warning("Conversation history cleared!")
+            emit_system_message("The agent will not remember previous interactions.")
+            emit_info(f"Auto-save session rotated to: {new_session_id}")
+            clipboard_manager = get_clipboard_manager()
+            clipboard_count = clipboard_manager.get_pending_count()
+            clipboard_manager.clear_pending()
+            if clipboard_count > 0:
+                emit_info(f"Cleared {clipboard_count} pending clipboard image(s)")
             continue
 
-        processed = parse_prompt_attachments(task)
-        cleaned = (processed.prompt or "").strip()
-        if cleaned.startswith("/"):
-            action = await _handle_slash_command(cleaned)
-            if action == "__CONTINUE__":
+        if disposition.kind == InputDispositionKind.SLASH_HANDLED:
+            continue
+
+        # SLASH_REWRITE — check for special autosave-load sentinel
+        if disposition.kind == InputDispositionKind.SLASH_REWRITE:
+            prompt = disposition.prompt
+            if prompt == "__AUTOSAVE_LOAD__":
+                try:
+                    from code_muse.command_line.autosave_menu import (
+                        interactive_autosave_picker,
+                    )
+                    from code_muse.config import set_current_autosave_from_session_name
+                    from code_muse.session_storage import (
+                        load_session,
+                        restore_autosave_interactively,
+                    )
+
+                    use_interactive_picker = (
+                        sys.stdin.isatty() and sys.stdout.isatty()
+                    )
+                    if os.getenv("MUSE_NO_TUI") == "1":
+                        use_interactive_picker = False
+
+                    if use_interactive_picker:
+                        chosen_session = await interactive_autosave_picker()
+                        if not chosen_session:
+                            emit_warning("Autosave load cancelled")
+                            continue
+                        base_dir = Path(AUTOSAVE_DIR)
+                        history = load_session(chosen_session, base_dir)
+                        agent = get_current_agent()
+                        agent.set_message_history(history)
+                        set_current_autosave_from_session_name(chosen_session)
+                        total_tokens = sum(
+                            agent.estimate_tokens_for_message(msg)
+                            for msg in history
+                        )
+                        session_path = base_dir / f"{chosen_session}.json"
+                        emit_success(
+                            f"✅ Autosave loaded: {len(history)} messages "
+                            f"({total_tokens} tokens)\n📁 From: {session_path}"
+                        )
+                        from code_muse.command_line.autosave_menu import (
+                            display_resumed_history,
+                        )
+                        display_resumed_history(history)
+                    else:
+                        await restore_autosave_interactively(Path(AUTOSAVE_DIR))
+                except Exception as e:
+                    emit_error(f"Failed to load autosave: {e}")
                 continue
-            if isinstance(action, str):
-                task = action
+            # Normal rewrite — fall through to task processing
+            task = prompt
 
-        if task.strip():
-            save_command_to_history(task)
-            return task
+        # TASK — or rewritten task from SLASH_REWRITE
+        if disposition.kind in (
+            InputDispositionKind.TASK,
+            InputDispositionKind.SLASH_REWRITE,
+        ):
+            if task.strip():
+                save_command_to_history(task)
+                return task
 
+        # Shouldn't reach here, but if we do, loop again
+        continue
 
 def _handle_agent_cancellation(terminal_session) -> None:
     """Reset terminal state after an agent task is cancelled."""

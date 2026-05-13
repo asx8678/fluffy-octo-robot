@@ -335,10 +335,6 @@ class TestInitialCommandPassthrough:
 
         with (
             patch("code_muse.cli_runner.loop.print_truecolor_warning"),
-            patch(
-                "code_muse.cli_runner.get_cancel_agent_display_name",
-                return_value="Ctrl+C",
-            ),
             patch("code_muse.messaging.emit_system_message"),
             patch("code_muse.messaging.emit_info"),
             patch("code_muse.messaging.emit_success"),
