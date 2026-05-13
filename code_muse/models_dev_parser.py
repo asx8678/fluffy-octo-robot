@@ -472,9 +472,7 @@ PROVIDER_TYPE_MAP = {
 }
 
 
-def convert_to_muse_config(
-    model: ModelInfo, provider: ProviderInfo
-) -> dict[str, Any]:
+def convert_to_muse_config(model: ModelInfo, provider: ProviderInfo) -> dict[str, Any]:
     """
     Convert a model and provider to Muse configuration format.
 

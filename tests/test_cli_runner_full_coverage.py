@@ -193,7 +193,6 @@ class TestMain:
             ["muse"],
             extra_patches={
                 "code_muse.cli_runner.interactive_mode": mock_inter,
-                "pyfiglet.figlet_format": MagicMock(return_value="LOGO\n\n"),
             },
         )
         mock_inter.assert_called_once()
@@ -205,7 +204,6 @@ class TestMain:
             ["muse", "do", "something"],
             extra_patches={
                 "code_muse.cli_runner.interactive_mode": mock_inter,
-                "pyfiglet.figlet_format": MagicMock(return_value="LOGO\n\n"),
             },
         )
         assert mock_inter.call_args[1]["initial_command"] == "do something"
@@ -243,9 +241,7 @@ class TestMain:
             extra_patches={
                 "code_muse.cli_runner.execute_single_prompt": AsyncMock(),
                 "code_muse.config.set_model_name": mock_set,
-                "code_muse.config._validate_model_exists": MagicMock(
-                    return_value=True
-                ),
+                "code_muse.config._validate_model_exists": MagicMock(return_value=True),
             },
         )
         mock_set.assert_called_with("gpt-5")
@@ -408,23 +404,16 @@ class TestMain:
             await main()
 
     @pytest.mark.anyio
-    async def test_pyfiglet_import_error(self):
-        import builtins
-
-        real_import = builtins.__import__
-
-        def fake_import(name, *args, **kwargs):
-            if name == "pyfiglet":
-                raise ImportError("no pyfiglet")
-            return real_import(name, *args, **kwargs)
-
+    async def test_banner_renders(self):
+        """Banner renders without error during startup."""
+        mock_inter = AsyncMock()
         await self._run_main(
             ["muse"],
             extra_patches={
-                "code_muse.cli_runner.interactive_mode": AsyncMock(),
-                "builtins.__import__": fake_import,
+                "code_muse.cli_runner.interactive_mode": mock_inter,
             },
         )
+        mock_inter.assert_called_once()
 
 
 # ---------------------------------------------------------------------------
@@ -1772,9 +1761,7 @@ class TestImportErrorFallbacks:
                 )
             )
             stack.enter_context(
-                patch(
-                    "code_muse.cli_runner.loop.get_current_agent", return_value=agent
-                )
+                patch("code_muse.cli_runner.loop.get_current_agent", return_value=agent)
             )
             stack.enter_context(
                 patch(

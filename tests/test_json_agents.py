@@ -264,19 +264,6 @@ class TestJSONAgentDiscovery:
         assert Path(user_dir).exists()
         assert Path(user_dir).is_dir()
 
-    def test_user_agents_directory_windows(self, monkeypatch):
-        """Test user agents directory cross-platform consistency."""
-        mock_agents_dir = Path("/fake/home/.muse/agents")
-
-        # Override the AGENTS_DIR constant directly
-        monkeypatch.setattr("code_muse.config.AGENTS_DIR", mock_agents_dir)
-
-        with patch("pathlib.Path.mkdir") as mock_mkdir:
-            user_dir = get_user_agents_directory()
-
-            assert user_dir == str(mock_agents_dir)
-            mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
-
     def test_user_agents_directory_macos(self, monkeypatch):
         """Test user agents directory on macOS."""
         mock_agents_dir = Path("/fake/home/.muse/agents")

@@ -62,9 +62,7 @@ def _register_delegation_tools() -> list[dict[str, Any]]:
                 }
             )
         except Exception as e:
-            logger.warning(
-                f"Could not create delegation tool for {agent_name}: {e}"
-            )
+            logger.warning(f"Could not create delegation tool for {agent_name}: {e}")
 
     return tools
 

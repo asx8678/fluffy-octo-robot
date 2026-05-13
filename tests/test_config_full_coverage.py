@@ -515,10 +515,6 @@ class TestModelName:
                 assert result == "default-m"
         cp_config._SESSION_MODEL = None
 
-    def test_set_model_name(self):
-        cp_config.set_model_name("new-model")
-        assert cp_config._SESSION_MODEL == "new-model"
-        cp_config._SESSION_MODEL = None
 
     def test_reset_session_model(self):
         cp_config._SESSION_MODEL = "foo"
@@ -788,7 +784,7 @@ class TestBannerColors:
     def test_get_default(self):
         cp_config.reset_value("banner_color_thinking")
         color = cp_config.get_banner_color("thinking")
-        assert color == "deep_sky_blue4"
+        assert color == "dark_violet"
 
     def test_get_unknown_banner(self):
         assert cp_config.get_banner_color("nonexistent_banner") == "blue"

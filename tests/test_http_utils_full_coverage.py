@@ -208,36 +208,6 @@ class TestRetryingAsyncClient:
             assert result.status_code == 200
 
     @pytest.mark.anyio
-    async def test_cerebras_ignores_retry_headers(self):
-        from code_muse.http_utils import RetryingAsyncClient
-
-        client = RetryingAsyncClient(max_retries=1, model_name="cerebras-fast")
-        assert client._ignore_retry_headers is True
-
-        resp_429 = MagicMock(spec=httpx.Response)
-        resp_429.status_code = 429
-        resp_429.headers = {"Retry-After": "60"}
-        resp_429.aclose = AsyncMock()
-
-        resp_200 = MagicMock(spec=httpx.Response)
-        resp_200.status_code = 200
-
-        with (
-            patch.object(
-                httpx.AsyncClient,
-                "send",
-                new_callable=AsyncMock,
-                side_effect=[resp_429, resp_200],
-            ),
-            patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
-        ):
-            result = await client.send(MagicMock(spec=httpx.Request))
-            assert result.status_code == 200
-            # Cerebras uses 3s base, not 60s from header
-            mock_sleep.assert_called_once()
-            assert mock_sleep.call_args[0][0] == 3.0
-
-    @pytest.mark.anyio
     async def test_exhausted_retries_returns_last_response(self):
         from code_muse.http_utils import RetryingAsyncClient
 

@@ -10,7 +10,6 @@ Covers:
 
 import json
 import os
-import platform
 from pathlib import Path
 from unittest.mock import patch
 
@@ -111,14 +110,6 @@ class TestProcessLiveness:
                 _is_process_alive("12345")  # type: ignore
                 # Should call with int(12345)
                 mock_kill.assert_called_once_with(12345, 0)
-
-    def test_is_process_alive_windows(self):
-        """Test Windows process checking."""
-        if platform.system() == "Windows":
-            # On Windows, should use OpenProcess
-            result = _is_process_alive(12345)
-            # Result depends on actual Windows API, just ensure no crash
-            assert isinstance(result, bool)
 
 
 class TestSessionDataPersistence:

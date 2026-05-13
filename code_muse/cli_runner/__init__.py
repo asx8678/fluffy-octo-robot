@@ -71,6 +71,28 @@ async def main():
     parser = build_parser()
     args = parser.parse_args()
 
+    # Set verbosity level from CLI flags (no sys.argv scan — args are parsed above)
+    if args.ultra_compact:
+        from code_muse.plugins.filter_engine.verbosity import (
+            VerbosityLevel,
+            set_verbosity,
+        )
+
+        set_verbosity(VerbosityLevel.ULTRA_COMPACT)
+    elif args.verbose:
+        from code_muse.plugins.filter_engine.verbosity import (
+            VerbosityLevel,
+            set_verbosity,
+        )
+
+        # --verbose count: 1→VERBOSE, 2→VERY_VERBOSE, 3+→RAW
+        level_map = {
+            1: VerbosityLevel.VERBOSE,
+            2: VerbosityLevel.VERY_VERBOSE,
+        }
+        level = level_map.get(args.verbose, VerbosityLevel.RAW)
+        set_verbosity(level)
+
     from code_muse.messaging import (
         RichConsoleRenderer,
         SynchronousInteractiveRenderer,
@@ -93,37 +115,12 @@ async def main():
 
     initialize_command_history_file()
 
-    # Show the awesome Muse logo when entering interactive mode
-    # This happens when: no -p flag (prompt-only mode) is used
-    # The logo should appear for both `muse` and `muse -i`
+    # ── Launch banner ──────────────────────────────────────────────────
+    # Show the beautiful Muse ASCII art when entering interactive mode
     if not args.prompt:
-        try:
-            import pyfiglet
+        from code_muse.banner import render_banner
 
-            intro_lines = pyfiglet.figlet_format(
-                "Muse", font="ansi_shadow"
-            ).split("\n")
-
-            # Warm gold to deep red gradient (top to bottom)
-            gradient_colors = ["gold1", "dark_orange", "red1"]
-            display_console.print("\n")
-
-            lines = []
-            # Apply gradient line by line
-            for line_num, line in enumerate(intro_lines):
-                if line.strip():
-                    # Use line position to determine color
-                    # (top gold, middle orange, bottom red)
-                    color_idx = min(line_num // 2, len(gradient_colors) - 1)
-                    color = gradient_colors[color_idx]
-                    lines.append(f"[{color}]{line}[/{color}]")
-                else:
-                    lines.append("")
-            # Print directly to console to avoid
-            # the 'dim' style from emit_system_message
-            display_console.print("\n".join(lines))
-        except ImportError:
-            emit_system_message("Loading...")
+        render_banner(display_console)
 
         # Truecolor warning moved to interactive_mode() so it prints LAST
         # after all the help stuff - max visibility for the ugly red box!

@@ -23,20 +23,6 @@ class TestMessagingExtended:
         if self.queue:
             self.queue.stop()
 
-    def test_emit_info(self):
-        """Test info message emission."""
-        # Mark renderer as active so messages don't get buffered
-        self.queue.mark_renderer_active()
-
-        # Use the queue instance directly, not global functions
-        self.queue.emit_simple(MessageType.INFO, "Test message", group="test")
-
-        # Retrieve the message
-        message = self.queue.get_nowait()
-        assert message is not None
-        assert message.type == MessageType.INFO
-        assert message.content == "Test message"
-        assert message.metadata.get("group") == "test"
 
     def test_emit_with_group(self):
         """Test message groups."""

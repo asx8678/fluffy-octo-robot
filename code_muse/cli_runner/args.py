@@ -16,6 +16,19 @@ def build_parser():
         help="Show version and exit",
     )
     parser.add_argument(
+        "--verbose",
+        action="count",
+        default=0,
+        help="Increase verbosity level (use -v for --version). "
+        "Specify once for VERBOSE, twice for VERY_VERBOSE, thrice for RAW",
+    )
+    parser.add_argument(
+        "--ultra-compact",
+        "-u",
+        action="store_true",
+        help="Ultra-compact mode — single-line summaries only",
+    )
+    parser.add_argument(
         "--interactive",
         "-i",
         action="store_true",
@@ -45,8 +58,7 @@ def build_parser():
         type=str,
         metavar="PATH",
         help=(
-            "Resume a saved session from a .json file "
-            "(e.g. ~/.muse/contexts/foo.json)"
+            "Resume a saved session from a .json file (e.g. ~/.muse/contexts/foo.json)"
         ),
     )
     parser.add_argument(

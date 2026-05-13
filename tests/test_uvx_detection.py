@@ -14,7 +14,6 @@ from unittest.mock import patch
 from code_muse.uvx_detection import (
     _get_parent_process_chain,
     _get_parent_process_chain_psutil,
-    _get_parent_process_chain_windows_ctypes,
     _get_parent_process_name_psutil,
     _is_uvx_in_chain,
     get_uvx_detection_info,
@@ -62,40 +61,6 @@ class TestIsUVXInChain:
         chain = ["python.exe", "uvx.exe", "cmd.exe"]
         result = _is_uvx_in_chain(chain)
         assert isinstance(result, bool)
-
-
-class TestIsWindowsDetection:
-    """Test Windows platform detection."""
-
-    @patch("platform.system")
-    def test_is_windows_true(
-        self,
-        mock_platform,
-    ):
-        """Test Windows detection returns True on Windows."""
-        mock_platform.return_value = "Windows"
-        result = is_windows()
-        assert result is True
-
-    @patch("platform.system")
-    def test_is_windows_false_linux(
-        self,
-        mock_platform,
-    ):
-        """Test Windows detection returns False on Linux."""
-        mock_platform.return_value = "Linux"
-        result = is_windows()
-        assert result is False
-
-    @patch("platform.system")
-    def test_is_windows_false_darwin(
-        self,
-        mock_platform,
-    ):
-        """Test Windows detection returns False on macOS."""
-        mock_platform.return_value = "Darwin"
-        result = is_windows()
-        assert result is False
 
 
 class TestIsLaunchedViaUVX:
@@ -170,32 +135,6 @@ class TestIsLaunchedViaUVX:
 
 class TestShouldUseAlternateCancelKey:
     """Test alternate cancel key decision."""
-
-    @patch("code_muse.uvx_detection.is_windows")
-    @patch("code_muse.uvx_detection.is_launched_via_uvx")
-    def test_should_use_alternate_key_windows_uvx(
-        self,
-        mock_is_uvx,
-        mock_is_windows,
-    ):
-        """Test alternate key is used on Windows with uvx."""
-        mock_is_windows.return_value = True
-        mock_is_uvx.return_value = True
-        result = should_use_alternate_cancel_key()
-        assert result is True
-
-    @patch("code_muse.uvx_detection.is_windows")
-    @patch("code_muse.uvx_detection.is_launched_via_uvx")
-    def test_should_use_alternate_key_windows_no_uvx(
-        self,
-        mock_is_uvx,
-        mock_is_windows,
-    ):
-        """Test alternate key is not used on Windows without uvx."""
-        mock_is_windows.return_value = True
-        mock_is_uvx.return_value = False
-        result = should_use_alternate_cancel_key()
-        assert result is False
 
     @patch("code_muse.uvx_detection.is_windows")
     @patch("code_muse.uvx_detection.is_launched_via_uvx")
@@ -297,46 +236,6 @@ class TestProcessDetectionIntegration:
         # Each item should be a string if list is non-empty
         for item in result:
             assert isinstance(item, str)
-
-    def test_get_parent_process_chain_windows_ctypes_returns_list(self):
-        """Test _get_parent_process_chain_windows_ctypes returns a list."""
-        result = _get_parent_process_chain_windows_ctypes()
-        assert isinstance(result, list)
-        # Each item should be a string
-        for item in result:
-            assert isinstance(item, str)
-
-
-class TestGetParentProcessChainWindowsCtypes:
-    """Test Windows ctypes-based process chain detection."""
-
-    @patch("platform.system")
-    def test_windows_ctypes_non_windows_returns_empty(self, mock_platform):
-        """Test that non-Windows platforms return empty list."""
-        mock_platform.return_value = "Linux"
-        result = _get_parent_process_chain_windows_ctypes()
-        assert result == []
-
-    @patch("platform.system")
-    def test_windows_ctypes_import_error(self, mock_platform):
-        """Test graceful handling of ctypes import errors."""
-        mock_platform.return_value = "Windows"
-        # This shouldn't raise; should return empty list on error
-        result = _get_parent_process_chain_windows_ctypes()
-        # Result depends on whether ctypes is available, but shouldn't raise
-        assert isinstance(result, list)
-
-    @patch("platform.system")
-    @patch("code_muse.uvx_detection.os.getpid")
-    def test_windows_ctypes_with_mock_processes(self, mock_getpid, mock_platform):
-        """Test Windows ctypes with mocked process snapshot."""
-        mock_platform.return_value = "Windows"
-        mock_getpid.return_value = 1000
-
-        # We can't easily mock the full ctypes/kernel32 stack,
-        # so we just verify it doesn't raise an exception
-        result = _get_parent_process_chain_windows_ctypes()
-        assert isinstance(result, list)
 
 
 class TestGetParentProcessChain:
@@ -444,11 +343,6 @@ class TestEdgeCasesAndErrors:
         result = _is_uvx_in_chain(chain_with_none)
         assert isinstance(result, bool)
 
-    def test_is_windows_always_returns_bool(self):
-        """Test that is_windows always returns a boolean."""
-        result = is_windows()
-        assert isinstance(result, bool)
-
     @patch("code_muse.uvx_detection._get_parent_process_chain")
     def test_is_launched_via_uvx_always_returns_bool(self, mock_get_chain):
         """Test that is_launched_via_uvx always returns a boolean."""
@@ -490,40 +384,6 @@ class TestEdgeCasesAndErrors:
 
 class TestUVXIntegration:
     """Test UVX detection integration scenarios."""
-
-    @patch("code_muse.uvx_detection._get_parent_process_chain")
-    @patch("platform.system")
-    def test_uvx_detection_windows_uvx_chain(
-        self,
-        mock_platform,
-        mock_get_chain,
-    ):
-        """Test full UVX detection on Windows with uvx."""
-        mock_platform.return_value = "Windows"
-        mock_get_chain.return_value = ["python.exe", "uvx.exe", "cmd.exe"]
-        if hasattr(is_launched_via_uvx, "cache_clear"):
-            is_launched_via_uvx.cache_clear()
-
-        assert is_windows() is True
-        assert is_launched_via_uvx() is True
-        assert should_use_alternate_cancel_key() is True
-
-    @patch("code_muse.uvx_detection._get_parent_process_chain")
-    @patch("platform.system")
-    def test_uv_run_chain_windows(
-        self,
-        mock_platform,
-        mock_get_chain,
-    ):
-        """Test uv run (not uvx) on Windows."""
-        mock_platform.return_value = "Windows"
-        mock_get_chain.return_value = ["python.exe", "uv.exe", "cmd.exe"]
-        if hasattr(is_launched_via_uvx, "cache_clear"):
-            is_launched_via_uvx.cache_clear()
-
-        assert is_windows() is True
-        assert is_launched_via_uvx() is False
-        assert should_use_alternate_cancel_key() is False
 
     @patch("code_muse.uvx_detection._get_parent_process_chain")
     @patch("platform.system")

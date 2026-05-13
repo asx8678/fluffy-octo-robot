@@ -40,11 +40,9 @@ ShellSafetyAssessment = command_runner_module.ShellSafetyAssessment
 _kill_process_group = command_runner_module._kill_process_group
 _register_process = command_runner_module._register_process
 _unregister_process = command_runner_module._unregister_process
-_win32_pipe_has_data = command_runner_module._win32_pipe_has_data
 _truncate_line = command_runner_module._truncate_line
 _shell_command_keyboard_context = command_runner_module._shell_command_keyboard_context
 _spawn_ctrl_x_key_listener = command_runner_module._spawn_ctrl_x_key_listener
-_listen_for_ctrl_x_windows = command_runner_module._listen_for_ctrl_x_windows
 _listen_for_ctrl_x_posix = command_runner_module._listen_for_ctrl_x_posix
 is_awaiting_user_input = command_runner_module.is_awaiting_user_input
 set_awaiting_user_input = command_runner_module.set_awaiting_user_input
@@ -97,68 +95,6 @@ class TestShellSafetyAssessment:
         """Test that reasoning is required."""
         with pytest.raises(ValueError):
             ShellSafetyAssessment(risk="medium")  # Missing reasoning
-
-
-class TestWin32PipeHasData:
-    """Test Windows-specific pipe checking."""
-
-    @pytest.mark.skipif(not sys.platform.startswith("win"), reason="Windows only")
-    def test_win32_pipe_has_data_with_real_pipe(self):
-        """Test pipe checking with actual Windows pipes."""
-        # This is a basic sanity check that the function doesn't crash
-        # Real pipes would be in subprocess.PIPE from Popen
-        mock_pipe = MagicMock()
-        mock_pipe.fileno.return_value = 3
-
-        # Should not crash even if call fails (Windows API quirks)
-        result = _win32_pipe_has_data(mock_pipe)
-        assert isinstance(result, bool)
-
-    def test_win32_pipe_has_data_handles_value_error(self):
-        """Test that ValueError from fileno is handled."""
-        mock_pipe = MagicMock()
-        mock_pipe.fileno.side_effect = ValueError("Bad file descriptor")
-
-        result = _win32_pipe_has_data(mock_pipe)
-        assert result is False
-
-    def test_win32_pipe_has_data_handles_oserror(self):
-        """Test that OSError is handled gracefully."""
-        mock_pipe = MagicMock()
-        mock_pipe.fileno.side_effect = OSError("Pipe closed")
-
-        result = _win32_pipe_has_data(mock_pipe)
-        assert result is False
-
-    def test_win32_pipe_has_data_handles_ctypes_error(self, monkeypatch):
-        """Test that ctypes.ArgumentError is handled."""
-        if sys.platform.startswith("win"):
-            import ctypes
-
-            mock_pipe = MagicMock()
-            mock_pipe.fileno.return_value = 3
-
-            # Mock the kernel32 call to raise ArgumentError
-            original_peeknamedpipe = command_runner_module._kernel32.PeekNamedPipe
-
-            def raise_arg_error(*args, **kwargs):
-                raise ctypes.ArgumentError("Invalid argument")
-
-            monkeypatch.setattr(
-                command_runner_module._kernel32,
-                "PeekNamedPipe",
-                raise_arg_error,
-            )
-
-            result = _win32_pipe_has_data(mock_pipe)
-            assert result is False
-
-            # Restore
-            monkeypatch.setattr(
-                command_runner_module._kernel32,
-                "PeekNamedPipe",
-                original_peeknamedpipe,
-            )
 
 
 class TestIsAwaitingUserInput:
@@ -573,22 +509,6 @@ class TestRunShellCommandAsync:
 
 class TestKeyboardListeners:
     """Test keyboard listener implementations for different platforms."""
-
-    @pytest.mark.skipif(not sys.platform.startswith("win"), reason="Windows only")
-    def test_windows_listener_handles_no_key(self):
-        """Test Windows listener when no key is pressed."""
-        stop_event = threading.Event()
-        escape_called = []
-
-        def on_escape():
-            escape_called.append(True)
-
-        # Mock msvcrt to return no key
-        with patch("msvcrt.kbhit", return_value=False):
-            with patch("time.sleep", MagicMock()):
-                stop_event.set()  # Stop after first iteration
-                _listen_for_ctrl_x_windows(stop_event, on_escape)
-                assert len(escape_called) == 0
 
     @pytest.mark.skipif(sys.platform.startswith("win"), reason="POSIX only")
     def test_posix_listener_handles_stdin_error(self):

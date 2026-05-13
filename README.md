@@ -1,12 +1,12 @@
 <div align="center">
 
-![Muse Logo](code_muse.png)
+![MUSE — the AI code agent](muse.png)
 
-**Muse — the AI code agent that makes IDEs look outdated**
+**MUSE — where ancient inspiration meets modern craft**
 
 [![Version](https://img.shields.io/pypi/v/code-muse?style=for-the-badge&logo=python&label=Version&color=purple)](https://pypi.org/project/code-muse/)
 [![Downloads](https://img.shields.io/badge/Downloads-170k%2B-brightgreen?style=for-the-badge&logo=download)](https://pypi.org/project/code-muse/)
-[![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![Python](https://img.shields.io/badge/Python-3.14%2B-blue?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge&logo=github)](https://github.com/asx8678/muse/actions)
 [![Tests](https://img.shields.io/badge/Tests-Passing-success?style=for-the-badge&logo=pytest)](https://github.com/asx8678/muse/tests)
@@ -22,9 +22,9 @@
 [![Discord](https://img.shields.io/badge/Discord-Community-purple?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/eAGdE4J7Ca)
 [![Docs](https://img.shields.io/badge/Read-The%20Docs-blue?style=for-the-badge&logo=readthedocs)](https://muse.dev)
 
-**[⭐ Star this repo if you seek true craftsmanship! ⭐](#quick-start)**
+**[⭐ Star this repo if you seek the muse's favor ⭐](#quick-start)**
 
-*"Where some see complexity, Muse reveals elegant structure"* - Someone, probably.
+*"Nine voices, one purpose: to shape raw thought into crafted form." — After Hesiod*
 
 </div>
 
@@ -34,15 +34,13 @@
 
 ## Overview
 
-Muse was born from the conviction that development tools should illuminate, not imprison — freedom from vendor lock-in, not captivity to rising costs.
+In Greek myth, the nine Muses — **Calliope** of epic poetry, **Clio** of history, **Erato** of love verse, **Euterpe** of music, **Melpomene** of tragedy, **Polyhymnia** of sacred hymn, **Terpsichore** of dance, **Thalia** of comedy, and **Urania** of astronomy — breathed inspiration into mortals, transforming raw ambition into enduring craft.
 
-Muse orchestrates multiple expert agents with the grace of the nine Muses, each bringing their unique domain of wisdom to bear on your work.
+MUSE carries that lineage forward. Each agent is a modern Muse: a specialist that illuminates its domain with precise, disciplined intelligence. Together, they orchestrate your work not with brute force, but with the clarity that comes from mastering a single art.
 
-Where some would harness brute force, Muse channels refined intelligence?*
-    - The path of inspiration is always the more rewarding one.
+Where others would throw compute at complexity, MUSE channels inspiration — the oldest and most powerful force in creation. The path of the inspired craftsperson is always the more rewarding one.
 
-
-Muse is an AI-powered code generation agent, designed to understand programming tasks, generate high-quality code, and explain its reasoning similar to tools like Windsurf and Cursor.
+MUSE is an AI-powered code generation agent, designed to understand programming tasks, generate high-quality code, and explain its reasoning — an open-source instrument for those who refuse to choose between velocity and elegance.
 
 
 ## Quick start
@@ -60,7 +58,7 @@ uvx --refresh-package code-muse code-muse -i
 
 ## 🪙 Token Savings
 
-Muse compresses shell command output, reducing token usage by **60–90%**.
+Muse compresses shell command output the way a sculptor removes excess marble — reducing token usage by **60–90%**.
 
 | Strategy | What it does | Savings |
 |----------|--------------|---------|
@@ -70,7 +68,7 @@ Muse compresses shell command output, reducing token usage by **60–90%**.
 | Code | Strips comments, trims boilerplate | ~50% |
 | Read | Smart-ranged file reading | ~60% |
 
-**Quick start:** Run `/init` in your project to get started.
+**Quick start:** Run `/init` in your project to lay the foundation.
 
 See `FEATURES.md` for detailed examples of each strategy.
 
@@ -166,7 +164,7 @@ Please review this code for security issues." > .claude/commands/review.md
 
 ## Requirements
 
-- Python 3.11+
+- Python 3.14+
 - OpenAI API key (for GPT models)
 - Gemini API key (for Google's Gemini models)
 - Cerebras API key (for Cerebras models)
@@ -175,7 +173,7 @@ Please review this code for security issues." > .claude/commands/review.md
 
 ## Agent Rules
 
-Muse supports `AGENTS.md` files for defining coding standards, project conventions, and behavioral guidelines that the AI should follow. These rules can cover formatting, naming conventions, architectural patterns, and project-specific instructions.
+Muse supports `AGENTS.md` files for defining coding standards, project conventions, and behavioral guidelines — the laws of your workshop. These rules cover formatting, naming conventions, architectural patterns, and project-specific instructions.
 
 For examples and more information about agent rules, visit [https://agent.md](https://agent.md)
 
@@ -197,7 +195,7 @@ Muse loads rules from multiple locations, combining them in order:
 
 ## Round Robin Model Distribution
 
-Muse supports **Round Robin model distribution** to help you overcome rate limits and distribute load across multiple AI models. This feature automatically cycles through configured models with each request, maximizing your API usage while staying within rate limits.
+Muse supports **Round Robin model distribution** — cycling through configured models the way the Muses cycled through their domains, each taking its turn. This feature automatically rotates through models with each request, maximizing API usage while staying within rate limits.
 
 ### Configuration
 Add a round-robin model configuration to your `~/.muse/extra_models.json` file:
@@ -293,9 +291,9 @@ Timeout values must be positive numbers (integers or floats) representing second
 
 ---
 
-## Create your own Agent!!!
+## Create Your Own Agent
 
-Muse features a flexible agent system that allows you to work with specialized AI assistants tailored for different coding tasks. The system supports both built-in Python agents and custom JSON agents that you can create yourself.
+Muse features a flexible agent system — each agent a specialist Muse in its own right — that allows you to work with tailored AI assistants for different domains of craft. The system supports both built-in Python agents and custom JSON agents that you can forge yourself.
 
 ## Quick Start
 
@@ -333,16 +331,16 @@ This is useful for managing context length when you have a long conversation his
 
 ### Muse (Default)
 - **Name**: `muse`
-- **Specialty**: General-purpose coding assistant
-- **Personality**: Playful, sarcastic, pedantic about code quality
+- **Specialty**: General-purpose coding assistant — the Calliope of code
+- **Personality**: Playful, sharp, pedantic about craftsmanship
 - **Tools**: Full access to all tools
 - **Best for**: All coding tasks, file management, execution
 - **Principles**: Clean, concise code following YAGNI, SRP, DRY principles
 - **File limit**: Max 600 lines per file (enforced!)
 
-### Agent Creator 🏗️
+### Agent Creator 🏛️
 - **Name**: `agent-creator`
-- **Specialty**: Creating custom JSON agent configurations
+- **Specialty**: Forging custom JSON agent configurations — the Hephaestus of agents
 - **Tools**: File operations, reasoning
 - **Best for**: Building new specialized agents
 - **Features**: Schema validation, guided creation process
@@ -350,14 +348,14 @@ This is useful for managing context length when you have a long conversation his
 ## Agent Types
 
 ### Python Agents
-Built-in agents implemented in Python with full system integration:
+Built-in agents forged in Python with full system integration:
 - Discovered automatically from `code_muse/agents/` directory
 - Inherit from `BaseAgent` class
 - Full access to system internals
 - Examples: `muse`, `agent-creator`
 
 ### JSON Agents
-User-created agents defined in JSON files:
+Agents you craft yourself, defined in JSON files:
 - Stored in user's agents directory
 - Easy to create, share, and modify
 - Schema-validated configuration
@@ -675,7 +673,7 @@ class MyCustomAgent(BaseAgent):
 
 ## Future Extensibility
 
-The agent system supports future expansion:
+The agent system is built for expansion — new muses for new domains:
 
 - **Specialized Agents**: Code reviewers, debuggers, architects
 - **Domain-Specific Agents**: Web dev, data science, DevOps, mobile
@@ -684,7 +682,7 @@ The agent system supports future expansion:
 - **Team Agents**: Shared configurations for coding standards
 - **Plugin System**: Community-contributed agents
 
-## Benefits of JSON Agents
+## The Craft of JSON Agents
 
 1. **Easy Customization**: Create agents without Python knowledge
 2. **Team Sharing**: JSON agents can be shared across teams
@@ -756,7 +754,7 @@ Consider contributing agent templates for:
 
 ## Security & Trust Boundaries
 
-Muse implements multiple safety layers to protect your secrets, filesystem, and runtime:
+Muse guards your workshop with the vigilance of a temple guardian — multiple safety layers protect your secrets, filesystem, and runtime:
 
 - **Sessions use JSON by default** — legacy pickle sessions are rejected unless explicitly imported with `--import-legacy-pickle-session` (RCE risk warning).
 - **Secrets are redacted** — token files are created with `0o600`, logs scrub `Authorization: Bearer ...` and sensitive query params, and token length is never logged.
@@ -766,7 +764,7 @@ Muse implements multiple safety layers to protect your secrets, filesystem, and 
 - **Universal Constructor safety** — user-generated tools run in a subprocess worker with JSON-only serialization, dangerous patterns (`eval`, `exec`, `subprocess`) are blocked or approval-gated, and timeouts kill the worker process.
 - **Grep safety** — search patterns are passed after `--` so they are treated as data, not CLI flags.
 
-Run `/safety` or `/status` inside Muse to see the current risk posture without exposing secrets.
+Run `/safety` or `/status` inside Muse to inspect the current risk posture — no secrets exposed.
 
 For full details, see [docs/SECURITY.md](docs/SECURITY.md).
 
@@ -774,11 +772,11 @@ For full details, see [docs/SECURITY.md](docs/SECURITY.md).
 
 # Muse Privacy Commitment
 
-**Zero-compromise privacy policy. Always.**
+**Zero-compromise privacy. Always.**
 
-Unlike other Agentic Coding software, there is no corporate or investor backing for this project, which means **zero pressure to compromise our principles for profit**. This isn't just a nice-to-have feature – it's fundamental to the project's DNA.
+Unlike other agentic coding tools, this project has no corporate or investor backing — meaning **zero pressure to compromise our principles for profit**. Privacy isn't a feature we bolted on; it is the bedrock on which Muse was built.
 
-### What Muse _absolutely does not_ collect:
+### What Muse _absolutely does not_ collect — now and forever:
 - ❌ **Zero telemetry** – no usage analytics, crash reports, or behavioral tracking
 - ❌ **Zero prompt logging** – your code, conversations, or project details are never stored
 - ❌ **Zero behavioral profiling** – we don't track what you build, how you code, or when you use the tool
@@ -789,10 +787,10 @@ Unlike other Agentic Coding software, there is no corporate or investor backing 
 - **Complete Local Option**: Run your own VLLM/SGLang/Llama.cpp server locally → **zero data leaves your network**. Configure this with `~/.muse/extra_models.json`
 - **Direct Developer Contact**: All feature requests, bug reports, and discussions happen directly with me – no middleman analytics platforms or customer data harvesting tools
 
-### Our privacy-first architecture:
-Muse is designed with privacy-by-design principles. Every feature has been evaluated through a privacy lens, and every integration respects user data sovereignty. When you use Muse, you're not the product – you're just a developer getting things done.
+### The privacy-first architecture:
+Muse is designed with privacy-by-design principles. Every feature has been evaluated through a privacy lens, and every integration respects your data sovereignty. When you use Muse, you are the craftsperson — never the product.
 
-**This commitment is enforceable because it's structurally impossible to violate it.** No external pressures, no investor demands, no quarterly earnings targets to hit. Just solid code that respects your privacy.
+**This commitment is structurally impossible to violate.** No external pressures, no investor demands, no quarterly earnings targets. Just principled code that respects your craft and your privacy.
 
 ## License
 

@@ -28,6 +28,7 @@ USER_PLUGINS_DIR = Path.home() / ".muse" / "plugins"
 # Track if plugins have already been loaded to prevent duplicate registration
 _PLUGINS_LOADED = False
 
+
 def _clean_stale_pycache(root_dir: Path) -> None:
     """Remove stale __pycache__ directories to prevent import ghosts.
 

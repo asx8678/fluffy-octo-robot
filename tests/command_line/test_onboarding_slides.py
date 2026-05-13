@@ -39,12 +39,14 @@ class TestGetGradientBanner:
         assert len(result) > 0
 
     def test_without_pyfiglet(self):
-        """Test fallback when pyfiglet is unavailable."""
-        import code_muse.command_line.onboarding_slides as mod
+        """Banner renders without pyfiglet dependency."""
+        from code_muse.command_line.onboarding_slides import get_gradient_banner
 
-        # pyfiglet is available in this env, so normal path works
-        result = mod.get_gradient_banner()
+        result = get_gradient_banner()
+        assert isinstance(result, str)
         assert len(result) > 0
+        # Should contain Rich markup with bold color tags
+        assert "[bold " in result
 
 
 class TestSlideWelcome:

@@ -125,9 +125,7 @@ def _commands_list() -> bool:
 
     if not _command_cache:
         emit_info("No custom commands found.")
-        emit_info(
-            "Create .toml files in ~/.muse/commands/ or .muse/commands/"
-        )
+        emit_info("Create .toml files in ~/.muse/commands/ or .muse/commands/")
         return True
 
     lines: list[str] = ["Custom commands:"]

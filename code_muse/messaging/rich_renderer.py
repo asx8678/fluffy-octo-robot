@@ -1087,9 +1087,7 @@ class RichConsoleRenderer:
 
         if not msg.skills:
             self._console.print("[dim]  No skills found.[/dim]")
-            self._console.print(
-                "[dim]  Install skills in ~/.muse/skills/[/dim]\n"
-            )
+            self._console.print("[dim]  Install skills in ~/.muse/skills/[/dim]\n")
             return
 
         # Create a table for skills

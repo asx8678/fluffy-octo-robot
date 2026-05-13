@@ -620,9 +620,7 @@ def list_skills() -> bool:
         disabled_skills = get_disabled_skills()
 
         if not skills:
-            emit_info(
-                "No skills found. Create skills in ~/.muse/skills/ or ./skills/"
-            )
+            emit_info("No skills found. Create skills in ~/.muse/skills/ or ./skills/")
             return True
 
         emit_info(f"\nFound {len(skills)} skill(s):\n")

@@ -6,9 +6,6 @@ import code_muse.command_line.core_commands  # noqa: F401
 import code_muse.command_line.session_commands  # noqa: F401
 import code_muse.command_line.uc_menu  # noqa: F401
 
-# Global flag to track if plugins have been loaded
-_PLUGINS_LOADED = False
-
 
 def get_commands_help():
     """Generate aligned commands help using Rich Text for safe markup.
@@ -142,14 +139,11 @@ def get_commands_help():
 
 
 def _ensure_plugins_loaded() -> None:
-    global _PLUGINS_LOADED
-    if _PLUGINS_LOADED:
-        return
+    """Ensure plugins are loaded (delegates to plugins module's idempotency)."""
     try:
         from code_muse import plugins
 
         plugins.load_plugin_callbacks()
-        _PLUGINS_LOADED = True
     except Exception as e:
         # If plugins fail to load, continue gracefully but note it
         try:
@@ -158,7 +152,6 @@ def _ensure_plugins_loaded() -> None:
             emit_warning(f"Plugin load error: {e}")
         except Exception:
             pass
-        _PLUGINS_LOADED = True
 
 
 # All command handlers moved to builtin_commands.py

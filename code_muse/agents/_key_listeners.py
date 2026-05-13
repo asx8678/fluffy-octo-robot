@@ -53,9 +53,7 @@ def spawn_key_listener(
         except Exception:
             emit_warning("Key listener stopped unexpectedly; press Ctrl+C to cancel.")
 
-    thread = threading.Thread(
-        target=listener, name="muse-key-listener", daemon=True
-    )
+    thread = threading.Thread(target=listener, name="muse-key-listener", daemon=True)
     thread.start()
     return thread
 

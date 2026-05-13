@@ -1,11 +1,10 @@
 """Verbosity configuration for the filter engine.
 
 Defines verbosity levels and provides helpers to read the current level
-from CLI flags or the ``FAST_PUPPY_VERBOSITY`` environment variable.
+from a CLI-set override or the ``FAST_PUPPY_VERBOSITY`` environment variable.
 """
 
 import os
-import sys
 from enum import IntEnum
 
 
@@ -20,35 +19,52 @@ class VerbosityLevel(IntEnum):
         RAW: Disable all filtering — passthrough raw output.
     """
 
-    ULTRA_COMPACT = 0  # -u
+    ULTRA_COMPACT = 0  # --ultra-compact
     COMPACT = 1  # default (no flag)
-    VERBOSE = 2  # -v
-    VERY_VERBOSE = 3  # -vv
-    RAW = 4  # -vvv
+    VERBOSE = 2  # --verbose
+    VERY_VERBOSE = 3  # --verbose --verbose (or -vv)
+    RAW = 4  # --verbose --verbose --verbose (or -vvv)
 
 
-def get_verbosity() -> VerbosityLevel:
+# Module-level override set by CLI after argparse (avoids sys.argv scan).
+_verbosity_override: VerbosityLevel | None = None
+
+
+def set_verbosity(level: VerbosityLevel) -> None:
+    """Set a process-wide verbosity override.
+
+    Called by the CLI entry point after ``argparse`` parses ``--verbose``
+    or ``--ultra-compact`` flags.  Overrides the environment variable but
+    can itself be overridden by passing an explicit argument to
+    :func:`get_verbosity`.
+    """
+    global _verbosity_override
+    _verbosity_override = level
+
+
+def get_verbosity(verbosity: VerbosityLevel | None = None) -> VerbosityLevel:
     """Determine the current verbosity level.
 
     Resolution order:
 
-    1. Check ``sys.argv`` for ``-u``/``--ultra-compact``, ``-v``, ``-vv``, ``-vvv``.
-    2. Check the ``FAST_PUPPY_VERBOSITY`` environment variable (``0``–``4``).
-    3. Default to ``VerbosityLevel.COMPACT``.
+    1. Explicit *verbosity* argument (passed by callers that already know).
+    2. CLI-set override (via :func:`set_verbosity`, called after argparse).
+    3. ``FAST_PUPPY_VERBOSITY`` environment variable (``0``–``4``).
+    4. Default to :attr:`VerbosityLevel.COMPACT`.
+
+    Args:
+        verbosity: Optional explicit level.  When ``None`` (the default)
+            the resolution chain above is used.
 
     Returns:
         The resolved verbosity level.
     """
-    # CLI flag parsing
-    args = sys.argv
-    if "-u" in args or "--ultra-compact" in args:
-        return VerbosityLevel.ULTRA_COMPACT
-    if "-vvv" in args:
-        return VerbosityLevel.RAW
-    if "-vv" in args:
-        return VerbosityLevel.VERY_VERBOSE
-    if "-v" in args:
-        return VerbosityLevel.VERBOSE
+    if verbosity is not None:
+        return verbosity
+
+    global _verbosity_override
+    if _verbosity_override is not None:
+        return _verbosity_override
 
     # Environment variable
     env_val = os.environ.get("FAST_PUPPY_VERBOSITY")

@@ -41,20 +41,22 @@ def get_nav_footer() -> str:
 
 
 def get_gradient_banner() -> str:
-    """Generate the gradient CODE PUPPY banner."""
-    try:
-        import pyfiglet
+    """Generate the gradient MUSE banner (shared with launch banner)."""
+    from code_muse.banner import BANNER_LINES
 
-        lines = pyfiglet.figlet_format("Muse", font="ansi_shadow").split("\n")
-        colors = ["gold1", "dark_orange", "red1"]
-        result = []
-        for i, line in enumerate(lines):
-            if line.strip():
-                color = colors[min(i // 2, len(colors) - 1)]
-                result.append(f"[{color}]{line}[/{color}]")
-        return "\n".join(result)
-    except ImportError:
-        return "[bold bright_red]═══ Muse ═══[/bold bright_red]"
+    palette = [
+        "bright_yellow",
+        "gold1",
+        "dark_orange",
+        "orange_red1",
+        "bright_red",
+        "medium_purple1",
+    ]
+    lines = []
+    for i, line in enumerate(BANNER_LINES):
+        colour = palette[i] if i < len(palette) else palette[-1]
+        lines.append(f"[bold {colour}]{line}[/bold {colour}]")
+    return "\n".join(lines)
 
 
 # ============================================================================

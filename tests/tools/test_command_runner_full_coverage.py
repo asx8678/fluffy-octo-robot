@@ -113,18 +113,6 @@ class TestKillProcessGroup:
                 # Should attempt os.kill as last ditch
                 assert mock_kill.called
 
-    @patch("sys.platform", "win32")
-    def test_windows_kill(self):
-        from code_muse.tools.command_runner import _kill_process_group
-
-        proc = MagicMock()
-        proc.pid = 12345
-        proc.poll.return_value = 0  # Dead after taskkill
-
-        with patch("subprocess.run"):
-            _kill_process_group(proc)
-            # May or may not call taskkill depending on platform detection
-
     def test_exception_in_kill(self):
         from code_muse.tools.command_runner import _kill_process_group
 

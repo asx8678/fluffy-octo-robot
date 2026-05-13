@@ -199,51 +199,6 @@ class TestGetParentProcessChainPsutilCoverage:
 class TestGetParentProcessChainWindowsCtypesCoverage:
     """Tests for Windows ctypes-based process chain detection."""
 
-    @patch("platform.system", return_value="Windows")
-    def test_windows_ctypes_handles_invalid_handle(self, mock_platform):
-        """Test handling of invalid handle from CreateToolhelp32Snapshot."""
-        mock_kernel32 = MagicMock()
-        mock_kernel32.CreateToolhelp32Snapshot.return_value = -1  # INVALID_HANDLE_VALUE
-
-        mock_ctypes = MagicMock()
-        mock_ctypes.windll.kernel32 = mock_kernel32
-        mock_ctypes.sizeof.return_value = 300
-        mock_ctypes.c_char = bytes
-        mock_ctypes.Structure = object
-
-        # Create a mock wintypes module
-        mock_wintypes = MagicMock()
-        mock_wintypes.DWORD = int
-        mock_wintypes.LONG = int
-        mock_wintypes.ULONG = int
-
-        with patch.dict(
-            sys.modules, {"ctypes": mock_ctypes, "ctypes.wintypes": mock_wintypes}
-        ):
-            result = _get_parent_process_chain_windows_ctypes()
-
-        # Should return empty list on invalid handle
-        assert isinstance(result, list)
-
-    @patch("platform.system", return_value="Windows")
-    def test_windows_ctypes_handles_exception(self, mock_platform):
-        """Test handling of exceptions during ctypes operations."""
-        mock_ctypes = MagicMock()
-        mock_ctypes.windll.kernel32.CreateToolhelp32Snapshot.side_effect = Exception(
-            "Ctypes error"
-        )
-
-        with patch.dict(sys.modules, {"ctypes": mock_ctypes}):
-            result = _get_parent_process_chain_windows_ctypes()
-
-        assert result == []
-
-    @patch("platform.system", return_value="Linux")
-    def test_returns_empty_list_on_non_windows(self, mock_platform):
-        """Test that non-Windows platforms return empty list immediately."""
-        result = _get_parent_process_chain_windows_ctypes()
-        assert result == []
-
     @patch("platform.system", return_value="Darwin")
     def test_returns_empty_list_on_macos(self, mock_platform):
         """Test that macOS returns empty list immediately."""
@@ -411,37 +366,6 @@ class TestPsutilModuleNotAvailable:
 
 class TestWindowsFallbackPath:
     """Test the Windows fallback path when psutil is unavailable."""
-
-    @patch("platform.system", return_value="Windows")
-    @patch("code_muse.uvx_detection._get_parent_process_chain_windows_ctypes")
-    def test_fallback_to_ctypes_on_windows(self, mock_ctypes_chain, mock_platform):
-        """Test that _get_parent_process_chain falls back to ctypes on Windows."""
-        mock_ctypes_chain.return_value = ["python.exe", "uvx.exe", "cmd.exe"]
-
-        # We need to make psutil import fail inside _get_parent_process_chain
-        # The function tries to import psutil first, then falls back to ctypes
-        original_modules = sys.modules.copy()
-
-        # Remove psutil to trigger ImportError path
-        if "psutil" in sys.modules:
-            del sys.modules["psutil"]
-
-        # Add a blocking entry that raises ImportError
-        class BlockingImport:
-            def __getattr__(self, name):
-                raise ImportError("No psutil")
-
-        sys.modules["psutil"] = BlockingImport()
-
-        try:
-            result = _get_parent_process_chain()
-            # On Windows without psutil, should call ctypes fallback
-            # But since we're not on actual Windows, this tests the path
-            assert isinstance(result, list)
-        finally:
-            # Restore modules
-            sys.modules.clear()
-            sys.modules.update(original_modules)
 
     @patch("platform.system", return_value="Linux")
     def test_no_fallback_on_linux(self, mock_platform):

@@ -12,7 +12,6 @@ This module provides extensive coverage for the command_runner module, testing:
 """
 
 import importlib.util
-import os
 import signal
 import subprocess
 import sys
@@ -37,7 +36,6 @@ ShellSafetyAssessment = command_runner_module.ShellSafetyAssessment
 _kill_process_group = command_runner_module._kill_process_group
 _register_process = command_runner_module._register_process
 _unregister_process = command_runner_module._unregister_process
-_win32_pipe_has_data = command_runner_module._win32_pipe_has_data
 _truncate_line = command_runner_module._truncate_line
 _shell_command_keyboard_context = command_runner_module._shell_command_keyboard_context
 _spawn_ctrl_x_key_listener = command_runner_module._spawn_ctrl_x_key_listener
@@ -249,30 +247,6 @@ class TestProcessTermination:
             _RUNNING_PROCESSES.clear()
         _USER_KILLED_PROCESSES.clear()
 
-    @pytest.mark.skipif(not sys.platform.startswith("win"), reason="Windows only")
-    def test_kill_process_group_windows_uses_taskkill(self, monkeypatch):
-        """Test Windows termination uses taskkill command."""
-        mock_process = MagicMock(spec=subprocess.Popen)
-        mock_process.pid = 1234
-        mock_process.poll.side_effect = [None, 1]  # Still running, then killed
-
-        taskkill_calls = []
-
-        def mock_run(cmd, *args, **kwargs):
-            taskkill_calls.append(cmd)
-            result = MagicMock()
-            result.returncode = 0
-            return result
-
-        monkeypatch.setattr("subprocess.run", mock_run)
-        monkeypatch.setattr("time.sleep", MagicMock())
-
-        # Only run on Windows
-        if sys.platform.startswith("win"):
-            _kill_process_group(mock_process)
-            # Should have called taskkill
-            assert any("taskkill" in str(cmd) for cmd in taskkill_calls)
-
     @pytest.mark.skipif(sys.platform.startswith("win"), reason="POSIX only")
     def test_kill_process_group_posix_uses_signals(self, monkeypatch):
         """Test POSIX termination uses signals."""
@@ -340,44 +314,6 @@ class TestProcessTermination:
             kill_all_running_shell_processes()
             # Pipes should have been closed
             # (actual closing happens in kill_all, not _kill_process_group)
-
-
-class TestWindowsSpecific:
-    """Test Windows-specific pipe handling."""
-
-    @pytest.mark.skipif(not sys.platform.startswith("win"), reason="Windows only")
-    def test_win32_pipe_has_data_success(self):
-        """Test _win32_pipe_has_data returns True when data available."""
-        if not sys.platform.startswith("win"):
-            pytest.skip("Windows only")
-
-        # Create a real pipe for testing
-        try:
-            r, w = os.pipe()
-            os.write(w, b"test")
-
-            # Open as file object
-            f = os.fdopen(r, "rb")
-            result = _win32_pipe_has_data(f)
-            os.close(w)
-            f.close()
-
-            # Should return True or False based on data
-            assert isinstance(result, bool)
-        except ImportError:
-            pytest.skip("msvcrt not available")
-
-    @pytest.mark.skipif(not sys.platform.startswith("win"), reason="Windows only")
-    def test_win32_pipe_has_data_handles_errors(self, monkeypatch):
-        """Test _win32_pipe_has_data handles errors gracefully."""
-        if not sys.platform.startswith("win"):
-            pytest.skip("Windows only")
-
-        mock_pipe = MagicMock()
-        mock_pipe.fileno.side_effect = ValueError("Closed file")
-
-        result = _win32_pipe_has_data(mock_pipe)
-        assert result is False
 
 
 class TestErrorHandling:

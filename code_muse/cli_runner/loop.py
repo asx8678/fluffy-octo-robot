@@ -53,13 +53,14 @@ def _show_startup_info(display_console) -> None:
         "Type @ for path completion, or /model to pick a model. "
         "Toggle multiline with Alt+M or F2; newline: Ctrl+J."
     )
-    emit_system_message("Paste images: Ctrl+V (even on Mac!), F3, or /paste command.")
     import platform
 
-    if platform.system() == "Darwin":
-        emit_system_message(
-            "💡 macOS tip: Use Ctrl+V (not Cmd+V) to paste images in terminal."
-        )
+    paste_tip = (
+        "💡 Tip: Use Ctrl+V to paste images in terminal."
+        if platform.system() == "Darwin"
+        else "Paste images: Ctrl+V, F3, or /paste command."
+    )
+    emit_system_message(paste_tip)
     cancel_key = get_cancel_agent_display_name()
     emit_system_message(
         f"Press {cancel_key} during processing to cancel the current task "

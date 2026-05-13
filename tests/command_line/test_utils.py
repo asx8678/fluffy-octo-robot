@@ -7,7 +7,6 @@ from unittest.mock import patch
 import pytest
 
 from code_muse.command_line.utils import (
-    _reset_windows_console,
     list_directory,
     make_directory_table,
     safe_input,
@@ -45,17 +44,6 @@ class TestMakeDirectoryTable:
             (Path(td) / "afile").write_text("")
             table = make_directory_table(td)
             assert table is not None
-
-
-class TestResetWindowsConsole:
-    @patch("sys.platform", "linux")
-    def test_non_windows(self):
-        _reset_windows_console()  # Should return early
-
-    @patch("sys.platform", "win32")
-    def test_windows(self):
-        # Should not crash even though ctypes.windll won't exist on non-windows
-        _reset_windows_console()
 
 
 class TestSafeInput:

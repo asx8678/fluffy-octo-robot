@@ -107,25 +107,6 @@ class TestIsProcessAlive:
             with patch("os.name", "posix"):
                 assert am._is_process_alive(99999) is True
 
-    @patch("os.name", "nt")
-    def test_windows_path(self):
-        # We can't easily test Windows on non-Windows, but we can test the branch
-        # by mocking ctypes
-        mock_kernel32 = MagicMock()
-        mock_kernel32.OpenProcess.return_value = 0  # No handle
-        mock_kernel32.GetLastError.return_value = 5  # ACCESS_DENIED
-        with (
-            patch.dict(
-                "sys.modules", {"ctypes": MagicMock(), "ctypes.wintypes": MagicMock()}
-            ),
-            patch("os.name", "nt"),
-        ):
-            # Just ensure it doesn't crash on non-Windows
-            try:
-                am._is_process_alive(1234)
-            except AttributeError, ImportError:
-                pass  # Expected on non-Windows
-
 
 class TestCleanupDeadSessions:
     """Tests for _cleanup_dead_sessions (lines 247)."""

@@ -50,9 +50,11 @@ def _resolve_proxy_config(verify: bool | str | None = None) -> ProxyConfig:
 
     http2_enabled = get_http2()
 
-    disable_retry = os.environ.get(
-        "MUSE_DISABLE_RETRY_TRANSPORT", ""
-    ).lower() in ("1", "true", "yes")
+    disable_retry = os.environ.get("MUSE_DISABLE_RETRY_TRANSPORT", "").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
 
     # When retry transport is disabled and no cert bundle is configured,
     # also disable TLS verification (legacy compatibility). If a cert
@@ -61,9 +63,11 @@ def _resolve_proxy_config(verify: bool | str | None = None) -> ProxyConfig:
         verify = False
 
     # Explicit TLS disable — independent from retry logic
-    disable_tls_verify = os.environ.get(
-        "MUSE_DISABLE_TLS_VERIFY", ""
-    ).lower() in ("1", "true", "yes")
+    disable_tls_verify = os.environ.get("MUSE_DISABLE_TLS_VERIFY", "").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
     if disable_tls_verify:
         verify = False
 

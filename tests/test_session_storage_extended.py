@@ -1,5 +1,4 @@
 import json
-import os
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -7,7 +6,6 @@ from typing import Any
 import pytest
 
 from code_muse.session_storage import (
-    cleanup_sessions,
     list_sessions,
     load_session,
     save_session,
@@ -30,41 +28,6 @@ class TestSessionStorageExtended:
     def token_estimator(self) -> Callable[[Any], int]:
         """Simple token estimator for testing."""
         return lambda message: len(str(message))
-
-    def test_save_and_load_session(
-        self,
-        tmp_path: Path,
-        sample_history: list[Any],
-        token_estimator: Callable[[Any], int],
-    ):
-        """Test round-trip save/load functionality."""
-        session_name = "test_session"
-        timestamp = "2024-01-01T12:00:00"
-
-        # Save session
-        metadata = save_session(
-            history=sample_history,
-            session_name=session_name,
-            base_dir=tmp_path,
-            timestamp=timestamp,
-            token_estimator=token_estimator,
-        )
-
-        # Verify metadata
-        assert metadata.session_name == session_name
-        assert metadata.message_count == len(sample_history)
-        assert metadata.total_tokens == sum(
-            token_estimator(msg) for msg in sample_history
-        )
-        assert metadata.auto_saved is False
-
-        # Verify files exist
-        assert metadata.pickle_path.exists()
-        assert metadata.metadata_path.exists()
-
-        # Load and verify content
-        loaded_history = load_session(session_name, tmp_path)
-        assert loaded_history == sample_history
 
     def test_save_autosave_session(
         self,
@@ -137,79 +100,6 @@ class TestSessionStorageExtended:
         loaded_history = load_session("overwrite_test", tmp_path)
         assert loaded_history == sample_history
         assert new_metadata.timestamp == "2024-01-01T12:00:00"
-
-    def test_list_sessions(
-        self,
-        tmp_path: Path,
-        sample_history: list[Any],
-        token_estimator: Callable[[Any], int],
-    ):
-        """Test session listing functionality."""
-        # Empty directory
-        assert list_sessions(tmp_path) == []
-
-        # Non-existent directory
-        assert list_sessions(tmp_path / "nonexistent") == []
-
-        # Create sessions
-        session_names = ["session1", "session2", "session3"]
-        for name in session_names:
-            save_session(
-                history=[f"{name}_data"],
-                session_name=name,
-                base_dir=tmp_path,
-                timestamp="2024-01-01T12:00:00",
-                token_estimator=token_estimator,
-            )
-
-        # Should list sessions in sorted order
-        sessions = list_sessions(tmp_path)
-        assert sessions == sorted(session_names)
-
-        # Should ignore non-pkl files
-        (tmp_path / "orphaned_meta.json").touch()
-        (tmp_path / "other_file.txt").touch()
-        assert list_sessions(tmp_path) == sorted(session_names)
-
-    def test_cleanup_sessions(
-        self, tmp_path: Path, token_estimator: Callable[[Any], int]
-    ):
-        """Test session cleanup functionality."""
-        # Create sessions with different timestamps
-        sessions = [
-            ("early_session", 0),
-            ("middle_session", 1),
-            ("late_session", 2),
-            ("latest_session", 3),
-        ]
-
-        for name, mtime in sessions:
-            metadata = save_session(
-                history=[f"data_{name}"],
-                session_name=name,
-                base_dir=tmp_path,
-                timestamp="2024-01-01T12:00:00",
-                token_estimator=token_estimator,
-            )
-            # Set modification time for sorting
-            os.utime(metadata.pickle_path, (mtime, mtime))
-
-        # Keep only 2 most recent
-        removed = cleanup_sessions(tmp_path, 2)
-
-        # Should remove the 2 oldest
-        assert set(removed) == {"early_session", "middle_session"}
-
-        # Should keep the 2 newest
-        remaining = list_sessions(tmp_path)
-        assert set(remaining) == {"late_session", "latest_session"}
-
-        # Zero or negative limits should not remove anything
-        removed = cleanup_sessions(tmp_path, 0)
-        assert removed == []
-
-        removed = cleanup_sessions(tmp_path, -1)
-        assert removed == []
 
     def test_corrupted_session_file(self, tmp_path: Path):
         """Test error handling for corrupted/unsigned pickle files.

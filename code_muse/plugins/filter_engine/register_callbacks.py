@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from code_muse.callbacks import register_callback
-from code_muse.messaging import emit_info, emit_success, emit_warning
+from code_muse.messaging import emit_info, emit_success
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +27,7 @@ def _setup_cython_hooks() -> None:
     """Enable pyximport so .pyx modules compile on-the-fly.
 
     Falls back gracefully when Cython is missing or compilation fails.
+    Status is reported centrally by the core startup callback runner.
     """
     try:
         import pyximport
@@ -36,18 +37,10 @@ def _setup_cython_hooks() -> None:
             build_in_temp=True,
             inplace=True,
         )
-        import code_muse
-
-        if code_muse.CYTHON_ENABLED:
-            emit_success(
-                f"✅ Cython enabled — {code_muse.PYX_MODULE_COUNT} modules compiled"
-            )
-        else:
-            emit_warning("⚠️ Cython not available — running in pure Python mode")
     except ImportError:
-        emit_warning("⚠️ Cython not available — running in pure Python mode")
+        pass  # core will report Cython status
     except Exception:  # noqa: BLE001
-        emit_warning("⚠️ Cython not available — running in pure Python mode")
+        pass  # core will report Cython status
 
 
 # ---------------------------------------------------------------------------

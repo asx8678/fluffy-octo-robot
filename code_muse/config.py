@@ -60,7 +60,11 @@ def _get_cached_config() -> configparser.ConfigParser:
         mtime = 0.0
 
     with _config_cache_lock:
-        if _config_cache is not None and _config_cache[0] == cache_key and _config_cache[1] == mtime:
+        if (
+            _config_cache is not None
+            and _config_cache[0] == cache_key
+            and _config_cache[1] == mtime
+        ):
             return _config_cache[2]
         # Cache miss or file changed — reload
         config = configparser.ConfigParser()
@@ -195,9 +199,7 @@ def ensure_config_exists():
             if key == "agent_name":
                 val = input("What should we name the agent? ").strip()
             elif key == "owner_name":
-                val = input(
-                    "What's your name (so Muse knows its owner)? "
-                ).strip()
+                val = input("What's your name (so Muse knows its owner)? ").strip()
             else:
                 val = input(f"Enter {key}: ").strip()
             config[DEFAULT_SECTION][key] = val
