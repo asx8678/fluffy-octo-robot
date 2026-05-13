@@ -18,14 +18,13 @@ from rich.console import Console
 from rich.markup import escape
 from rich.text import Text
 
+# Module-level import avoids repeated import overhead in _fire_stream_event_sync
+from code_muse import callbacks
 from code_muse.agents._history import estimate_tokens
 from code_muse.config import get_banner_color, get_subagent_verbose
 from code_muse.messaging import get_session_context
 from code_muse.messaging.spinner import pause_all_spinners, resume_all_spinners
 from code_muse.tools.subagent_context import is_subagent
-
-# Module-level import avoids repeated import overhead in _fire_stream_event_sync
-from code_muse import callbacks
 
 logger = logging.getLogger(__name__)
 

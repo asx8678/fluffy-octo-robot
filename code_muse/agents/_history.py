@@ -13,14 +13,14 @@ that retain message objects.
 import dataclasses
 import json
 import math
-import orjson
 import pathlib
 import weakref
+from annotationlib import get_annotations
 from collections import OrderedDict
 from typing import Any
 
+import orjson
 import pydantic
-from annotationlib import get_annotations
 from pydantic_ai import BinaryContent
 from pydantic_ai.messages import ModelMessage, ModelRequest, ToolReturnPart
 

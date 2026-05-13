@@ -734,6 +734,7 @@ class TestActiveSubagentTasks:
     def test_active_tasks_contextvar_exists(self):
         """Test that the active tasks ContextVar is accessible."""
         from contextvars import ContextVar
+
         from code_muse.tools.agent_tools import _active_subagent_tasks_var
 
         assert isinstance(_active_subagent_tasks_var, ContextVar)

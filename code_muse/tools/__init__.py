@@ -2,6 +2,7 @@ from annotationlib import get_annotations
 
 from code_muse.callbacks import on_register_tools
 from code_muse.messaging import emit_warning
+from code_muse.plugins.tool_registry.registry import ToolMetadata, ToolRegistry
 from code_muse.tools.agent_tools import register_invoke_agent, register_list_agents
 from code_muse.tools.ask_user_question import register_ask_user_question
 
@@ -87,7 +88,6 @@ from code_muse.tools.skills_tools import (
     register_activate_skill,
     register_list_or_search_skills,
 )
-from code_muse.plugins.tool_registry.registry import ToolMetadata, ToolRegistry
 from code_muse.tools.universal_constructor import register_universal_constructor
 
 # Map of tool names to their individual registration functions

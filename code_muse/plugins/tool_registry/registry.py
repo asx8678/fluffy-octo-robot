@@ -1,7 +1,8 @@
 """Core registry for tool metadata."""
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable, Literal
+from typing import Literal
 
 ToolTier = Literal["high", "medium", "low"]
 ToolCategory = Literal[
