@@ -483,8 +483,6 @@ async def run(
             return RunOutcome(False)
         return outcome
 
-    agent_task = asyncio.create_task(run_agent_task())
-
     try:
         await on_agent_run_start(
             agent_name=agent.name,
@@ -494,6 +492,8 @@ async def run(
     except Exception:
         # Hook failures never block the agent.
         pass
+
+    agent_task = asyncio.create_task(run_agent_task())
 
     loop = asyncio.get_running_loop()
 
