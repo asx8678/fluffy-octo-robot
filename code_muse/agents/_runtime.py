@@ -51,7 +51,7 @@ try:
 except ImportError:  # pragma: no cover - 3.10 only
     BaseExceptionGroup = Exception  # type: ignore[misc,assignment]
 
-from code_muse.agents import _history, _key_listeners
+from code_muse.agents import _key_listeners
 from code_muse.agents._builder import build_pydantic_agent
 from code_muse.agents._diagnostics import emit_exception_diagnostics
 from code_muse.agents._non_streaming_render import (
@@ -329,16 +329,13 @@ def _extract_response_text(result: Any) -> str:
 
 def _should_prepend_system_prompt(agent: Any, prompt: str) -> str:
     """Prepend system prompt to user prompt on the first turn (claude-code etc)."""
-    from code_muse.agents._builder import load_muse_rules
+    from code_muse.agents._builder import assemble_full_system_prompt
     from code_muse.model_utils import prepare_prompt_for_model
 
     if agent._message_history:
         return prompt
 
-    system_prompt = agent.get_full_system_prompt()
-    rules = load_muse_rules()
-    if rules:
-        system_prompt += f"\n{rules}"
+    system_prompt = assemble_full_system_prompt(agent, agent.get_model_name())
 
     prepared = prepare_prompt_for_model(
         model_name=agent.get_model_name(),

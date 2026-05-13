@@ -151,28 +151,43 @@ def load_model_with_fallback(
         raise ValueError(friendly) from exc
 
 
-def _assemble_instructions(agent: Any, resolved_model_name: str) -> str:
-    """Compose full system prompt + muse rules + extended-thinking note."""
-    from code_muse.model_utils import prepare_prompt_for_model
+def assemble_full_system_prompt(agent: Any, model_name: str | None = None) -> str:
+    """Assemble the full system prompt including muse rules, extended thinking note,
+    and plugin additions. Used by both the agent builder and the runtime prompt prepender.
+
+    This is the canonical system prompt assembly path.
+    """
     from code_muse.tools import (
         EXTENDED_THINKING_PROMPT_NOTE,
         has_extended_thinking_active,
     )
 
+    resolved_model = model_name or agent.get_model_name()
+
     instructions = agent.get_full_system_prompt()
+
     agent_rules = load_muse_rules()
     if agent_rules:
         instructions += f"\n{agent_rules}"
 
-    if has_extended_thinking_active(resolved_model_name):
+    if has_extended_thinking_active(resolved_model):
         instructions += EXTENDED_THINKING_PROMPT_NOTE
 
-    # Append plugin prompt additions (file permission rules, skill docs, etc.)
+    # Plugin prompt additions (file permission rules, skill docs, etc.)
     from code_muse import callbacks as _cb
 
     prompt_additions = _cb.on_load_prompt()
     if prompt_additions:
         instructions += "\n" + "\n".join(str(p) for p in prompt_additions if p)
+
+    return instructions
+
+
+def _assemble_instructions(agent: Any, resolved_model_name: str) -> str:
+    """Compose full system prompt + muse rules + extended-thinking note."""
+    from code_muse.model_utils import prepare_prompt_for_model
+
+    instructions = assemble_full_system_prompt(agent, resolved_model_name)
 
     prepared = prepare_prompt_for_model(
         agent.get_model_name(), instructions, "", prepend_system_to_user=False
