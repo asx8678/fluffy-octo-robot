@@ -15,6 +15,7 @@ import json
 import math
 import pathlib
 import weakref
+from collections import OrderedDict
 from typing import Any
 
 import pydantic
@@ -81,7 +82,7 @@ def stringify_part(part: Any) -> str:
 # when the message object is garbage-collected, preventing stale hits if the
 # same memory address is reused for a different message later (common in
 # tests that create many short-lived messages).
-_hash_cache: dict[int, int] = {}
+_hash_cache: OrderedDict[int, int] = OrderedDict()
 _HASH_CACHE_MAX = 8192
 
 
@@ -94,6 +95,7 @@ def hash_message(message: Any) -> int:
     msg_id = id(message)
     cached = _hash_cache.get(msg_id)
     if cached is not None:
+        _hash_cache.move_to_end(msg_id)
         return cached
 
     role = getattr(message, "role", None)
@@ -108,9 +110,9 @@ def hash_message(message: Any) -> int:
     canonical = "||".join(header_bits + part_strings)
     result = hash(canonical)
 
-    # Bounded cache — evict oldest entries when full
+    # Bounded cache — LRU eviction when full
     if len(_hash_cache) >= _HASH_CACHE_MAX:
-        _hash_cache.clear()
+        _hash_cache.popitem(last=False)
     _hash_cache[msg_id] = result
     weakref.finalize(message, _evict_hash_cache, msg_id)
     return result
@@ -331,7 +333,7 @@ def filter_huge_messages(
         )
         < 50000
     ]
-    return prune_interrupted_tool_calls(filtered)
+    return filtered
 
 
 # ---------------------------------------------------------------------------
