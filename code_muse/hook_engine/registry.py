@@ -56,7 +56,7 @@ def build_registry_from_config(
             if not isinstance(group, dict):
                 continue
 
-            matcher = group.get("matcher", "*")
+            matcher = group.get("matcher") or "*"
             hooks_data = group.get("hooks", [])
 
             for hook_data in hooks_data:

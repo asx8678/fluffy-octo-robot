@@ -28,6 +28,30 @@ USER_PLUGINS_DIR = Path.home() / ".muse" / "plugins"
 # Track if plugins have already been loaded to prevent duplicate registration
 _PLUGINS_LOADED = False
 
+def _clean_stale_pycache(root_dir: Path) -> None:
+    """Remove stale __pycache__ directories to prevent import ghosts.
+
+    Deletes any __pycache__ directory whose containing .py file no longer
+    exists.  This prevents stale bytecode from old package names (e.g.
+    after a rename) from causing ``No module named X`` errors.
+    """
+    import shutil
+
+    for pycache_dir in list(root_dir.rglob("__pycache__")):
+        if not pycache_dir.is_dir():
+            continue
+        # Check if any .py file in parent directory still exists
+        parent = pycache_dir.parent
+        has_py_files = any(parent.glob("*.py"))
+        if not has_py_files:
+            # Parent dir has no .py files anymore — likely a removed module
+            try:
+                shutil.rmtree(pycache_dir)
+                logger.debug("Cleaned stale __pycache__: %s", pycache_dir)
+            except OSError:
+                pass
+
+
 # ---------------------------------------------------------------------------
 # Trust manifest helpers
 # ---------------------------------------------------------------------------
@@ -420,6 +444,9 @@ def load_plugin_callbacks() -> dict[str, list[str]]:
     NOTE: This function is idempotent - calling it multiple times will only
     load plugins once. Subsequent calls return empty lists.
     """
+    # Clean stale __pycache__ to prevent import ghosts from renames
+    _clean_stale_pycache(Path(__file__).parent)
+
     global _PLUGINS_LOADED
 
     # Prevent duplicate loading - plugins register callbacks at import time,

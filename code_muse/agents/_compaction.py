@@ -21,6 +21,7 @@ from pydantic_ai.messages import (
     ModelResponse,
     TextPart,
     ThinkingPart,
+    ToolReturnPart,
 )
 
 from code_muse.agents._history import (
@@ -49,7 +50,8 @@ _SUMMARIZATION_INSTRUCTIONS = (
     " as well as user queries, etc. Summarize the contents of these steps."
     " The high level details should remain but the bulk of the content from tool-call"
     " responses should be compacted and summarized. For example if you see a tool-call"
-    " reading a file, and the file contents are large, then in your summary you might just"
+    " reading a file, and the file contents are large, then in your"
+    " summary you might just"
     " write: * used read_file on space_invaders.cpp - contents removed."
     "\n Make sure your result is a bulleted list of all steps and interactions."
     "\n\nNOTE: This summary represents older conversation history. "
@@ -147,7 +149,8 @@ def truncate(
     model_name: str | None = None,
     cache: CompactionCache | None = None,
 ) -> list[ModelMessage]:
-    """Drop middle messages, keeping system prompt, optional thinking, and recent tail."""
+    """Drop middle messages, keeping system prompt, optional thinking,
+    and recent tail."""
     import queue
 
     if not messages:
@@ -223,7 +226,8 @@ def _run_summarization_core(
 
     if not isinstance(new_messages, list):
         emit_warning(
-            "Summarization agent returned non-list output; wrapping into message request"
+            "Summarization agent returned non-list output;"
+            " wrapping into message request"
         )
         new_messages = [ModelRequest([TextPart(str(new_messages))])]
 
@@ -425,7 +429,7 @@ def make_history_processor(agent: Any) -> Callable[..., list[ModelMessage]]:
       1. Fires ``on_message_history_processor_start``.
       2. Merges any incoming messages not already in ``agent._message_history``
          (preserving the last-message regardless of compacted-hash collisions).
-      3. Runs ``compact(...)`` if we're over threshold.
+      3. Runs ``compact_with_tool_truncation(...)`` if we're over threshold — truncates older tool-result content first, then falls through to compact().
       4. Records dropped-message hashes in ``agent._compacted_message_hashes``.
       5. Strips empty ThinkingParts.
       6. Trims trailing ModelResponse messages so history ends with a ModelRequest.
@@ -467,7 +471,7 @@ def make_history_processor(agent: Any) -> Callable[..., list[ModelMessage]]:
                 history.append(msg)
                 messages_added += 1
 
-        new_history, dropped = compact(
+        new_history, dropped = compact_with_tool_truncation(
             agent,
             history,
             agent._get_model_context_length(),
@@ -504,3 +508,110 @@ def make_history_processor(agent: Any) -> Callable[..., list[ModelMessage]]:
         return cleaned
 
     return history_processor
+
+
+# --- Phase 3: Enhanced History Compression ---
+PROTECTION_ZONE_MESSAGES = 6  # Last N messages never pruned
+RECENT_TOOL_RESULTS_TO_KEEP = 7  # Keep last N tool results in full
+
+
+def _truncate_tool_result_content(
+    messages: list[ModelMessage],
+    keep_count: int = RECENT_TOOL_RESULTS_TO_KEEP,
+) -> list[ModelMessage]:
+    """Replace older tool result content with a truncation marker.
+
+    Keeps the last `keep_count` tool results in full.
+    Older tool results get their content replaced with a short notice.
+    The structural pairing (tool_call ↔ tool_return) stays intact.
+
+    Only affects ToolReturnPart content — all other parts preserved.
+    """
+    # Reverse-scan: collect tool_call_ids of the most recent N tool results
+    protected_ids: set[str] = set()
+    seen = 0
+    for i in range(len(messages) - 1, -1, -1):
+        msg = messages[i]
+        if isinstance(msg, ModelRequest):
+            for part in msg.parts:
+                if isinstance(part, ToolReturnPart):
+                    seen += 1
+                    if seen <= keep_count:
+                        protected_ids.add(part.tool_call_id)
+
+    # Forward-pass: truncate old results
+    result: list[ModelMessage] = []
+    TRUNCATION_MSG = "[Result truncated — re-call tool if full output is needed]"
+
+    for msg in messages:
+        if not isinstance(msg, ModelRequest):
+            result.append(msg)
+            continue
+        new_parts = []
+        for part in msg.parts:
+            if (
+                isinstance(part, ToolReturnPart)
+                and part.tool_call_id not in protected_ids
+            ):
+                # Replace content, keep structure
+                try:
+                    if hasattr(part, "model_copy"):
+                        new_parts.append(
+                            part.model_copy(update={"content": TRUNCATION_MSG})
+                        )
+                    else:
+                        new_parts.append(part)
+                except Exception:
+                    new_parts.append(part)
+            else:
+                new_parts.append(part)
+        result.append(ModelRequest(parts=new_parts))
+
+    return result
+
+
+def compact_with_tool_truncation(
+    agent: Any,
+    messages: list[ModelMessage],
+    model_max: int,
+    context_overhead: int,
+) -> tuple[list[ModelMessage], list[ModelMessage]]:
+    """Enhanced compact() that first truncates old tool results,
+    then runs normal compaction.
+
+    This is the Phase 3 replacement for compact(). It:
+    1. Truncates old tool result content first (always reduces tokens)
+    2. Then runs the existing compact() logic on the cleaner history
+    3. Falls through to summarization/truncation if still over threshold
+
+    Returns: (new_messages, dropped_messages_for_hash_tracking)
+    """
+    # Step 1: Truncate old tool results (always safe, always reduces tokens)
+    truncated = _truncate_tool_result_content(messages)
+
+    # Step 2: Run existing compaction on the already-trimmed history
+    # The existing compact() handles summarization or truncation if still over threshold
+    return compact(agent, truncated, model_max, context_overhead)
+
+
+def _protect_zone_messages(
+    messages: list[ModelMessage],
+    zone_size: int = PROTECTION_ZONE_MESSAGES,
+) -> tuple[list[ModelMessage], list[ModelMessage]]:
+    """Split messages into (middle_for_summarization, protected_tail).
+
+    The last `zone_size` messages (or fewer if history is short) are protected
+    and never summarized/truncated. Returns (middle, protected).
+
+    System message (index 0) is always protected.
+    """
+    if len(messages) <= zone_size + 1:
+        return [], messages
+
+    split_idx = max(1, len(messages) - zone_size)
+    # Adjust split to not sever tool_call/tool_return pairs (use existing logic)
+    adjusted_idx = _find_safe_split_index(messages, split_idx)
+
+    middle = messages[1:adjusted_idx]
+    protected = messages[:1] + messages[adjusted_idx:]
+    return middle, protected

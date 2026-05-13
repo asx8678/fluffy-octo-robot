@@ -60,6 +60,8 @@ def validate_hooks_config(config: dict[str, Any]) -> tuple[bool, list[str]]:
 
             if "matcher" not in group:
                 errors.append(f"'{event_type}[{i}]' missing required field 'matcher'")
+            elif not group["matcher"]:
+                errors.append(f"'{event_type}[{i}]' matcher cannot be empty string — use '*' to match all events")
 
             if "hooks" not in group:
                 errors.append(f"'{event_type}[{i}]' missing required field 'hooks'")

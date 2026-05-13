@@ -20,7 +20,7 @@ from typing import Any
 
 import pydantic
 from pydantic_ai import BinaryContent
-from pydantic_ai.messages import ModelMessage
+from pydantic_ai.messages import ModelMessage, ModelRequest, ToolReturnPart
 
 
 def _json_safe(obj):
@@ -380,3 +380,10 @@ class CompactionCache:
     ) -> int:
         """Sum estimated tokens across all messages using the cache."""
         return sum(self.estimate_tokens(m, model_name) for m in messages)
+
+
+def is_tool_result_message(msg: ModelMessage) -> bool:
+    """Check if a message contains tool return parts."""
+    if isinstance(msg, ModelRequest):
+        return any(isinstance(p, ToolReturnPart) for p in msg.parts)
+    return False
