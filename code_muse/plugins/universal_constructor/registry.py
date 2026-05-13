@@ -10,7 +10,6 @@ disabled or untrusted tools during scan.
 
 import ast
 import importlib.util
-import inspect
 import logging
 import sys
 from collections.abc import Callable
@@ -192,35 +191,32 @@ class UCRegistry:
                     docstring=None,
                 )
 
-        # Step 4: Only import if we passed safety/trust
-        module = self._load_module(file_path)
-        if module is None:
-            return None
-
-        # Find the callable function
-        func, func_name = self._find_tool_function(module, meta.name)
-        if func is None:
+        # Step 4: Extract metadata from AST without importing
+        func_def = self._extract_function_def(tree, meta.name)
+        if func_def is None:
             logger.warning(f"No callable function found in {file_path}")
             return None
 
-        # Extract signature
-        try:
-            sig = inspect.signature(func)
-            signature_str = f"{func_name}{sig}"
-        except (ValueError, TypeError):
-            signature_str = f"{func_name}(...)"
+        signature_str = self._extract_signature_from_ast(func_def)
 
-        # Extract docstring
-        docstring = inspect.getdoc(func)
+        # Extract docstring from AST (first constant expression in function body)
+        docstring = None
+        if (
+            func_def.body
+            and isinstance(func_def.body[0], ast.Expr)
+            and isinstance(func_def.body[0].value, ast.Constant)
+            and isinstance(func_def.body[0].value.value, str)
+        ):
+            docstring = func_def.body[0].value.value
 
-        # Store module reference for later calls
-        self._modules[full_name] = module
+        # Module loading is deferred to runtime (runner.py handles it on invocation)
+        # to avoid executing arbitrary code at scan time
 
         return UCToolInfo(
             meta=meta,
             signature=signature_str,
             source_path=str(file_path),
-            function_name=func_name,
+            function_name=func_def.name,
             docstring=docstring,
         )
 
@@ -230,14 +226,99 @@ class UCRegistry:
         for node in ast.walk(tree):
             if isinstance(node, ast.Assign):
                 for target in node.targets:
-                    if isinstance(target, ast.Name) and target.id == "TOOL_META":
-                        if isinstance(node.value, ast.Dict):
-                            try:
-                                meta_str = ast.unparse(node.value)
-                                return ast.literal_eval(meta_str)
-                            except (ValueError, SyntaxError):
-                                return None
+                    if (
+                        isinstance(target, ast.Name)
+                        and target.id == "TOOL_META"
+                        and isinstance(node.value, ast.Dict)
+                    ):
+                        try:
+                            meta_str = ast.unparse(node.value)
+                            return ast.literal_eval(meta_str)
+                        except (ValueError, SyntaxError):
+                            return None
         return None
+
+    @staticmethod
+    def _extract_function_def(tree: ast.AST, tool_name: str) -> ast.FunctionDef | None:
+        """Find the function definition for a tool by name in the AST.
+
+        Searches for function definitions with the given name.
+        Falls back to 'run', 'execute', or the first public function.
+        """
+        candidates = [tool_name, "run", "execute"]
+        functions: list[ast.FunctionDef] = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.FunctionDef):
+                functions.append(node)
+
+        # Try candidates in priority order
+        for name in candidates:
+            for fn in functions:
+                if fn.name == name:
+                    return fn
+
+        # Fall back to first public function
+        for fn in functions:
+            if not fn.name.startswith("_"):
+                return fn
+
+        return None
+
+    @staticmethod
+    def _extract_signature_from_ast(func_def: ast.FunctionDef) -> str:
+        """Extract a signature string from an AST function definition."""
+        args = func_def.args
+        parts = [func_def.name, "("]
+
+        params = []
+        # Positional args
+        for i, arg in enumerate(args.args):
+            # Check if we're past the positional-only separator
+            if args.posonlyargs and i >= len(args.posonlyargs):
+                pass
+            param = arg.arg
+            if arg.annotation:
+                param += f": {ast.unparse(arg.annotation)}"
+            if args.defaults and i >= len(args.args) - len(args.defaults):
+                default_idx = i - (len(args.args) - len(args.defaults))
+                param += f"={ast.unparse(args.defaults[default_idx])}"
+            params.append(param)
+
+        # *args
+        if args.vararg:
+            param = f"*{args.vararg.arg}"
+            if args.vararg.annotation:
+                param += f": {ast.unparse(args.vararg.annotation)}"
+            params.append(param)
+
+        # Keyword-only args
+        for i, arg in enumerate(args.kwonlyargs):
+            param = arg.arg
+            if arg.annotation:
+                param += f": {ast.unparse(arg.annotation)}"
+            if (
+                args.kw_defaults
+                and i < len(args.kw_defaults)
+                and args.kw_defaults[i] is not None
+            ):
+                param += f"={ast.unparse(args.kw_defaults[i])}"
+            params.append(param)
+
+        # **kwargs
+        if args.kwarg:
+            param = f"**{args.kwarg.arg}"
+            if args.kwarg.annotation:
+                param += f": {ast.unparse(args.kwarg.annotation)}"
+            params.append(param)
+
+        parts.append(", ".join(params))
+        parts.append(")")
+
+        # Return annotation
+        if func_def.returns:
+            parts.append(f" -> {ast.unparse(func_def.returns)}")
+
+        return "".join(parts)
 
     def _load_module(self, file_path: Path) -> ModuleType | None:
         """Load a Python module from a file path.
@@ -344,9 +425,17 @@ class UCRegistry:
         if tool is None:
             return None
 
+        # Do not load disabled, blocked, or unapproved tools
+        if tool.signature == f"{tool.meta.name}(...)":
+            return None
+
         module = self._modules.get(name)
         if module is None:
-            return None
+            # Defer module loading to runtime to avoid executing code at scan time
+            module = self._load_module(Path(tool.source_path))
+            if module is None:
+                return None
+            self._modules[name] = module
 
         func, _ = self._find_tool_function(module, tool.meta.name)
         return func
@@ -363,7 +452,22 @@ class UCRegistry:
         if not self._tools:
             self.scan()
 
-        return self._modules.get(name)
+        tool = self._tools.get(name)
+        if tool is None:
+            return None
+
+        # Do not load disabled, blocked, or unapproved tools
+        if tool.signature == f"{tool.meta.name}(...)":
+            return None
+
+        module = self._modules.get(name)
+        if module is None:
+            module = self._load_module(Path(tool.source_path))
+            if module is None:
+                return None
+            self._modules[name] = module
+
+        return module
 
     def reload(self) -> int:
         """Force a rescan of all tools.

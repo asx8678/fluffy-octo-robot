@@ -713,25 +713,19 @@ def tool(): pass
         count = reg.scan()
         assert count == 0
 
-    def test_load_tool_file_signature_fails(self, tmp_path):
-        """Lines 136-137: inspect.signature raises."""
+    def test_load_tool_file_signature_ast(self, tmp_path):
+        """Signature extracted from AST for *a, **kw functions."""
         tool_code = """
 TOOL_META = {"name": "sig_tool", "description": "test"}
 
-# Use a builtin as the tool function - inspect.signature may fail
 def sig_tool(*a, **kw): pass
 """
         (tmp_path / "sig_tool.py").write_text(tool_code)
         reg = UCRegistry(tools_dir=tmp_path)
-        # Patch inspect.signature to raise
-        with patch(
-            "code_muse.plugins.universal_constructor.registry.inspect.signature",
-            side_effect=ValueError("no sig"),
-        ):
-            count = reg.scan()
-            assert count == 1
-            tool = reg.get_tool("sig_tool")
-            assert "(...)" in tool.signature
+        count = reg.scan()
+        assert count == 1
+        tool = reg.get_tool("sig_tool")
+        assert "sig_tool(*a, **kw)" in tool.signature
 
     def test_namespaced_tool(self, tmp_path):
         """Tool in subdirectory gets namespace."""
