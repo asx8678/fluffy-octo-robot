@@ -3,6 +3,7 @@
 import fnmatch
 import os
 import re
+import threading
 from pathlib import Path
 
 from code_muse.fs_scan_cache.scan_cache_core import GlobMatch, ScanCache
@@ -31,11 +32,8 @@ def _should_skip(
         return True
     if skip_node_modules and "node_modules" in path.parts:
         return True
-    if use_gitignore:
-        # Lightweight approximation: skip `.git` directory
-        if ".git" in path.parts:
-            return True
-    return False
+    # Lightweight approximation: skip `.git` directory
+    return use_gitignore and ".git" in path.parts
 
 
 def _stat_entry(p: Path) -> tuple[str, float, int]:
@@ -47,7 +45,7 @@ def _stat_entry(p: Path) -> tuple[str, float, int]:
         if p.is_dir():
             return "dir", st.st_mtime, 0
         return "file", st.st_mtime, st.st_size
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return "file", 0.0, 0
 
 
@@ -132,7 +130,7 @@ def _grep_scanner(
             if size > 5 * 1024 * 1024:
                 continue
             text = p.read_text(encoding="utf-8", errors="replace")
-        except (OSError, UnicodeDecodeError):
+        except OSError, UnicodeDecodeError:
             continue
         if compiled.search(text):
             file_type, mtime, fsize = _stat_entry(p)
@@ -188,14 +186,31 @@ def _find_scanner(
 
 
 # Module-level default cache used by the cached_* helpers.
-_default_cache: ScanCache | None = None
+# Tied to session ID to avoid stale cross-session data (issue 0c1.4).
+_default_cache: tuple[str, ScanCache] | None = None
+_default_cache_lock = threading.Lock()
 
 
 def _get_default_cache() -> ScanCache:
+    """Get or create the default scan cache, tied to current session.
+
+    Invalidates when the session changes (cross-session data is stale).
+    """
+    from code_muse.config import get_current_autosave_id
+
     global _default_cache
-    if _default_cache is None:
-        _default_cache = ScanCache()
-    return _default_cache
+    session_id = get_current_autosave_id() or ""
+
+    with _default_cache_lock:
+        if _default_cache is not None:
+            cached_session_id, cache = _default_cache
+            if cached_session_id == session_id:
+                return cache
+
+        # Create new cache for this session
+        cache = ScanCache()
+        _default_cache = (session_id, cache)
+        return cache
 
 
 def cached_glob(
