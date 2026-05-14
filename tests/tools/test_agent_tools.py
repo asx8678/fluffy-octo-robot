@@ -248,18 +248,12 @@ class TestRegisterInvokeAgent:
 
     @pytest.mark.asyncio
     async def test_agent_not_found(self):
-        import contextvars
-
         from code_muse.tools.agent_tools import register_invoke_agent
 
         agent = MagicMock()
         captured = {}
         agent.tool = lambda fn: (captured.update({"fn": fn}), fn)[-1]
         register_invoke_agent(agent)
-
-        # Create a real context var for the token reset
-        fake_browser_var = contextvars.ContextVar("fake_browser")
-        browser_token = fake_browser_var.set("y")
 
         ctx = MagicMock()
         with (
@@ -269,14 +263,6 @@ class TestRegisterInvokeAgent:
             patch("code_muse.tools.agent_tools.get_message_bus"),
             patch("code_muse.tools.agent_tools.get_session_context", return_value=None),
             patch("code_muse.tools.agent_tools.set_session_context"),
-            patch(
-                "code_muse.tools.browser.browser_manager.set_browser_session",
-                return_value=browser_token,
-            ),
-            patch(
-                "code_muse.tools.browser.browser_manager._browser_session_var",
-                fake_browser_var,
-            ),
             patch(
                 "code_muse.agents.agent_manager.load_agent",
                 side_effect=Exception("Agent not found"),

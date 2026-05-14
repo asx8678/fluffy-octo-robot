@@ -427,14 +427,6 @@ def register_invoke_agent(agent):
         previous_session_id = get_session_context()
         set_session_context(session_id)
 
-        # Set browser session for browser tools (qa-iris, etc.)
-        # This allows parallel agent invocations to each have their own browser
-        from code_muse.tools.browser.browser_manager import (
-            set_browser_session,
-        )
-
-        browser_session_token = set_browser_session(f"browser-{session_id}")
-
         # Bound up-front so the ``except`` block can always reach for it even
         # if load_agent() itself fails before assignment.
         agent_config = None
@@ -648,11 +640,5 @@ def register_invoke_agent(agent):
         finally:
             # Restore the previous session context
             set_session_context(previous_session_id)
-            # Reset browser session context
-            from code_muse.tools.browser.browser_manager import (
-                _browser_session_var,
-            )
-
-            _browser_session_var.reset(browser_session_token)
 
     return invoke_agent

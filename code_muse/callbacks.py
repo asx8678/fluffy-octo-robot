@@ -36,7 +36,6 @@ PhaseType = Literal[
     "agent_run_start",
     "agent_run_end",
     "agent_run_result",
-    "register_browser_types",
     "register_model_providers",
     "message_history_processor_start",
     "message_history_processor_end",
@@ -78,7 +77,6 @@ _callbacks: dict[PhaseType, list[tuple[int, CallbackFunc]]] = {
     "agent_run_start": [],
     "agent_run_end": [],
     "agent_run_result": [],
-    "register_browser_types": [],
     "register_model_providers": [],
     "message_history_processor_start": [],
     "message_history_processor_end": [],
@@ -946,31 +944,6 @@ async def on_agent_run_result(
         List of results from registered callbacks.
     """
     return await _trigger_callbacks("agent_run_result", result, agent_name, model_name)
-
-
-def on_register_browser_types() -> list[Any]:
-    """Trigger callbacks to register custom browser types/providers.
-
-    Plugins can register callbacks that return a dict mapping browser type names
-    to initialization functions. This allows plugins to provide custom browser
-    implementations (like Camoufox for stealth browsing).
-
-    Each callback should return a dict with:
-    - key: str - the browser type name (e.g., "camoufox", "firefox-stealth")
-    - value: callable - async initialization function that takes (manager, **kwargs)
-                        and sets up the browser on the manager instance
-
-    Example callback:
-        def register_my_browser_types():
-            return {
-                "camoufox": initialize_camoufox,
-                "my-stealth-browser": initialize_my_stealth,
-            }
-
-    Returns:
-        List of dicts from all registered callbacks.
-    """
-    return _trigger_callbacks_sync("register_browser_types")
 
 
 def on_register_model_providers() -> list[Any]:

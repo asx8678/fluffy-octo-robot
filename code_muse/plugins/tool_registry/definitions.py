@@ -36,7 +36,7 @@ def _derive_tier(name: str) -> ToolTier:
         "chrome_cdp",
         "create_file",
     }
-    if name in high or name.startswith("browser_"):
+    if name in high:
         return "high"
     low = {
         "list_files",
@@ -63,8 +63,6 @@ def _derive_category(name: str) -> ToolCategory:
         "edit_file",
     ):
         return "file_mods"
-    if name.startswith("browser_"):
-        return "browser"
     if name in ("chrome_cdp", "mitmproxy"):
         return "chrome_cdp"
     if name == "agent_run_shell_command":
@@ -97,8 +95,6 @@ def _derive_destructive(name: str) -> bool:
         return True
     if name == "agent_run_shell_command":
         return True
-    if name.startswith("browser_"):
-        return True
     return name == "create_file"
 
 
@@ -109,7 +105,7 @@ def _derive_idempotent(name: str, read_only: bool) -> bool:
         return True
     if name.startswith("list_"):
         return True
-    return bool(name.startswith("browser_find_"))
+    return False
 
 
 def _derive_requires_confirmation(name: str) -> bool:
@@ -137,7 +133,6 @@ def _build_allow_lists() -> dict[str, list[str]]:
             "delete_snippet",
             "delete_file",
         ],
-        "browser": [n for n in definitions if n.startswith("browser_")],
         "shell": ["agent_run_shell_command", "mitmproxy"],
         "agent": ["invoke_agent", "list_agents", "ask_user_question"],
         "skills": [n for n, m in definitions.items() if m.category == "skills"],
