@@ -4,11 +4,13 @@ This module provides helper functions for configuration management,
 environment variable resolution, and model configuration.
 """
 
-import orjson as json
 import logging
 import os
 import re
 from typing import Any
+
+import orjson
+import orjson as json
 
 from .config import (
     DEFAULT_CONTEXT_LENGTHS,
@@ -110,7 +112,7 @@ def load_extra_models() -> dict[str, Any]:
 
     try:
         with open(extra_models_path, encoding="utf-8") as f:
-            return orjson.loads(f.read())
+            return json.loads(f.read())
     except json.JSONDecodeError as e:
         logger.error(f"Invalid JSON in extra_models.json: {e}")
         return {}
@@ -137,7 +139,7 @@ def save_extra_models(models: dict[str, Any]) -> bool:
         # Atomic write using temp file
         temp_path = extra_models_path.with_suffix(".tmp")
         with open(temp_path, "w", encoding="utf-8") as f:
-            f.write(orjson.dumps(models, option=orjson.OPT_INDENT_2).decode())
+            f.write(json.dumps(models, option=orjson.OPT_INDENT_2).decode())
         temp_path.replace(extra_models_path)
 
         logger.info(f"Saved {len(models)} models to extra_models.json")

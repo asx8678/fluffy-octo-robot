@@ -1,7 +1,9 @@
 """Agent Creator - helps users create new JSON agents."""
 
-import orjson as json
 from pathlib import Path
+
+import orjson
+import orjson as json
 
 from code_muse.config import get_user_agents_directory
 from code_muse.model_factory import ModelFactory
@@ -595,7 +597,7 @@ Your goal is to take users from idea to working agent in one smooth conversation
         # Create the JSON file
         try:
             with open(file_path, "w", encoding="utf-8") as f:
-                f.write(orjson.dumps(agent_config, option=orjson.OPT_INDENT_2).decode())
+                f.write(json.dumps(agent_config, option=orjson.OPT_INDENT_2).decode())
             return True, f"Successfully created agent '{agent_name}' at {file_path}"
         except Exception as e:
             return False, f"Failed to create agent file: {e}"

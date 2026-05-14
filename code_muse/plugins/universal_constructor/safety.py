@@ -8,11 +8,13 @@ import ast
 import contextlib
 import hashlib
 import hmac
-import orjson as json
 import logging
 import os
 import re
 from pathlib import Path
+
+import orjson
+import orjson as json
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +81,7 @@ _APPROVAL_HMAC_KEY = hashlib.sha256(b"uc_approval_v1:muse_integrity").digest()
 
 def _compute_entry_hmac(entry: dict) -> str:
     """Compute HMAC for an approval entry dict."""
-    payload = orjson.dumps(entry, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    payload = json.dumps(entry, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hmac.new(_APPROVAL_HMAC_KEY, payload, hashlib.sha256).hexdigest()
 
 
@@ -160,7 +162,7 @@ def _atomic_write_private_json(file_path: Path, data: dict) -> None:
             0o600,
         )
         with os.fdopen(fd, "w", encoding="utf-8") as f:
-            f.write(orjson.dumps(data, option=orjson.OPT_INDENT_2).decode())
+            f.write(json.dumps(data, option=orjson.OPT_INDENT_2).decode())
             f.flush()
             os.fsync(f.fileno())
         os.replace(str(tmp_path), str(file_path))
@@ -183,7 +185,7 @@ def _load_approval_db() -> dict[str, dict]:
         return {}
     try:
         with open(_APPROVAL_FILE, encoding="utf-8") as f:
-            data = orjson.loads(f.read())
+            data = json.loads(f.read())
         if not isinstance(data, dict):
             return {}
         # Verify and strip HMAC from every entry

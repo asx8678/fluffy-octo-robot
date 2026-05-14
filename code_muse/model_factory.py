@@ -1,10 +1,11 @@
-import orjson as json
 import logging
 import os
 import pathlib
 from typing import Any
 
 import httpx
+import orjson
+import orjson as json
 from anthropic import AsyncAnthropic
 from openai import AsyncAzureOpenAI
 from pydantic_ai.models.anthropic import AnthropicModel, AnthropicModelSettings
@@ -512,14 +513,14 @@ class ModelFactory:
             # in extra_models.json (overlay loaded below).
             bundled_models = pathlib.Path(__file__).parent / "models.json"
             with open(bundled_models) as f:
-                config = orjson.loads(f.read())
+                config = json.loads(f.read())
 
         # User-level models.json overrides bundled config
         user_models = pathlib.Path(MODELS_FILE)
         if user_models.exists():
             try:
                 with open(user_models) as f:
-                    config.update(orjson.loads(f.read()))
+                    config.update(json.loads(f.read()))
             except json.JSONDecodeError as exc:
                 logging.getLogger(__name__).warning(
                     f"Failed to load user models config from {user_models}: Invalid JSON - {exc}"
@@ -564,10 +565,10 @@ class ModelFactory:
                             f"claude_code_oauth plugin not available, loading {label} as plain JSON"
                         )
                         with open(source_path) as f:
-                            extra_config = orjson.loads(f.read())
+                            extra_config = json.loads(f.read())
                 else:
                     with open(source_path) as f:
-                        extra_config = orjson.loads(f.read())
+                        extra_config = json.loads(f.read())
                 config.update(extra_config)
             except json.JSONDecodeError as exc:
                 logging.getLogger(__name__).warning(
@@ -857,7 +858,6 @@ class ModelFactory:
                             return super()._map_model_response(message)
 
                         import orjson as json
-
                         from openai.types.chat import (
                             ChatCompletionAssistantMessageParam,
                         )
@@ -871,7 +871,7 @@ class ModelFactory:
                             elif isinstance(part, ToolCallPart):
                                 args = part.args
                                 if isinstance(args, dict):
-                                    args_str = orjson.dumps(args, option=orjson.OPT_SORT_KEYS)
+                                    args_str = json.dumps(args, option=orjson.OPT_SORT_KEYS)
                                 else:
                                     args_str = "" if args is None else str(args)
                                 chunks.append(

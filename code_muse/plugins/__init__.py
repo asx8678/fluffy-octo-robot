@@ -12,12 +12,13 @@ import contextlib
 import hashlib
 import importlib
 import importlib.util
-import orjson as json
 import logging
 import os
 import re
 import sys
 from pathlib import Path
+
+import orjson as json
 
 from code_muse.secret_storage import atomic_write_private_json, ensure_private_dir
 
@@ -92,7 +93,7 @@ def _load_trust_manifest() -> dict:
         return {}
     try:
         text = path.read_text(encoding="utf-8")
-        data = orjson.loads(text)
+        data = json.loads(text)
         if isinstance(data, dict):
             return data
     except (json.JSONDecodeError, OSError) as exc:

@@ -628,11 +628,12 @@ def _sanitize_string(text: str) -> str:
 
 
 def _grep(context: RunContext, search_string: str, directory: str = ".") -> GrepOutput:
-    import orjson as json
     import os
     import shutil
     import subprocess
     import sys
+
+    import orjson as json
 
     # Sanitize search string to handle any surrogates from copy-paste
     search_string = _sanitize_string(search_string)
@@ -727,7 +728,7 @@ def _grep(context: RunContext, search_string: str, directory: str = ".") -> Grep
                 if not line:
                     continue
                 try:
-                    match_data = orjson.loads(line)
+                    match_data = json.loads(line)
                 except json.JSONDecodeError:
                     continue
                 if match_data.get("type") != "match":

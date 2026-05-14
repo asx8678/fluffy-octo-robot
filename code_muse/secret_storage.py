@@ -5,12 +5,14 @@ from the start, fsync before rename, and warn when existing files are too
 broadly permissioned.
 """
 
-import orjson as json
 import logging
 import os
 import stat
 from pathlib import Path
 from typing import Any
+
+import orjson
+import orjson as json
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +53,7 @@ def atomic_write_private_bytes(path: Path, data: bytes) -> None:
 
 def atomic_write_private_json(path: Path, data: dict[str, Any]) -> None:
     """Atomically write a JSON object to *path* with mode ``0o600``."""
-    payload = orjson.dumps(data, option=orjson.OPT_INDENT_2)
+    payload = json.dumps(data, option=orjson.OPT_INDENT_2)
     atomic_write_private_bytes(path, payload)
 
 

@@ -7,12 +7,14 @@ Cloud models supported (the Ollama "Recommended Models" cloud tier):
     kimi-k2.6:cloud, kimi-k2.5:cloud, glm-5:cloud, glm-5.1:cloud, minimax-m2.7:cloud, qwen3.5:cloud
 """
 
-import orjson as json
 import logging
 import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
+
+import orjson
+import orjson as json
 
 from code_muse.callbacks import register_callback
 from code_muse.config import EXTRA_MODELS_FILE
@@ -116,7 +118,7 @@ def _register_model(model_tag: str) -> bool:
     if extra_path.exists():
         try:
             with open(extra_path, encoding="utf-8") as fh:
-                extra_models = orjson.loads(fh.read())
+                extra_models = json.loads(fh.read())
                 if not isinstance(extra_models, dict):
                     emit_error("extra_models.json must be a dict, not a list")
                     return False
@@ -142,7 +144,7 @@ def _register_model(model_tag: str) -> bool:
     tmp = extra_path.with_suffix(".tmp")
     try:
         with open(tmp, "w", encoding="utf-8") as fh:
-            fh.write(orjson.dumps(extra_models, option=orjson.OPT_INDENT_4).decode())
+            fh.write(json.dumps(extra_models, option=orjson.OPT_INDENT_4).decode())
         tmp.replace(extra_path)
     except Exception as exc:
         emit_error(f"Failed to write extra_models.json: {exc}")
@@ -158,8 +160,9 @@ def _test_model_auth(model_tag: str) -> tuple[bool, str]:
     Returns (authorized: bool, message: str).
     If unauthorized, message contains guidance for the user.
     """
-    import orjson as json_mod
     import urllib.request
+
+    import orjson as json_mod
 
     test_payload = json_mod.dumps(
         {

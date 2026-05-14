@@ -4,10 +4,11 @@ Provides a structured, flexible storage system for expert reports.
 Supports in-memory buffering, persistent caching, and workspace-local storage.
 """
 
-import orjson as json
 import logging
 import pathlib
 
+import orjson
+import orjson as json
 from pydantic import BaseModel
 
 from code_muse.plugins.mindpack.schemas import (
@@ -55,7 +56,7 @@ class ReportStore:
                 if not self.config.save_raw_transcripts:
                     data_dict = redact_secrets(data_dict)
                 with open(file_path, "w") as f:
-                    f.write(orjson.dumps(data_dict, option=orjson.OPT_INDENT_2).decode())
+                    f.write(json.dumps(data_dict, option=orjson.OPT_INDENT_2).decode())
                 logger.debug("ReportStore: saved %s to %s", filename, file_path)
 
     def add_report(self, report: MindPackExpertReport) -> None:

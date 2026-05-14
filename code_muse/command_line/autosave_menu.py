@@ -5,12 +5,12 @@ autosave sessions with live preview of message content.
 """
 
 import asyncio
-import orjson as json
 import sys
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
 
+import orjson as json
 from prompt_toolkit.application import Application
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.layout import Dimension, Layout, VSplit, Window
@@ -36,7 +36,7 @@ def _get_session_metadata(base_dir: Path, session_name: str) -> dict:
     meta_path = base_dir / f"{session_name}_meta.json"
     try:
         with meta_path.open("r", encoding="utf-8") as f:
-            return orjson.loads(f.read())
+            return json.loads(f.read())
     except Exception:
         return {}
 

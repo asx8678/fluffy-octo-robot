@@ -237,7 +237,7 @@ def patch_tool_call_callbacks() -> None:
                 try:
                     import orjson as json
 
-                    tool_args = orjson.loads(call.args)
+                    tool_args = json.loads(call.args)
                 except json.JSONDecodeError, TypeError, ValueError:
                     tool_args = {"raw": call.args}
 

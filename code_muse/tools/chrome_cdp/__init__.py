@@ -5,7 +5,6 @@ Connects directly to Chrome's remote-debugging WebSocket endpoint.
 """
 
 import asyncio
-import orjson as json
 import logging
 import os
 import platform
@@ -13,6 +12,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+import orjson as json
 from pydantic import BaseModel
 from pydantic_ai import RunContext
 
@@ -110,7 +110,7 @@ def _get_browser_ws_url(port: int) -> str:
 
     url = f"http://localhost:{port}/json/version"
     with urllib.request.urlopen(url, timeout=5) as resp:  # noqa: S310
-        data = orjson.loads(resp.read().decode("utf-8"))
+        data = json.loads(resp.read().decode("utf-8"))
     ws_url = data.get("webSocketDebuggerUrl", "")
     if not ws_url:
         raise RuntimeError("No webSocketDebuggerUrl in /json/version")
@@ -139,7 +139,7 @@ def _fetch_json_list(port: int) -> list[dict[str, Any]]:
 
     url = f"http://localhost:{port}/json/list"
     with urllib.request.urlopen(url, timeout=5) as resp:  # noqa: S310
-        return orjson.loads(resp.read().decode("utf-8"))
+        return json.loads(resp.read().decode("utf-8"))
 
 
 # ---------------------------------------------------------------------------
@@ -189,7 +189,7 @@ async def _send_cdp(
     _PENDING[msg_id] = future
 
     try:
-        await ws.send(orjson.dumps(payload))
+        await ws.send(json.dumps(payload))
         msg = await asyncio.wait_for(future, timeout=timeout)
     finally:
         _PENDING.pop(msg_id, None)
@@ -217,7 +217,7 @@ async def _read_ws_loop(ws, event_buffers: dict[str, list] | None = None) -> Non
     try:
         async for raw in ws:
             try:
-                msg = orjson.loads(raw)
+                msg = json.loads(raw)
             except json.JSONDecodeError:
                 continue
             msg_id = msg.get("id")
@@ -373,7 +373,7 @@ class CdpSession:
         except (RuntimeError, TimeoutError, ConnectionError) as exc:
             logger.debug("get_source CDP fallback after %s", exc)
         # Try getting source from page via eval (fetch the URL content)
-        result = await self.eval(f"fetch({orjson.dumps(url)}).then(r => r.text())")
+        result = await self.eval(f"fetch({json.dumps(url)}).then(r => r.text())")
         return result
 
     async def ensure_connected(self) -> None:
@@ -548,7 +548,7 @@ class CdpSession:
             "}))"
         )
         try:
-            return orjson.loads(raw)
+            return json.loads(raw)
         except json.JSONDecodeError:
             return []
 
@@ -705,7 +705,7 @@ def register_chrome_cdp(agent):
                 port = _get_devtools_port()
                 version_url = f"http://localhost:{port}/json/version"
                 with urllib.request.urlopen(version_url, timeout=3) as resp:  # noqa: S310
-                    data = orjson.loads(resp.read().decode("utf-8"))
+                    data = json.loads(resp.read().decode("utf-8"))
                 version = data.get("Browser", "")
                 emit_info(f"chrome_cdp: Chrome available — {version}")
                 return ChromeCdpInfo(available=True, ws_url=ws_url, version=version)

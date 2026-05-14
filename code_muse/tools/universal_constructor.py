@@ -331,7 +331,7 @@ def _handle_call_action(
         try:
             import orjson as json
 
-            args = orjson.loads(args)
+            args = json.loads(args)
         except json.JSONDecodeError:
             return UniversalConstructorOutput(
                 action="call",

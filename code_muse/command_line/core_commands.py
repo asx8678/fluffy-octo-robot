@@ -524,8 +524,9 @@ def handle_add_model_command(command: str) -> bool:
 )
 def handle_remove_model_command(command: str) -> bool:
     """Remove a model from extra_models.json by key."""
-    import orjson as json
     import pathlib
+
+    import orjson as json
 
     from code_muse.config import EXTRA_MODELS_FILE, clear_model_cache
     from code_muse.messaging import emit_success, emit_warning
@@ -542,7 +543,7 @@ def handle_remove_model_command(command: str) -> bool:
     if extra_models_path.exists():
         try:
             with open(extra_models_path, encoding="utf-8") as f:
-                extra_models = orjson.loads(f.read())
+                extra_models = json.loads(f.read())
                 if not isinstance(extra_models, dict):
                     emit_warning("extra_models.json must be a dictionary")
                     return False
@@ -567,7 +568,7 @@ def handle_remove_model_command(command: str) -> bool:
     extra_models_path.parent.mkdir(parents=True, exist_ok=True)
     temp_path = extra_models_path.with_suffix(".tmp")
     with open(temp_path, "w", encoding="utf-8") as f:
-        f.write(orjson.dumps(extra_models, option=orjson.OPT_INDENT_4).decode())
+        f.write(json.dumps(extra_models, option=orjson.OPT_INDENT_4).decode())
     temp_path.replace(extra_models_path)
 
     clear_model_cache()

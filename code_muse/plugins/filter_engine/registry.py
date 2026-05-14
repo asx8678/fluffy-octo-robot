@@ -4,11 +4,12 @@ Maps command categories to compression strategy functions.  Handles
 registration, duplicate detection, and priority-based overrides.
 """
 
-import orjson as json
 import logging
 import re
 from collections.abc import Callable
 from typing import Any
+
+import orjson as json
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +134,7 @@ def _register_content_stubs() -> None:
         if not stdout or not stdout.strip():
             return None
         try:
-            data = orjson.loads(stdout)
+            data = json.loads(stdout)
         except ValueError:
             # Not valid JSON — let passthrough handle it
             return None

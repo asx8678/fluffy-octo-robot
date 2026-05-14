@@ -5,9 +5,10 @@ Uses fast heuristics — no LLM calls.
 """
 
 import enum
-import orjson as json
 import re
 from typing import ClassVar
+
+import orjson as json
 
 
 class ContentType(enum.Enum):
@@ -119,7 +120,7 @@ class ContentTypeDetector:
         if first not in ("{", "["):
             return False
         try:
-            orjson.loads(text)
+            json.loads(text)
             return True
         except ValueError:
             return False

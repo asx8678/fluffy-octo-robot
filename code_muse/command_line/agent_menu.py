@@ -126,7 +126,7 @@ def _get_pinned_model(agent_name: str) -> str | None:
         if agent_name in json_agents:
             agent_file_path = json_agents[agent_name]
             with open(agent_file_path, encoding="utf-8") as f:
-                agent_config = orjson.loads(f.read())
+                agent_config = json.loads(f.read())
             model = agent_config.get("model")
             return model if model else None
     except Exception:
@@ -230,7 +230,7 @@ def _apply_pinned_model(agent_name: str, model_choice: str) -> None:
             agent_file_path = json_agents[agent_name]
 
             with open(agent_file_path, encoding="utf-8") as f:
-                agent_config = orjson.loads(f.read())
+                agent_config = json.loads(f.read())
 
             if model_choice == "(unpin)":
                 # Remove the model key if it exists
@@ -246,7 +246,7 @@ def _apply_pinned_model(agent_name: str, model_choice: str) -> None:
 
             # Save the updated configuration
             with open(agent_file_path, "w", encoding="utf-8") as f:
-                f.write(orjson.dumps(agent_config, option=orjson.OPT_INDENT_2).decode())
+                f.write(json.dumps(agent_config, option=orjson.OPT_INDENT_2).decode())
         else:
             # Handle built-in Python agent - use config functions
             if model_choice == "(unpin)":

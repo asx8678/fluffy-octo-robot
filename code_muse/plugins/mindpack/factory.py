@@ -23,7 +23,6 @@ from typing import Any, get_args
 
 from pydantic_ai import Agent as PydanticAgent
 from pydantic_ai import UsageLimits
-from pydantic_ai.capabilities import ProcessHistory
 
 from code_muse.plugins.mindpack.schemas import (
     AskMindPackInput,

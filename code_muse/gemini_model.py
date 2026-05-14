@@ -6,13 +6,13 @@ SDK dependency.
 """
 
 import base64
-import orjson as json
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
 
 import httpx
+import orjson as json
 from pydantic_ai._run_context import RunContext
 from pydantic_ai.messages import (
     ModelMessage,
@@ -480,7 +480,7 @@ class GeminiModel(Model):
                         json_str = line[6:]
                         if json_str:
                             try:
-                                yield orjson.loads(json_str)
+                                yield json.loads(json_str)
                             except json.JSONDecodeError:
                                 continue
 

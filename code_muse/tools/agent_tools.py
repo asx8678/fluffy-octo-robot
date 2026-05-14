@@ -1,7 +1,6 @@
 # agent_tools.py
 import asyncio
 import hashlib
-import orjson as json
 import logging
 import re
 import threading
@@ -13,6 +12,8 @@ from functools import partial
 from pathlib import Path
 from typing import Any
 
+import orjson
+import orjson as json
 from pydantic import BaseModel
 
 # Import Agent from pydantic_ai to create temporary agents for invocation
@@ -190,16 +191,16 @@ def _save_session_history(
             "message_count": len(message_history),
         }
         with open(txt_path, "w") as f:
-            f.write(orjson.dumps(metadata, option=orjson.OPT_INDENT_2).decode())
+            f.write(json.dumps(metadata, option=orjson.OPT_INDENT_2).decode())
     elif txt_path.exists():
         # Update message count on subsequent saves
         try:
             with open(txt_path) as f:
-                metadata = orjson.loads(f.read())
+                metadata = json.loads(f.read())
             metadata["message_count"] = len(message_history)
             metadata["last_updated"] = datetime.now().isoformat()
             with open(txt_path, "w") as f:
-                f.write(orjson.dumps(metadata, option=orjson.OPT_INDENT_2).decode())
+                f.write(json.dumps(metadata, option=orjson.OPT_INDENT_2).decode())
         except Exception:
             pass  # If we can't update metadata, no big deal
 
@@ -229,7 +230,7 @@ def _load_session_history(session_id: str) -> list[ModelMessage]:
     if json_path.exists():
         try:
             with open(json_path, encoding="utf-8") as f:
-                session_data = orjson.loads(f.read())
+                session_data = json.loads(f.read())
             raw_messages = session_data.get("messages", [])
             if isinstance(raw_messages, list):
                 try:
@@ -246,7 +247,7 @@ def _load_session_history(session_id: str) -> list[ModelMessage]:
     if pkl_path.exists():
         try:
             with open(pkl_path, encoding="utf-8") as f:
-                session_data = orjson.loads(f.read())
+                session_data = json.loads(f.read())
             raw_messages = session_data.get("messages", [])
             if isinstance(raw_messages, list):
                 try:

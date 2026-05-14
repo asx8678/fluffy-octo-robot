@@ -12,12 +12,12 @@ The parser supports filtering by cost, context length, capabilities, and provide
 comprehensive type safety throughout the implementation.
 """
 
-import orjson as json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import httpx
+import orjson as json
 
 from code_muse.messaging import emit_error, emit_info, emit_warning
 
@@ -181,7 +181,7 @@ class ModelsDevRegistry:
                 raise FileNotFoundError(f"Models API file not found: {self.json_path}")
             try:
                 with open(self.json_path, encoding="utf-8") as f:
-                    data = orjson.loads(f.read())
+                    data = json.loads(f.read())
                 self.data_source = f"file:{self.json_path}"
             except json.JSONDecodeError as e:
                 emit_error(f"Invalid JSON in {self.json_path}: {e}")
@@ -198,7 +198,7 @@ class ModelsDevRegistry:
                 if bundled_path.exists():
                     try:
                         with open(bundled_path, encoding="utf-8") as f:
-                            data = orjson.loads(f.read())
+                            data = json.loads(f.read())
                         self.data_source = f"bundled:{bundled_path.name}"
                         emit_info(
                             "📦 Using bundled models database (models.dev unavailable)"

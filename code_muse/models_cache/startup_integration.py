@@ -1,10 +1,11 @@
 """Startup cache integration — load cached models on session start."""
 
-import orjson as json
 import logging
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
+
+import orjson as json
 
 from code_muse.config import MODELS_CACHE_FILE
 from code_muse.models_cache.cache_writer import write_models_cache
@@ -28,7 +29,7 @@ def load_cached_models() -> list[dict[str, Any]] | None:
             return None
 
         with open(MODELS_CACHE_PATH, encoding="utf-8") as f:
-            cache = orjson.loads(f.read())
+            cache = json.loads(f.read())
 
         fetched_at_str = cache.get("fetched_at")
         if not fetched_at_str:

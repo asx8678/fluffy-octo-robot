@@ -204,7 +204,8 @@ class BaseAgent(ABC):
             raise
         except BaseException as exc:
             import traceback
-            from code_muse.messaging import emit_warning, emit_error
+
+            from code_muse.messaging import emit_error, emit_warning
 
             if isinstance(exc, BaseExceptionGroup):
                 for i, sub in enumerate(exc.exceptions, 1):

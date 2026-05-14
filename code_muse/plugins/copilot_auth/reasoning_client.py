@@ -19,11 +19,11 @@ The approach mirrors the ``ChatGPTCodexAsyncClient`` pattern already in the code
 """
 
 import hashlib
-import orjson as json
 import logging
 from typing import Any
 
 import httpx
+import orjson as json
 from httpx import AsyncByteStream
 
 logger = logging.getLogger(__name__)
@@ -113,7 +113,7 @@ class _OpaqueCapturingStream(AsyncByteStream):
                 self._flush()
                 continue
             try:
-                event = orjson.loads(data_str)
+                event = json.loads(data_str)
                 self._extract_from_event(event)
             except json.JSONDecodeError, TypeError:
                 pass
@@ -169,7 +169,7 @@ def _capture_from_content(
 ) -> None:
     """Extract ``reasoning_opaque`` from an already-read response body."""
     try:
-        data = orjson.loads(content)
+        data = json.loads(content)
         for choice in data.get("choices", []):
             msg = choice.get("message") or {}
             text = msg.get(thinking_field)
@@ -191,7 +191,7 @@ def _rebuild_request_body(
     client: httpx.AsyncClient,
 ) -> None:
     """Replace the request body in-place (mirrors ChatGPTCodexAsyncClient)."""
-    new_body = orjson.dumps(body).encode("utf-8")
+    new_body = json.dumps(body).encode("utf-8")
     rebuilt = client.build_request(
         method=request.method,
         url=request.url,
@@ -224,7 +224,7 @@ def _inject_opaque_into_request(
         if not body_bytes:
             return
 
-        body = orjson.loads(body_bytes)
+        body = json.loads(body_bytes)
         if not isinstance(body, dict):
             return
 
@@ -305,7 +305,7 @@ def _strip_all_reasoning_fields(
         if not body_bytes:
             return False
 
-        body = orjson.loads(body_bytes)
+        body = json.loads(body_bytes)
         if not isinstance(body, dict):
             return False
 

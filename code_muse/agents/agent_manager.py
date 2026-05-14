@@ -172,7 +172,7 @@ def _save_session_data(sessions: dict[str, str]) -> None:
         # Write to file atomically (write to temp file, then rename)
         temp_file = session_file.with_suffix(".tmp")
         with open(temp_file, "w", encoding="utf-8") as f:
-            f.write(orjson.dumps(cleaned_sessions, option=orjson.OPT_INDENT_2).decode())
+            f.write(json.dumps(cleaned_sessions, option=orjson.OPT_INDENT_2).decode())
 
         # Atomic rename (works on all platforms)
         temp_file.replace(session_file)
@@ -684,7 +684,7 @@ def clone_agent(agent_name: str) -> str | None:
     try:
         if isinstance(agent_ref, str):
             with open(agent_ref, encoding="utf-8") as f:
-                source_config = orjson.loads(f.read())
+                source_config = json.loads(f.read())
 
             source_display_name = source_config.get("display_name")
             if not source_display_name:
@@ -736,7 +736,7 @@ def clone_agent(agent_name: str) -> str | None:
 
     try:
         with open(clone_path, "w", encoding="utf-8") as f:
-            f.write(orjson.dumps(clone_config, option=orjson.OPT_INDENT_2).decode())
+            f.write(json.dumps(clone_config, option=orjson.OPT_INDENT_2).decode())
         emit_success(f"Cloned '{agent_name}' to '{clone_name}'.")
         global _DISCOVERY_DIRTY, _DISCOVERY_CACHE
         _DISCOVERY_DIRTY = True

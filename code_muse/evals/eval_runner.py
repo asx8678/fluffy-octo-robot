@@ -6,7 +6,6 @@ agent prompts in a temporary directory via headless ``code-muse``, and
 """
 
 import importlib.util
-import orjson as json
 import shlex
 import shutil
 import subprocess
@@ -16,6 +15,8 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+import orjson as json
 
 
 @dataclass
@@ -80,7 +81,7 @@ def _parse_tool_calls_from_stdout(stdout: str) -> list[ToolCall]:
         if not line:
             continue
         try:
-            obj = orjson.loads(line)
+            obj = json.loads(line)
             if isinstance(obj, dict) and "tool_name" in obj and "tool_args" in obj:
                 tool_calls.append(
                     ToolCall(
@@ -118,7 +119,7 @@ def _extract_json_objects_with_tool_fields(text: str) -> list[ToolCall]:
             if depth == 0:
                 candidate = text[start:i]
                 try:
-                    obj = orjson.loads(candidate)
+                    obj = json.loads(candidate)
                     if (
                         isinstance(obj, dict)
                         and "tool_name" in obj

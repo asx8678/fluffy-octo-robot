@@ -11,7 +11,6 @@ that retain message objects.
 """
 
 import dataclasses
-import orjson as json
 import math
 import pathlib
 import weakref
@@ -19,7 +18,7 @@ from annotationlib import get_annotations
 from collections import OrderedDict
 from typing import Any
 
-import orjson
+import orjson as json
 import pydantic
 from pydantic_ai import BinaryContent
 from pydantic_ai.messages import ModelMessage, ModelRequest, ToolReturnPart
@@ -80,10 +79,10 @@ def stringify_part(part: Any) -> str:
     elif isinstance(content, str):
         attributes.append(f"content={content}")
     elif isinstance(content, pydantic.BaseModel):
-        dumped = orjson.dumps(content.model_dump(), default=_prep_for_orjson).decode()
+        dumped = json.dumps(content.model_dump(), default=_prep_for_orjson).decode()
         attributes.append(f"content={dumped}")
     elif isinstance(content, dict):
-        dumped = orjson.dumps(content, default=_prep_for_orjson).decode()
+        dumped = json.dumps(content, default=_prep_for_orjson).decode()
         attributes.append(f"content={dumped}")
     elif isinstance(content, list):
         for item in content:
@@ -243,7 +242,7 @@ def estimate_context_overhead(
 
         schema = getattr(tool_func, "schema", None)
         if schema is not None:
-            schema_str = orjson.dumps(schema) if isinstance(schema, dict) else str(schema)
+            schema_str = json.dumps(schema) if isinstance(schema, dict) else str(schema)
             total += estimate_tokens(schema_str)
         else:
             annotations = get_annotations(tool_func)

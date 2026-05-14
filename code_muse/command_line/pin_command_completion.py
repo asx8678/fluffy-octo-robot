@@ -1,6 +1,6 @@
-import orjson as json
 from collections.abc import Iterable
 
+import orjson as json
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.document import Document
 
@@ -15,7 +15,7 @@ def _get_json_agents_for_model(model_name: str) -> list:
         for agent_name, agent_path in json_agents.items():
             try:
                 with open(agent_path) as f:
-                    agent_data = orjson.loads(f.read())
+                    agent_data = json.loads(f.read())
                     if agent_data.get("model") == model_name:
                         pinned.append(agent_name)
             except Exception:
@@ -44,7 +44,7 @@ def _get_pinned_model_for_agent(agent_name: str) -> str | None:
         json_agents = discover_json_agents()
         if agent_name in json_agents:
             with open(json_agents[agent_name]) as f:
-                agent_data = orjson.loads(f.read())
+                agent_data = json.loads(f.read())
                 return agent_data.get("model")
     except Exception:
         pass

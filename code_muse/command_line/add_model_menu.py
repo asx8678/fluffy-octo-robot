@@ -4,12 +4,13 @@ Provides a beautiful split-panel interface for browsing providers and models
 with live preview of model details and one-click addition to extra_models.json.
 """
 
-import orjson as json
 import os
 import sys
 import time
 from pathlib import Path
 
+import orjson
+import orjson as json
 from prompt_toolkit.application import Application
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.layout import Dimension, Layout, VSplit, Window
@@ -737,7 +738,7 @@ class AddModelMenu:
             if extra_models_path.exists():
                 try:
                     with open(extra_models_path, encoding="utf-8") as f:
-                        extra_models = orjson.loads(f.read())
+                        extra_models = json.loads(f.read())
                         if not isinstance(extra_models, dict):
                             emit_error(
                                 "extra_models.json must be a dictionary, not a list"
@@ -767,7 +768,7 @@ class AddModelMenu:
             # Save updated configuration (atomic write)
             temp_path = extra_models_path.with_suffix(".tmp")
             with open(temp_path, "w", encoding="utf-8") as f:
-                f.write(orjson.dumps(extra_models, option=orjson.OPT_INDENT_4).decode())
+                f.write(json.dumps(extra_models, option=orjson.OPT_INDENT_4).decode())
             temp_path.replace(extra_models_path)
 
             emit_info(f"Added {model_key} to extra_models.json")

@@ -1,6 +1,5 @@
 """Manage mitmdump subprocess for traffic capture."""
 
-import orjson as json
 import logging
 import os
 import shlex
@@ -11,6 +10,8 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+
+import orjson as json
 
 from code_muse.http_utils import find_available_port
 from code_muse.messaging import emit_info, emit_success, emit_warning
@@ -320,7 +321,7 @@ class MitmProxyManager:
             return None
         try:
             with open(self._output_path, encoding="utf-8") as f:
-                return orjson.loads(f.read())
+                return json.loads(f.read())
         except Exception as exc:
             logger.warning("Failed to read capture file: %s", exc)
             return None

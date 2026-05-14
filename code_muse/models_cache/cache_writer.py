@@ -5,12 +5,14 @@ catalog bundled with the client, refreshed on startup.
 """
 
 import dataclasses
-import orjson as json
 import logging
 import os
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+
+import orjson
+import orjson as json
 
 from code_muse.config import DATA_DIR
 from code_muse.models_dev_parser import (
@@ -76,7 +78,7 @@ def write_models_cache(models: list[ModelInfo] | None = None) -> Path | None:
         cache_path = Path(DATA_DIR) / "models_cache.json"
         os.makedirs(cache_path.parent, exist_ok=True)
         with open(cache_path, "w", encoding="utf-8") as f:
-            f.write(orjson.dumps(cache_data, option=orjson.OPT_INDENT_2, default=str).decode())
+            f.write(json.dumps(cache_data, option=orjson.OPT_INDENT_2, default=str).decode())
 
         logger.info(f"Wrote models cache ({len(models)} models) to {cache_path}")
         return cache_path

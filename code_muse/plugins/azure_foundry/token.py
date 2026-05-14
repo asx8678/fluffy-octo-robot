@@ -125,6 +125,7 @@ class AzureFoundryTokenProvider:
             try:
                 # The token is a JWT, we can decode the payload to get user info
                 import base64
+
                 import orjson as json
 
                 # Split the JWT and decode the payload (second part)
@@ -136,7 +137,7 @@ class AzureFoundryTokenProvider:
                     if padding != 4:
                         payload += "=" * padding
                     decoded = base64.urlsafe_b64decode(payload)
-                    claims = orjson.loads(decoded)
+                    claims = json.loads(decoded)
                     user_info = (
                         claims.get("upn")
                         or claims.get("email")

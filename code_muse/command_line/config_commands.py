@@ -4,6 +4,7 @@ This module contains @register_command decorated handlers that are automatically
 discovered by the command registry system.
 """
 
+import orjson
 import orjson as json
 
 from code_muse.command_line.command_registry import register_command
@@ -258,7 +259,7 @@ def _get_json_agents_pinned_to_model(model_name: str) -> list:
     for agent_name, agent_path in json_agents.items():
         try:
             with open(agent_path) as f:
-                agent_data = orjson.loads(f.read())
+                agent_data = json.loads(f.read())
                 if agent_data.get("model") == model_name:
                     pinned.append(agent_name)
         except Exception:
@@ -355,14 +356,14 @@ def handle_pin_model_command(command: str) -> bool:
             agent_file_path = json_agents[agent_name]
 
             with open(agent_file_path, encoding="utf-8") as f:
-                agent_config = orjson.loads(f.read())
+                agent_config = json.loads(f.read())
 
             # Set the model
             agent_config["model"] = model_name
 
             # Save the updated configuration
             with open(agent_file_path, "w", encoding="utf-8") as f:
-                f.write(orjson.dumps(agent_config, option=orjson.OPT_INDENT_2).decode())
+                f.write(json.dumps(agent_config, option=orjson.OPT_INDENT_2).decode())
 
         else:
             # Handle built-in Python agent - store in config
@@ -432,7 +433,7 @@ def handle_unpin_command(command: str) -> bool:
                 # Read the JSON file to check for pinned model
                 try:
                     with open(agent_path) as f:
-                        agent_config = orjson.loads(f.read())
+                        agent_config = json.loads(f.read())
                     pinned_model = agent_config.get("model")
                     if pinned_model:
                         emit_info(f"  {agent_name} ({agent_path}) [→ {pinned_model}]")
@@ -493,7 +494,7 @@ def handle_unpin_command(command: str) -> bool:
             agent_file_path = json_agents[agent_name]
 
             with open(agent_file_path, encoding="utf-8") as f:
-                agent_config = orjson.loads(f.read())
+                agent_config = json.loads(f.read())
 
             # Remove the model key if it exists
             if "model" in agent_config:
@@ -501,7 +502,7 @@ def handle_unpin_command(command: str) -> bool:
 
             # Save the updated configuration
             with open(agent_file_path, "w", encoding="utf-8") as f:
-                f.write(orjson.dumps(agent_config, option=orjson.OPT_INDENT_2).decode())
+                f.write(json.dumps(agent_config, option=orjson.OPT_INDENT_2).decode())
 
         else:
             # Handle built-in Python agent - clear from config

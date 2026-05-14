@@ -2,7 +2,6 @@
 
 import base64
 import hashlib
-import orjson as json
 import logging
 import re
 import secrets
@@ -12,6 +11,7 @@ from typing import Any
 from urllib.parse import urlencode
 
 import httpx
+import orjson as json
 
 from code_muse.secret_storage import (
     atomic_write_private_json,
@@ -138,7 +138,7 @@ def load_stored_tokens() -> dict[str, Any | None]:
         if token_path.exists():
             warn_or_fix_private_file_mode(token_path)
             with open(token_path, encoding="utf-8") as handle:
-                return orjson.loads(handle.read())
+                return json.loads(handle.read())
     except Exception as exc:  # pragma: no cover - defensive logging
         logger.error("Failed to load tokens: %s", exc)
     return None
@@ -325,7 +325,7 @@ def load_claude_models() -> dict[str, Any]:
         models_path = get_claude_models_path()
         if models_path.exists():
             with open(models_path, encoding="utf-8") as handle:
-                return orjson.loads(handle.read())
+                return json.loads(handle.read())
     except Exception as exc:  # pragma: no cover - defensive logging
         logger.error("Failed to load Claude models: %s", exc)
     return {}

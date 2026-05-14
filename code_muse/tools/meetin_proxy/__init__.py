@@ -1,8 +1,9 @@
 """mitmproxy — MITM proxy for provider traffic capture and analysis."""
 
-import orjson as json
 from typing import Any
 
+import orjson
+import orjson as json
 from pydantic import BaseModel
 from pydantic_ai import RunContext
 
@@ -117,7 +118,7 @@ def register_mitmproxy(agent):
                     prefix="mitmproxy_result_", suffix=".json"
                 )
                 with open(fd, "w", encoding="utf-8") as f:
-                    f.write(orjson.dumps(data, option=orjson.OPT_INDENT_2, default=str).decode())
+                    f.write(json.dumps(data, option=orjson.OPT_INDENT_2, default=str).decode())
 
             if data:
                 emit_success(
@@ -195,7 +196,7 @@ def register_mitmproxy(agent):
                     prefix="mitmproxy_result_", suffix=".json"
                 )
                 with open(fd, "w", encoding="utf-8") as f:
-                    f.write(orjson.dumps(data, option=orjson.OPT_INDENT_2, default=str).decode())
+                    f.write(json.dumps(data, option=orjson.OPT_INDENT_2, default=str).decode())
 
             if data:
                 emit_success(

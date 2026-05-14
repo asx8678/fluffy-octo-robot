@@ -10,7 +10,6 @@ Key guarantees
 
 import contextlib
 import difflib
-import orjson as json
 import os
 import traceback
 import warnings
@@ -18,6 +17,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Annotated, Any
 
+import orjson as json
 import orjson as json_repair
 from pydantic import BaseModel, BeforeValidator, WithJsonSchema
 from pydantic_ai import RunContext
@@ -837,7 +837,7 @@ def register_edit_file(agent):
         if isinstance(payload, str):
             try:
                 # Fallback for weird models that just can't help but send json strings...
-                payload_dict = orjson.loads(json_repair.repair_json(payload))
+                payload_dict = json.loads(json_repair.repair_json(payload))
                 if "replacements" in payload_dict:
                     payload = ReplacementsPayload(**payload_dict)
                 elif "delete_snippet" in payload_dict:
@@ -983,7 +983,7 @@ def _try_json_repair(v: Any) -> Any:
     if not isinstance(v, str):
         return v
     try:
-        return orjson.loads(json_repair.repair_json(v))
+        return json.loads(json_repair.repair_json(v))
     except Exception:
         return v
 

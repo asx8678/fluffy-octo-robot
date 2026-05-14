@@ -11,12 +11,14 @@ Data models live in ``schemas.py`` to avoid circular imports.
 """
 
 import asyncio
-import orjson as json
 import logging
 import uuid
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+import orjson
+import orjson as json
 
 from code_muse.plugins.mindpack.memory import ReportStore
 from code_muse.plugins.mindpack.schemas import (
@@ -185,7 +187,7 @@ class MindPackOrchestrator:
         config_path = self._get_experts_config_path()
         data = [e.model_dump() for e in self._expert_registry]
         with open(config_path, "w", encoding="utf-8") as f:
-            f.write(orjson.dumps(data, option=orjson.OPT_INDENT_2).decode())
+            f.write(json.dumps(data, option=orjson.OPT_INDENT_2).decode())
         logger.info("Orchestrator: saved %d experts to %s", len(data), config_path)
 
     def load_experts(self) -> None:
@@ -203,7 +205,7 @@ class MindPackOrchestrator:
 
         try:
             with open(config_path, encoding="utf-8") as f:
-                data = orjson.loads(f.read())
+                data = json.loads(f.read())
 
             # Remove any existing experts that will be replaced
             custom_experts = [ExpertDescriptor(**d) for d in data]
@@ -303,7 +305,7 @@ class MindPackOrchestrator:
         config_path = self._get_profiles_config_path()
         data = [p.model_dump() for p in self._profile_registry]
         with open(config_path, "w", encoding="utf-8") as f:
-            f.write(orjson.dumps(data, option=orjson.OPT_INDENT_2).decode())
+            f.write(json.dumps(data, option=orjson.OPT_INDENT_2).decode())
         logger.info("Orchestrator: saved %d profiles to %s", len(data), config_path)
 
     def load_profiles(self) -> None:
@@ -325,7 +327,7 @@ class MindPackOrchestrator:
 
         try:
             with open(config_path, encoding="utf-8") as f:
-                data = orjson.loads(f.read())
+                data = json.loads(f.read())
             self._profile_registry = [ProfileDescriptor(**d) for d in data]
             self._migrate_orphans_to_default()
             logger.info(

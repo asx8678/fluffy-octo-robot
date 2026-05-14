@@ -6,7 +6,6 @@ Generative Language API. The Code Assist API supports OAuth authentication
 and has a different request/response format.
 """
 
-import orjson as json
 import logging
 import uuid
 from collections.abc import AsyncIterator
@@ -15,6 +14,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import httpx
+import orjson as json
 from pydantic_ai.messages import (
     ModelMessage,
     ModelRequest,
@@ -159,7 +159,7 @@ class GeminiCodeAssistModel(Model):
                         content = part.content
                         if not isinstance(content, (str, int, float, bool, type(None))):
                             try:
-                                content = orjson.dumps(content, default=str)
+                                content = json.dumps(content, default=str)
                             except (TypeError, ValueError):
                                 content = str(content)
                         contents.append(
@@ -332,7 +332,7 @@ class StreamedResponse:
                     break
 
                 try:
-                    data = orjson.loads(data_str)
+                    data = json.loads(data_str)
                     # Unwrap Code Assist format
                     inner = data.get("response", data)
 

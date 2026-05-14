@@ -1,10 +1,10 @@
 """Session persistence layer - public API (save, load, list, cleanup)."""
 
-import orjson as json
 from pathlib import Path
 from typing import Any
 
 import aiofiles
+import orjson as json
 
 from code_muse.session_storage_helpers import (  # noqa: F401
     _FORMAT,
@@ -92,7 +92,7 @@ def load_session(
     json_path = _canonical_json_path(base_dir, session_name)
     if json_path.exists():
         with json_path.open("r", encoding="utf-8") as f:
-            data = orjson.loads(f.read())
+            data = json.loads(f.read())
         return _unwrap_messages(data)
 
     # 2. Try compat .pkl path
@@ -247,7 +247,7 @@ async def restore_autosave_interactively(base_dir: Path) -> None:
         meta_path = base_dir / f"{name}_meta.json"
         try:
             async with aiofiles.open(meta_path, encoding="utf-8") as meta_file:
-                data = orjson.loads(await meta_file.read())
+                data = json.loads(await meta_file.read())
             timestamp = data.get("timestamp")
             message_count = data.get("message_count")
         except Exception:

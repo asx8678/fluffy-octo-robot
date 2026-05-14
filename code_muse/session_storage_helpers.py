@@ -21,7 +21,6 @@ Backward compatibility:
 
 import hashlib
 import hmac
-import orjson as json
 import os
 import pickle
 import warnings
@@ -30,6 +29,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import orjson
+import orjson as json
 from pydantic_ai.messages import ModelMessage, ModelMessagesTypeAdapter
 
 _LEGACY_SIGNED_HEADER = b"CPSESSION\x01"
@@ -52,7 +53,7 @@ def _hash_session_data(data: dict[str, Any]) -> str | None:
     """Return a SHA-256 hash of serialised session data for dirty-flag comparison."""
     try:
         return hashlib.sha256(
-            orjson.dumps(data, option=orjson.OPT_SORT_KEYS)
+            json.dumps(data, option=orjson.OPT_SORT_KEYS)
         ).hexdigest()
     except TypeError, ValueError:
         return None
@@ -285,7 +286,7 @@ def _atomic_write_json(path: Path, data: dict[str, Any]) -> None:
     """Write JSON data atomically to *path*."""
     tmp = path.with_suffix(".tmp")
     with tmp.open("w", encoding="utf-8") as f:
-        f.write(orjson.dumps(data, option=orjson.OPT_INDENT_2).decode())
+        f.write(json.dumps(data, option=orjson.OPT_INDENT_2).decode())
     tmp.replace(path)
 
 
@@ -311,7 +312,7 @@ def _try_load_pkl(path: Path, *, allow_legacy: bool = False) -> Any:
     # Try JSON first (current save_session writes JSON to .pkl)
     if not _is_binary_pickle(raw):
         try:
-            data = orjson.loads(raw)
+            data = json.loads(raw)
             return _unwrap_messages(data)
         except json.JSONDecodeError:
             pass

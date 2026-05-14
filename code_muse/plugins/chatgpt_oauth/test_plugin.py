@@ -2,9 +2,9 @@
 Basic tests for ChatGPT OAuth plugin.
 """
 
-import orjson as json
 from unittest.mock import MagicMock, patch
 
+import orjson as json
 import pytest
 
 from code_muse.plugins.chatgpt_oauth import config, utils
@@ -133,7 +133,7 @@ def test_parse_jwt_claims():
     # Valid JWT structure (header.payload.signature)
     import base64
 
-    payload = base64.urlsafe_b64encode(orjson.dumps({"sub": "user123"}).encode()).decode()
+    payload = base64.urlsafe_b64encode(json.dumps({"sub": "user123"}).encode()).decode()
     token = f"header.{payload}.signature"
 
     claims = utils.parse_jwt_claims(token)

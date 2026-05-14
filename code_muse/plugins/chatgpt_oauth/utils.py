@@ -3,7 +3,6 @@
 import base64
 import datetime
 import hashlib
-import orjson as json
 import logging
 import secrets
 import time
@@ -13,6 +12,8 @@ from urllib.parse import parse_qs as urllib_parse_qs
 from urllib.parse import urlencode, urlparse
 
 import httpx
+import orjson
+import orjson as json
 
 from code_muse.secret_storage import (
     atomic_write_private_json,
@@ -138,7 +139,7 @@ def parse_jwt_claims(token: str) -> dict[str, Any | None]:
         _, payload, _ = token.split(".")
         padded = payload + "=" * (-len(payload) % 4)
         data = base64.urlsafe_b64decode(padded.encode())
-        return orjson.loads(data.decode())
+        return json.loads(data.decode())
     except Exception as exc:
         logger.error("Failed to parse JWT: %s", exc)
     return None
@@ -150,7 +151,7 @@ def load_stored_tokens() -> dict[str, Any | None]:
         if token_path.exists():
             warn_or_fix_private_file_mode(token_path)
             with open(token_path, encoding="utf-8") as handle:
-                return orjson.loads(handle.read())
+                return json.loads(handle.read())
     except Exception as exc:
         logger.error("Failed to load tokens: %s", exc)
     return None
@@ -269,7 +270,7 @@ def load_chatgpt_models() -> dict[str, Any]:
         models_path = get_chatgpt_models_path()
         if models_path.exists():
             with open(models_path, encoding="utf-8") as handle:
-                return orjson.loads(handle.read())
+                return json.loads(handle.read())
     except Exception as exc:
         logger.error("Failed to load ChatGPT models: %s", exc)
     return {}
@@ -279,7 +280,7 @@ def save_chatgpt_models(models: dict[str, Any]) -> bool:
     try:
         models_path = get_chatgpt_models_path()
         with open(models_path, "w", encoding="utf-8") as handle:
-            handle.write(orjson.dumps(models, option=orjson.OPT_INDENT_2).decode())
+            handle.write(json.dumps(models, option=orjson.OPT_INDENT_2).decode())
         return True
     except Exception as exc:
         logger.error("Failed to save ChatGPT models: %s", exc)
