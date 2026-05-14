@@ -36,6 +36,7 @@ async def _invoke_agent(agent_name: str, prompt: str) -> _AgentResult:
     ``RunContext`` — making it callable from plugin callbacks.
     """
     from pydantic_ai import Agent, UsageLimits
+    from pydantic_ai.capabilities import ProcessHistory
 
     from code_muse.agents._compaction import make_history_processor
     from code_muse.agents.agent_manager import load_agent
@@ -98,7 +99,7 @@ async def _invoke_agent(agent_name: str, prompt: str) -> _AgentResult:
             output_type=str,
             retries=3,
             toolsets=[],
-            history_processors=[make_history_processor(agent_config)],
+            capabilities=[ProcessHistory(make_history_processor(agent_config))],
             model_settings=model_settings,
         )
 

@@ -17,6 +17,7 @@ from pydantic import BaseModel
 
 # Import Agent from pydantic_ai to create temporary agents for invocation
 from pydantic_ai import Agent, RunContext, UsageLimits
+from pydantic_ai.capabilities import ProcessHistory
 from pydantic_ai.messages import ModelMessage, ModelMessagesTypeAdapter
 
 from code_muse.callbacks import (
@@ -524,7 +525,7 @@ def register_invoke_agent(agent):
                     output_type=str,
                     retries=3,
                     toolsets=external_servers,
-                    history_processors=[make_history_processor(agent_config)],
+                    capabilities=[ProcessHistory(make_history_processor(agent_config))],
                     model_settings=model_settings,
                 )
 

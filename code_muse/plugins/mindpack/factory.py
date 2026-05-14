@@ -23,6 +23,7 @@ from typing import Any, get_args
 
 from pydantic_ai import Agent as PydanticAgent
 from pydantic_ai import UsageLimits
+from pydantic_ai.capabilities import ProcessHistory
 
 from code_muse.plugins.mindpack.schemas import (
     AskMindPackInput,
@@ -310,7 +311,7 @@ class ExpertAgentFactory:
             # Explicitly restrict tools via registration later,
             # but ensure this agent has NO access to agent/browser control.
             toolsets=[],
-            history_processors=[],
+            capabilities=[],
             model_settings=model_settings,
         )
 

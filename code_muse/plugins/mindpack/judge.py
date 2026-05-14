@@ -23,6 +23,7 @@ from typing import Any
 
 from pydantic_ai import Agent as PydanticAgent
 from pydantic_ai import UsageLimits
+from pydantic_ai.capabilities import ProcessHistory
 
 from code_muse.plugins.mindpack.orchestration import JudgeMerger
 from code_muse.plugins.mindpack.schemas import (
@@ -255,7 +256,7 @@ class JudgeAgentFactory:
             output_type=AskMindPackOutput,
             retries=2,
             toolsets=[],
-            history_processors=[],
+            capabilities=[],
             model_settings=model_settings,
         )
 
