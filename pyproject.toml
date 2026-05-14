@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "code-muse"
-version = "0.1.35"
+version = "0.1.36"
 description = "Muse — eternal guide of creators in the arts and sciences. An elegant AI coding assistant."
 readme = "README.md"
 requires-python = ">=3.14,<3.16"
@@ -100,6 +100,7 @@ select = ["E", "F", "UP", "B", "SIM", "I"]
 "code_muse/messaging/__init__.py" = ["E402"]
 "code_muse/plugins/mindpack/orchestration.py" = ["E402"]
 "code_muse/tools/chrome_cdp/*.py" = ["E501"]
+"code_muse/agents/agent_muse.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.14"
