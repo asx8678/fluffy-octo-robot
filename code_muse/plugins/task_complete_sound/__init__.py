@@ -1,7 +1,9 @@
 """Task Complete Sound plugin for Muse — audible notification on agent completion.
 
-Plays a system beep or custom sound file when the top-level agent run
-completes successfully.  Enabled via ``/sound on``; disabled by default.
+Plays a system notification sound (or custom file) when the top-level
+agent run completes successfully.  On Linux, tries ``canberra-gtk-play``
+before falling back to terminal bell.  Enabled via ``/sound on``;
+disabled by default.
 
 Architecture
 ------------

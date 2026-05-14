@@ -23,7 +23,7 @@ async def play_sound(file_path: str | None = None) -> None:
         - **macOS**: ``afplay <path>`` for custom, ``osascript -e 'beep'``
           for default.
         - **Linux**: ``paplay <path>`` or ``aplay <path>`` for custom,
-          terminal bell for default.
+          ``canberra-gtk-play`` for default, then terminal bell.
         - **Windows**: ``winsound.PlaySound`` for custom,
           ``winsound.MessageBeep`` for default.
         - **Fallback**: Terminal bell ``\\a``.
@@ -42,15 +42,16 @@ async def _play_file(path: str) -> None:
     system = sys.platform
 
     if system == "darwin":
-        await _run_subprocess("afplay", path)
+        if not await _run_subprocess("afplay", path):
+            _terminal_bell()
     elif system == "win32":
         await _play_winsound_file(path)
     elif system.startswith("linux"):
-        # Try PulseAudio first, fall back to ALSA
-        try:
-            await _run_subprocess("paplay", path)
-        except Exception:
-            await _run_subprocess("aplay", path)
+        # Try PulseAudio first, fall back to ALSA, then bell
+        if not await _run_subprocess("paplay", path) and not await _run_subprocess(
+            "aplay", path
+        ):
+            _terminal_bell()
     else:
         # Unknown platform — terminal bell fallback
         _terminal_bell()
@@ -61,35 +62,42 @@ async def _play_default() -> None:
     system = sys.platform
 
     if system == "darwin":
-        await _run_subprocess("osascript", "-e", "beep")
+        if not await _run_subprocess("osascript", "-e", "beep"):
+            _terminal_bell()
     elif system == "win32":
         await _play_winsound_default()
     elif system.startswith("linux"):
         # Try libcanberra system sound, then terminal bell
-        try:
-            await _run_subprocess("canberra-gtk-play", "--id", "bell")
-        except Exception:
+        if not await _run_subprocess("canberra-gtk-play", "--id", "bell"):
             _terminal_bell()
     else:
         _terminal_bell()
 
 
-async def _run_subprocess(*args: str) -> None:
-    """Execute a subprocess asynchronously; log on failure."""
+async def _run_subprocess(*args: str) -> bool:
+    """Execute a subprocess asynchronously.
+
+    Returns:
+        ``True`` if the command ran and exited successfully,
+        ``False`` on any failure (not found, timeout, non-zero exit).
+
+    Does **not** call ``_terminal_bell()`` — callers decide fallback.
+    """
     try:
         proc = await asyncio.create_subprocess_exec(
             *args,
             stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.DEVNULL,
         )
-        await asyncio.wait_for(proc.wait(), timeout=5.0)
+        returncode = await asyncio.wait_for(proc.wait(), timeout=5.0)
+        return returncode == 0
     except FileNotFoundError:
         logger.debug("Sound player not found: %s", args[0])
-        _terminal_bell()
     except TimeoutError:
         logger.debug("Sound playback timed out: %s", args[0])
     except Exception:
         logger.debug("Sound subprocess error", exc_info=True)
+    return False
 
 
 async def _play_winsound_file(path: str) -> None:
