@@ -49,11 +49,9 @@ from code_muse.config import (
 )
 
 # Optional TPS meter integration for bottom toolbar
+# Note: tps_meter plugin was removed; keep _tps_state = None so the
+# guarded reference in get_bottom_toolbar() below is a no-op.
 _tps_state = None
-try:
-
-except ImportError:
-    pass
 
 
 def _sanitize_for_encoding(text: str) -> str:

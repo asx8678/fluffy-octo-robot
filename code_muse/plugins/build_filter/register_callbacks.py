@@ -83,6 +83,7 @@ async def build_filter_callback(
     build commands, or ``None`` to passthrough to the filter engine.
     """
     if not _is_build_command(command):
+        return None  # Let filter_engine handle it
 
     verbosity = get_verbosity()
     if verbosity.value >= 4:  # RAW: no filtering
