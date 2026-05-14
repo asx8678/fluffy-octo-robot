@@ -35,13 +35,13 @@ async def _invoke_agent(agent_name: str, prompt: str) -> _AgentResult:
     ``invoke_agent`` tool logic but doesn't require a Pydantic-AI
     ``RunContext`` — making it callable from plugin callbacks.
     """
-    from pydantic_ai import Agent, UsageLimits
+    from pydantic_ai import Agent
     from pydantic_ai.capabilities import ProcessHistory
 
     from code_muse.agents._compaction import make_history_processor
     from code_muse.agents.agent_manager import load_agent
     from code_muse.agents.subagent_stream_handler import subagent_stream_handler
-    from code_muse.config import get_message_limit
+    
     from code_muse.model_factory import ModelFactory, make_model_settings
     from code_muse.model_utils import prepare_prompt_for_model
     from code_muse.tools import register_tools_for_agent
@@ -120,7 +120,7 @@ async def _invoke_agent(agent_name: str, prompt: str) -> _AgentResult:
                 result = await temp_agent.run(
                     prompt,
                     message_history=[],
-                    usage_limits=UsageLimits(request_limit=get_message_limit()),
+            
                     event_stream_handler=stream_handler,
                 )
 

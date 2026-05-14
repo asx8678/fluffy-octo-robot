@@ -188,7 +188,7 @@ def get_api_key(env_var_name: str) -> str | None:
 # Model types that use the Anthropic Messages API under the hood.
 # These all need Anthropic-specific settings (thinking, effort, etc.).
 _ANTHROPIC_MODEL_TYPES = frozenset(
-    {"anthropic", "aws_bedrock", "azure_foundry", "claude_code"}
+    {"anthropic", "aws_bedrock", "claude_code"}
 )
 
 
@@ -313,7 +313,7 @@ def make_model_settings(
 
         uses_responses_api = (
             model_type == "chatgpt_oauth"
-            or model_type == "azure_foundry_openai"
+           
             or (model_type == "openai" and "codex" in model_name)
             or (model_type == "custom_openai" and "codex" in model_name)
         )

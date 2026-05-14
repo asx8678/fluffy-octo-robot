@@ -121,24 +121,6 @@ async def test_run_model_exception_reports_failure(
     assert run_end_calls[0]["error"] is not None
 
 
-async def test_run_usage_limit_reports_failure(
-    monkeypatch: pytest.MonkeyPatch,
-    run_end_calls: list[dict[str, Any]],
-) -> None:
-    from pydantic_ai import UsageLimitExceeded
-
-    original = UsageLimitExceeded("limit hit")
-    pydantic_agent = ScriptedPydanticAgent(original)
-    agent = DummyAgent(pydantic_agent)
-
-    with pytest.raises(BaseExceptionGroup):
-        await _runtime.run(agent, "hello")
-
-    assert len(run_end_calls) == 1
-    assert run_end_calls[0]["success"] is False
-    assert run_end_calls[0]["error"] is not None
-
-
 async def test_run_cancel_reports_failure(
     monkeypatch: pytest.MonkeyPatch,
     run_end_calls: list[dict[str, Any]],

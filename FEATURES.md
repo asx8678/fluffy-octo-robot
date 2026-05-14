@@ -1,4 +1,4 @@
-# Fast-Puppy Filter Strategies
+# Muse Filter Strategies
 
 Real before/after examples from the test suite.
 

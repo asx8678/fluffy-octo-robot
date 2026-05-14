@@ -1,4 +1,4 @@
-# Releasing Fast Puppy
+# Releasing Muse
 
 PyPI publishing is driven by GitHub Releases.
 

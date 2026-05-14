@@ -34,8 +34,6 @@ from pydantic_ai import (
     DocumentUrl,
     ImageUrl,
     UnexpectedModelBehavior,
-    UsageLimitExceeded,
-    UsageLimits,
 )
 
 try:  # pragma: no cover - pydantic-ai version dependent
@@ -77,11 +75,7 @@ from code_muse.config import (
     get_enable_streaming,
     get_max_consecutive_tool_errors,
     get_max_hook_retries,
-    get_max_tool_calls,
-    get_message_limit,
-    get_max_agent_steps,
     get_overall_run_timeout_seconds,
-    get_total_tokens_limit,
 )
 from code_muse.keymap import cancel_agent_uses_signal
 from code_muse.messaging import emit_error, emit_info, emit_warning
@@ -441,11 +435,7 @@ async def run(
 
     async def _do_run(prompt_to_use: Any) -> Any:
         """Run the agent once, then honour any plugin ``retry`` requests."""
-        usage_limits = UsageLimits(
-            request_limit=min(get_message_limit(), get_max_agent_steps()),
-            tool_calls_limit=get_max_tool_calls() or None,
-            total_tokens_limit=get_total_tokens_limit() or None,
-        )
+
 
         # Per-run tool error circuit breaker
         tracker = _ToolErrorTracker(max_errors=get_max_consecutive_tool_errors())
@@ -498,7 +488,6 @@ async def run(
             coro = pydantic_agent.run(
                 prompt,
                 message_history=history,
-                usage_limits=usage_limits,
                 event_stream_handler=stream_h,
                 **kwargs,
             )
@@ -629,19 +618,12 @@ async def run(
                     await stack.enter_async_context(cm)
                 result = await _do_run(prompt_payload)
                 outcome = RunOutcome(True, result=result)
-        except* UsageLimitExceeded as ule:
-            emit_info(f"Usage limit exceeded: {ule}", group_id=group_id)
-            emit_info(
-                "The agent has reached its usage limit. You can ask it to continue "
-                "by saying 'please continue' or similar.",
-                group_id=group_id,
-            )
-            outcome = RunOutcome(False, error=ule)
+
         except* Exception as other:
             unexpected = _collect_exceptions(
                 other,
                 lambda e: (
-                    not isinstance(e, (asyncio.CancelledError, UsageLimitExceeded))
+                    not isinstance(e, (asyncio.CancelledError))
                 ),
             )
             for exc in unexpected:

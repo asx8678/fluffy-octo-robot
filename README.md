@@ -43,6 +43,120 @@ Where others would throw compute at complexity, MUSE channels inspiration — th
 MUSE is an AI-powered code generation agent, designed to understand programming tasks, generate high-quality code, and explain its reasoning — an open-source instrument for those who refuse to choose between velocity and elegance.
 
 
+## ✨ Features
+
+Muse is an open-source AI coding agent with an extensive feature set built around a plugin-based architecture. Below is a comprehensive catalog of everything Muse offers:
+
+### Core Intelligence
+- **Multi-Provider AI** — Supports OpenAI (GPT-4o, o-series), Anthropic (Claude 3.5/4), Google Gemini (1.5/2), Cerebras, xAI Grok, Groq, Mistral, Together AI, Perplexity, DeepInfra, Cohere, AWS Bedrock, Ollama (local), and 65+ more providers via models.dev
+- **models.dev Integration** — Browse and add models from 65+ providers with a single `/add_model` command, including interactive TUI, model preview, smart warnings for unsupported/no-tool-calling models, and offline fallback
+- **Round Robin Model Distribution** — Rotate through multiple API keys/models with configurable `rotate_every` frequency to maximize throughput and stay within rate limits
+- **Custom Model Timeouts** — Per-model timeout configuration for slow or unreliable endpoints
+- **Multi-Agent System** — Specialist agents (Muse, Helios, QA Iris, Code Critic) with dynamic switching via `/agent`
+
+### Token Optimization
+- **Filter Engine** — Smart command output classifier routing domain-specific output through compression strategies
+- **Shell Minimizer** — Pipeline-based compression reducing shell output tokens by 60–90%
+- **Git Compression (~85%)** — Compresses `git status`, `git log`, `git diff` into one-liners
+- **Test Compression (~90%)** — Shows only failures + summary for pytest, cargo test, and more
+- **Lint Compression (~80%)** — Groups lint errors by rule, not by file
+- **Code Compression (~50%)** — Strips comments, trims boilerplate, removes excess blank lines
+- **Read Compression (~60%)** — Smart-ranged file reading, grep/find output grouping
+- **Tree-sitter AST Compression** — Language-aware abstract syntax tree compression via Cython-optimized parsers (Python, JavaScript, Go)
+- **JSON Compression** — Structural JSON output minimization
+- **Build Filter** — Compresses build tool output (make, cargo, npm, pip, etc.)
+
+### Agent System
+- **Built-in Agents** — Muse (default), Helios (Universal Constructor), QA Iris (browser testing), Code Critic (code review), Planning Agent, Agent Creator
+- **Custom JSON Agents** — Create your own agents without Python knowledge via JSON configuration files
+- **Agent Creator** — Interactive `/agent agent-creator` guided process for forging custom agents
+- **Agent Skills** — Discoverable, installable skills with remote catalog, local catalogs, and interactive menus
+- **Sub-Agent Delegation** — Invoke specialist sub-agents with full context passing
+
+### Plugin Architecture
+- **40+ Built-in Plugins** — All under `code_muse/plugins/` with a standardized callback registration system
+- **Callback Hook System** — 30+ lifecycle hooks (startup, shutdown, pre/post tool call, file permission, shell command, agent run events, streaming, custom commands, model registration, and more)
+- **User Plugin Support** — `~/.muse/plugins/` with content-hash-based trust manifest
+- **Plugin Trust Model** — Fail-closed by default, per-plugin trust approval, content hash verification
+
+### Plugin Catalog
+- **Smart Compression** — `semantic_compression` plugin for intelligent code/text compression
+- **Autonomous Memory** — Long-term memory with BM25 scoring, session scanning, lease locking, memory consolidation, secret scanning
+- **Token Tracking** — SQLite-based per-command, per-session, cumulative token usage with reports
+- **Token Caching** — Cache hit tracking, cacheable prefix detection, stats display for Anthropic prompt caching
+- **Plan Mode** — Three-mode cycling (DEFAULT → AUTO_EDIT → PLAN) with plan approval workflow, goal setting, plan editor
+- **Checkpointing** — Conversation snapshots, restore, rewind, shadow git auto-commit on every assistant message
+- **Code Critic** — Automated strict code review returning approved/rejected verdicts with detailed feedback
+- **Auto Review** — Automatic code review on file changes with visibility control and caching
+- **Destructive Command Guard** — Detects and blocks dangerous shell commands (rm -rf, dd, format, mkfs, etc.)
+- **Force Push Guard** — Protection against accidental `git push --force`
+- **File Permission Handler** — Granular file operation permission control with user approval flows
+- **Shell Safety** — Command approval, command caching, agent shell safety boundaries
+- **Policy Engine** — TOML-based policy files with approval flow integration
+- **Custom Commands** — Slash commands from markdown files or TOML schemas
+- **Customizable Commands** — User-customizable command definitions
+- **Build Filter** — Build output compression strategies
+- **GAC (Git Auto Commit)** — Automated git add/commit with intelligent prompts
+- **Hook Engine** — Full hook system with trust, aliases, matchers, validators, executor, registry
+- **Hook Manager** — Interactive hook management UI
+- **Hook Creator** — Interactive hook creation wizard
+- **AWS Bedrock** — Amazon Bedrock model integration
+- **ChatGPT OAuth** — OAuth flow for ChatGPT Codex integration
+- **Claude Code Hooks & OAuth** — Claude Code integration with token refresh heartbeat, fast mode
+- **Ollama Setup** — Interactive local model setup with auto-completion
+- **Agent Skills** — Full skill system with discovery, download, installation, metadata, config
+- **Tool Registry** — Centralized tool definitions with standardized registration
+- **Universal Constructor** — Safe user-generated tool execution in sandboxed subprocess workers with JSON-only serialization, `eval`/`exec` blocking, timeout enforcement
+- **TPS Meter** — Real-time tokens-per-second metering
+- **Safety Status** — `/safety` and `/status` commands to inspect security posture
+- **Frontend Emitter** — WebSocket-based frontend event emission
+- **History Store** — Session history persistence
+- **Prompt Newline** — Configurable newline behavior in prompts
+- **Synthetic Status** — API status checks and health monitoring
+- **Plugin Trust Manager** — Plugin trust manifest UI
+
+### Developer Tools
+- **Chrome CDP** — Full browser debugging via Chrome DevTools Protocol: navigate, screenshot, accessibility snapshots, console error reading, network capture, JavaScript eval, click, type, view source
+- **mitmproxy** — Network traffic capture and inspection for debugging HTTP/S requests/responses
+- **Universal Constructor** — Create any tool dynamically at runtime with sandboxed execution
+- **Image Analysis** — Load and analyze images with vision-capable models
+
+### Development Environment
+- **Interactive TUI** — Rich terminal UI with prompt toolkit, theming, spinners, shimmer effects
+- **Message Bus** — Structured event-driven messaging system with queue, console, and renderer layers
+- **Diff Menu** — Interactive diff viewing with syntax highlighting
+- **Colors Menu** — Configurable color themes and appearance
+- **Model Settings Menu** — Interactive model configuration and switching
+- **Autosave** — Automatic session state persistence
+- **Onboarding Wizard** — Interactive first-run setup with slides
+- **Agent Menu** — Interactive agent switching
+- **File Path Completion** — Tab completion with fuzzy matching
+- **Model Picker Completion** — Fuzzy model selection
+
+### Configuration & Customization
+- **AGENTS.md Rules** — Hierarchical agent rules (global → project) with `.muse/` directory precedence
+- **TOML Config** — `~/.muse/config.toml` with per-project overrides
+- **Custom Slash Commands** — `.md` files in `.claude/commands/`, `.github/prompts/`, or `.agents/commands/`
+- **Session Management** — Save, load, resume, truncate, export sessions with JSON storage
+- **Secret Storage** — Private file creation with `0o600` permissions
+
+### Security
+- **JSON Session Storage** — No pickle/RCE risk (legacy pickle rejected unless explicitly imported)
+- **Secret Redaction** — Logs scrub `Authorization: Bearer ...`, sensitive query params; token length never logged
+- **Shell Approval** — Commands require approval by default; `yolo_mode` is off
+- **Workspace Boundaries** — File tools enforce cwd containment, block `.env`, `.ssh`, etc.
+- **Hook Trust** — Content-hash based trust verification
+- **Grep Safety** — Patterns passed after `--` to prevent CLI flag injection
+- **Cython Redaction Engine** — High-performance C-compiled secret redaction
+
+### Quality of Life
+- **100% Privacy** — Zero telemetry, zero prompt logging, zero behavioral profiling, zero third-party data sharing
+- **Beads Issue Tracking** — Integrated `bd` issue tracker with local Dolt DB and git sync
+- **Version Checker** — Automatic version checking with update notifications
+- **Event Streaming** — Real-time streaming of agent events
+- **Sub-agent Streaming** — Streaming output from sub-agent invocations
+- **Agent Run Events** — Lifecycle hooks with full metadata for agent execution tracking
+
 ## Quick start
 
 ```bash

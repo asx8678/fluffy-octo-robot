@@ -13,7 +13,7 @@ from code_muse.config import (
     get_compaction_threshold,
     get_diff_context_lines,
     get_global_model_name,
-    get_message_limit,
+    
     get_owner_name,
     get_protected_token_count,
     get_value,
@@ -169,16 +169,6 @@ class TestConfigExtendedPart1:
             result = get_auto_save_session()
             assert result is True  # Default should be True
 
-    def test_integer_conversion_message_limit(self, mock_config_file):
-        """Test integer conversion for message_limit"""
-        result = get_message_limit()
-        assert result == 50
-
-        # Test default when not set
-        set_config_value("message_limit", "")
-        result = get_message_limit()
-        assert result == 1000  # Default should be 1000
-
     def test_integer_conversion_protected_token_count(self, mock_config_file):
         """Test integer conversion for protected_token_count"""
         result = get_protected_token_count()
@@ -313,11 +303,6 @@ class TestConfigExtendedPart1:
 
     def test_type_conversion_edge_cases(self, mock_config_file):
         """Test type conversion with edge case values"""
-        # Test integer conversion with invalid values
-        set_config_value("message_limit", "invalid")
-        result = get_message_limit()
-        assert result == 1000  # Should fall back to default
-
         # Test float conversion with invalid values
         set_config_value("compaction_threshold", "invalid")
         result = get_compaction_threshold()
