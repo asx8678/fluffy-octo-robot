@@ -2,12 +2,15 @@
 
 Registers:
     - ``request_review`` tool — called by the planner to submit a proposal
-      for checkpoint review; the tool itself invokes the reviewer LLM and
-      returns the verdict.
-    - ``pre_tool_call`` hook — gates further ``request_review`` calls when
-      the budget is exhausted or a loop is detected.
-    - ``startup`` hook — resets session state.
-    - ``shutdown`` hook — emits final telemetry.
+      for checkpoint review; the tool function itself invokes the reviewer
+      LLM (via :func:`~code_muse.plugins.debate.reviewer.run_review`) and
+      returns the structured verdict.
+    - ``pre_tool_call`` hook — gates ``request_review`` calls when the
+      budget is exhausted or a loop is detected (returns
+      ``{"blocked": True}``).
+    - ``agent_run_start`` / ``agent_run_end`` hooks — track the agent-run
+      lifecycle so the debate state knows when reviews are in-context.
+    - ``startup`` / ``shutdown`` hooks — session initialisation & cleanup.
     - ``/debate`` slash commands and help entries.
 """
 
@@ -46,6 +49,44 @@ def _on_shutdown() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Agent-run lifecycle hooks
+# ---------------------------------------------------------------------------
+
+
+async def _on_agent_run_start(
+    agent_name: str,
+    model_name: str,
+    session_id: str | None = None,
+) -> None:
+    """Mark the debate session as active when an agent run starts."""
+    if not is_debate_enabled():
+        return
+    DebateState.set_active(True, agent_name)
+    logger.debug(
+        "Debate: agent run started — agent=%s model=%s session=%s",
+        agent_name,
+        model_name,
+        session_id,
+    )
+
+
+async def _on_agent_run_end(
+    agent_name: str,
+    model_name: str,
+    session_id: str | None = None,
+    success: bool = True,
+    error: Exception | None = None,
+    response_text: str | None = None,
+    metadata: dict | None = None,
+) -> None:
+    """Mark the debate session as inactive when the agent run ends."""
+    if not is_debate_enabled():
+        return
+    DebateState.set_active(False, agent_name)
+    logger.debug("Debate: agent run ended — agent=%s success=%s", agent_name, success)
+
+
+# ---------------------------------------------------------------------------
 # Tool: request_review
 # ---------------------------------------------------------------------------
 
@@ -81,11 +122,16 @@ def _register_debate_tools() -> list[dict[str, Any]]:
             """
             if not is_debate_enabled():
                 return {
-                    "verdict": {"kind": "approve", "summary": "Debate mode disabled"},
+                    "verdict": {
+                        "kind": "approve",
+                        "summary": "Debate mode disabled",
+                    },
                     "review_count": 0,
                     "remaining_budget": 0,
                 }
 
+            # Build the review request and call the reviewer LLM.
+            # run_review() records the review in DebateState internally.
             start = time.monotonic()
             request = ReviewRequest(
                 proposal=proposal,
@@ -93,7 +139,10 @@ def _register_debate_tools() -> list[dict[str, Any]]:
                 checkpoint=checkpoint,
             )
             response = await run_review(request)
-            record_review_latency(start, response.verdict.kind)
+            elapsed_kind = response.verdict.kind if response else None
+
+            if elapsed_kind is not None:
+                record_review_latency(start, elapsed_kind)
 
             if response is not None:
                 line = render_verdict_summary(
@@ -105,8 +154,12 @@ def _register_debate_tools() -> list[dict[str, Any]]:
                 emit_info(line)
                 return response.model_dump()
 
+            # Reviewer unreachable — return fallback so planner isn't stuck
             return {
-                "verdict": {"kind": "approve", "summary": "Review unavailable"},
+                "verdict": {
+                    "kind": "approve",
+                    "summary": "Review unavailable — proceeding",
+                },
                 "review_count": DebateState.review_count(),
                 "remaining_budget": DebateState.remaining_budget(),
             }
@@ -128,6 +181,8 @@ async def _on_pre_tool_call(
 
     Returns ``{"blocked": True}`` to prevent the call; returns ``None``
     to allow it.
+
+    Only gates the ``request_review`` tool — all other tools pass through.
     """
     if tool_name != "request_review":
         return None
@@ -189,6 +244,8 @@ def _on_custom_command_help() -> list[tuple[str, str]]:
 
 register_callback("startup", _on_startup)
 register_callback("shutdown", _on_shutdown)
+register_callback("agent_run_start", _on_agent_run_start)
+register_callback("agent_run_end", _on_agent_run_end)
 register_callback("register_tools", _register_debate_tools)
 register_callback("pre_tool_call", _on_pre_tool_call)
 register_callback("custom_command", _on_custom_command)

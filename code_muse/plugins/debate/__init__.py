@@ -11,8 +11,8 @@ File structure under ``code_muse/plugins/debate/``:
 
 - ``schemas.py``      — Pydantic models (Verdict, ReviewRequest, ReviewResponse)
 - ``config.py``       — Configuration accessors (muse.cfg)
-- ``state.py``        — Session state & budget tracking
-- ``reviewer.py``     — Reviewer LLM caller
+- ``state.py``        — Session state, budget & agent-run tracking
+- ``reviewer.py``     — Reviewer LLM caller (pydantic-ai Agent)
 - ``ui.py``           — Terminal rendering
 - ``telemetry.py``    — Latency and verdict metrics
 - ``register_callbacks.py`` — Hook & tool registration
@@ -24,7 +24,9 @@ Key Design Decisions
    the reviewer LLM and returns the verdict.
 2. ``pre_tool_call`` hook is used ONLY for gating (budget enforcement,
    loop detection) — returns ``{'blocked': True}`` when limits are hit.
-3. Zero core Muse files modified — plugin only.
+3. ``agent_run_start`` / ``agent_run_end`` hooks track the agent lifecycle
+   so the debate state knows when reviews are in-context.
+4. Zero core Muse files modified — plugin only.
 """
 
 from code_muse.plugins.debate.config import (
