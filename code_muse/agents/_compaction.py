@@ -180,13 +180,18 @@ def truncate(
     num_tokens = 0
     stack: queue.LifoQueue[ModelMessage] = queue.LifoQueue()
     for msg in reversed(messages_to_scan):
-        num_tokens += _tok(msg, model_name)
-        if num_tokens > protected_tokens:
+        msg_tokens = _tok(msg, model_name)
+        if num_tokens + msg_tokens > protected_tokens:
             break
+        num_tokens += msg_tokens
         stack.put(msg)
 
     while not stack.empty():
         result.append(stack.get())
+
+    # Safety: never return only the system prompt with no user messages.
+    if len(result) == 1 and len(messages) > 1:
+        result.append(messages[-1])
 
     return result
 

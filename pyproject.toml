@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "code-muse"
-version = "0.1.29"
+version = "0.1.30"
 description = "Muse — eternal guide of creators in the arts and sciences. An elegant AI coding assistant."
 readme = "README.md"
 requires-python = ">=3.14,<3.16"
