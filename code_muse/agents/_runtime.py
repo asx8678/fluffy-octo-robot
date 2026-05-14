@@ -581,8 +581,6 @@ async def run(
             if max_steps > 0 and hasattr(result, "all_messages"):
                 step_count = len(result.all_messages())
                 if step_count >= max_steps:
-                    from code_muse.io import emit_warning
-
                     emit_warning(
                         f"⚠️  Agent run reached {step_count} steps (max {max_steps}). "
                         f"Truncating result. Consider increasing 'max_agent_steps' via /set.",
