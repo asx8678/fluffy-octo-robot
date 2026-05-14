@@ -572,7 +572,7 @@ async def run(
             usage = None
             if hasattr(result, "usage") and callable(result.usage):
                 try:
-                    usage = result.usage()
+                    usage = result.usage
                 except Exception:
                     pass
             elif hasattr(result, "usage"):
