@@ -28,6 +28,10 @@ _MUSE_DIR = ".muse"
 # mtime initialised to -1.0 so 0.0 (no files exist) is still a valid cache key.
 _load_muse_rules_cache: dict[str, Any] = {"mtime": -1.0, "content": None}
 
+# System prompt cache: keyed by (agent_name, model_name)
+# Invalidated when AGENTS.md changes or the agent/model changes.
+_system_prompt_cache: dict[tuple[str, str | None], str] = {}
+
 
 def _load_muse_rules_mtime() -> float:
     """Max mtime of all AGENT(S).md files checked by ``load_muse_rules()``.
@@ -158,6 +162,11 @@ def assemble_full_system_prompt(agent: Any, model_name: str | None = None) -> st
 
     This is the canonical system prompt assembly path.
     """
+    cache_key = (agent.name if hasattr(agent, 'name') else str(id(agent)), model_name or agent.get_model_name())
+    cached = _system_prompt_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     from code_muse.tools import (
         EXTENDED_THINKING_PROMPT_NOTE,
         has_extended_thinking_active,
@@ -181,6 +190,7 @@ def assemble_full_system_prompt(agent: Any, model_name: str | None = None) -> st
     if prompt_additions:
         instructions += "\n" + "\n".join(str(p) for p in prompt_additions if p)
 
+    _system_prompt_cache[cache_key] = instructions
     return instructions
 
 
@@ -217,6 +227,11 @@ def build_pydantic_agent(
     from code_muse.tools import register_tools_for_agent
 
     agent._muse_rules = None
+    # Clear system prompt cache for this agent
+    agent_key = (agent.name if hasattr(agent, 'name') else str(id(agent)), None)
+    keys_to_clear = [k for k in _system_prompt_cache if k[0] == agent_key[0]]
+    for k in keys_to_clear:
+        _system_prompt_cache.pop(k, None)
     agent._context_overhead_cache = None
     message_group = message_group or str(uuid.uuid4())
 

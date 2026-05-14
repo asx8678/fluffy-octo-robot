@@ -422,7 +422,25 @@ def get_message_limit(default: int = 1000) -> int:
     val = get_value("message_limit")
     try:
         return int(val) if val else default
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
+        return default
+
+
+def get_max_agent_steps(default: int = 25) -> int:
+    """
+    Returns the maximum number of agent steps (LLM round-trips) before
+    the agent is forced to stop. This is a safety cap to prevent runaway
+    loops and unbounded token consumption.
+
+    This is used as an upper bound on request_limit in UsageLimits, so
+    even if message_limit is higher, the agent will stop after this many
+    steps.
+    Configurable by 'max_agent_steps' key.
+    """
+    val = get_value("max_agent_steps")
+    try:
+        return int(val) if val else default
+    except (ValueError, TypeError):
         return default
 
 

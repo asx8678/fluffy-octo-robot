@@ -58,6 +58,11 @@ _SUMMARIZATION_INSTRUCTIONS = (
     "Recent messages are preserved separately."
 )
 
+# Hard cap on message count to prevent unbounded history growth.
+# If the message list exceeds this count, compaction is forced even
+# if token proportion is below the threshold.
+_MAX_MESSAGES_HARD_CAP = 50
+
 
 def _find_safe_split_index(messages: list[ModelMessage], initial_split_idx: int) -> int:
     """Adjust split index so we never sever a tool_call from its tool_return."""
@@ -325,6 +330,41 @@ def compact(
         total_tokens, model_max, proportion_used
     )
     update_spinner_context(context_summary)
+
+    # Hard cap on message count: prevent unbounded history even when
+    # token proportion is below threshold. Short messages can accumulate
+    # past the cap without triggering token-based compaction.
+    if len(messages) > _MAX_MESSAGES_HARD_CAP:
+        strategy = get_compaction_strategy()
+        protected_tokens = get_protected_token_count()
+        filtered = filter_huge_messages(messages, model_name, cache=cache)
+
+        if strategy == "truncation":
+            result_messages, summarized_messages = _truncate_with_dropped(
+                filtered, protected_tokens, model_name, cache=cache
+            )
+        else:
+            result_messages, summarized_messages = summarize(
+                filtered, protected_tokens, True, model_name, cache=cache
+            )
+            if not summarized_messages:
+                result_messages, summarized_messages = _truncate_with_dropped(
+                    filtered, protected_tokens, model_name, cache=cache
+                )
+
+        new_proportion = 0.0
+        if model_max:
+            new_total = cache.sum_tokens(result_messages, model_name) + context_overhead
+            new_proportion = new_total / model_max
+        update_spinner_context(
+            "Count cap: "
+            + SpinnerBase.format_context_info(
+                cache.sum_tokens(result_messages, model_name) + context_overhead,
+                model_max,
+                new_proportion,
+            )
+        )
+        return result_messages, summarized_messages
 
     threshold = get_compaction_threshold()
     if proportion_used <= threshold:

@@ -79,6 +79,7 @@ from code_muse.config import (
     get_max_hook_retries,
     get_max_tool_calls,
     get_message_limit,
+    get_max_agent_steps,
     get_overall_run_timeout_seconds,
     get_total_tokens_limit,
 )
@@ -441,7 +442,7 @@ async def run(
     async def _do_run(prompt_to_use: Any) -> Any:
         """Run the agent once, then honour any plugin ``retry`` requests."""
         usage_limits = UsageLimits(
-            request_limit=get_message_limit(),
+            request_limit=min(get_message_limit(), get_max_agent_steps()),
             tool_calls_limit=get_max_tool_calls() or None,
             total_tokens_limit=get_total_tokens_limit() or None,
         )
