@@ -1,7 +1,6 @@
 """Config: core parser, getters, setters, and simple config wrappers."""
 
 import configparser
-import shutil
 import threading
 from contextlib import contextmanager
 from pathlib import Path
@@ -199,33 +198,112 @@ def reset_value(key: str) -> None:
 
 @contextmanager
 def isolated_config(temp_dir: Path):
-    """Temporarily redirect config paths to a temp directory. Restores on exit."""
+    """Temporarily redirect ALL config paths to a temp directory. Restores on exit.
+
+    Creates the full ``.muse/`` directory structure (config, data, cache, state
+    subdirectories) under *temp_dir* and points every path constant in both
+    ``code_muse.config.paths`` and ``code_muse.config`` to the temp equivalents.
+
+    Unlike the previous implementation, this does **not** copy the real config
+    file — each test starts from a clean slate.  This prevents cross-test bleed
+    when a test mutates a shared config value.
+
+    Yields ``(temp_config_file, temp_config_dir)``.
+    """
     import code_muse.config as cfg_mod
     import code_muse.config.paths as paths
 
-    original_cfg = paths.CONFIG_FILE
-    original_dir = paths.CONFIG_DIR
-    temp_config_dir = temp_dir / ".muse"
-    temp_config_dir.mkdir(parents=True, exist_ok=True)
+    global _config_cache
+
+    # --- 1. Save originals ---------------------------------------------------
+    _PATH_ATTRS = [
+        # Base dirs
+        "CONFIG_DIR",
+        "DATA_DIR",
+        "CACHE_DIR",
+        "STATE_DIR",
+        # Derived config files
+        "CONFIG_FILE",
+        # Data files
+        "MODELS_FILE",
+        "EXTRA_MODELS_FILE",
+        "MODELS_CACHE_FILE",
+        "AGENTS_DIR",
+        "SKILLS_DIR",
+        "CONTEXTS_DIR",
+        # OAuth plugin model files
+        "GEMINI_MODELS_FILE",
+        "CHATGPT_MODELS_FILE",
+        "CLAUDE_MODELS_FILE",
+        "COPILOT_MODELS_FILE",
+        # Cache files
+        "AUTOSAVE_DIR",
+        # State files
+        "COMMAND_HISTORY_FILE",
+    ]
+
+    originals: dict[str, object] = {}
+    for attr in _PATH_ATTRS:
+        originals[attr] = getattr(paths, attr)
+
+    # --- 2. Build temp directory structure -----------------------------------
+    muse_root = temp_dir / ".muse"
+    temp_config_dir = muse_root / "config"
+    temp_data_dir = muse_root / "data"
+    temp_cache_dir = muse_root / "cache"
+    temp_state_dir = muse_root / "state"
+
+    for d in (temp_config_dir, temp_data_dir, temp_cache_dir, temp_state_dir):
+        d.mkdir(parents=True, exist_ok=True)
+
     temp_config_file = temp_config_dir / "muse.cfg"
-    if original_cfg.exists():
-        shutil.copy(original_cfg, temp_config_file)
-    # Override
-    paths.CONFIG_FILE = temp_config_file
-    cfg_mod.CONFIG_FILE = temp_config_file
-    paths.CONFIG_DIR = temp_config_dir
-    cfg_mod.CONFIG_DIR = temp_config_dir
-    from code_muse.config.models import clear_model_cache
+    # Create an empty config so config readers don't crash
+    temp_config_file.write_text("[muse]\n", encoding="utf-8")
+
+    # --- 3. Compute temp values for all derived paths ------------------------
+    temp_values: dict[str, object] = {
+        "CONFIG_DIR": temp_config_dir,
+        "DATA_DIR": temp_data_dir,
+        "CACHE_DIR": temp_cache_dir,
+        "STATE_DIR": temp_state_dir,
+        "CONFIG_FILE": temp_config_file,
+        "MODELS_FILE": temp_data_dir / "models.json",
+        "EXTRA_MODELS_FILE": temp_data_dir / "extra_models.json",
+        "MODELS_CACHE_FILE": temp_data_dir / "models_cache.json",
+        "AGENTS_DIR": temp_data_dir / "agents",
+        "SKILLS_DIR": temp_data_dir / "skills",
+        "CONTEXTS_DIR": temp_data_dir / "contexts",
+        "GEMINI_MODELS_FILE": temp_data_dir / "gemini_models.json",
+        "CHATGPT_MODELS_FILE": temp_data_dir / "chatgpt_models.json",
+        "CLAUDE_MODELS_FILE": temp_data_dir / "claude_models.json",
+        "COPILOT_MODELS_FILE": temp_data_dir / "copilot_models.json",
+        "AUTOSAVE_DIR": temp_cache_dir / "autosaves",
+        "COMMAND_HISTORY_FILE": temp_state_dir / "command_history.txt",
+    }
+
+    # --- 4. Apply overrides in BOTH modules ----------------------------------
+    for attr, val in temp_values.items():
+        setattr(paths, attr, val)
+        setattr(cfg_mod, attr, val)
+
+    # --- 5. Clear caches -----------------------------------------------------
+    from code_muse.config.models import clear_model_cache, reset_session_model
 
     clear_model_cache()
+    reset_session_model()
+    _config_cache = None
+
     try:
         yield temp_config_file, temp_config_dir
     finally:
-        paths.CONFIG_FILE = original_cfg
-        cfg_mod.CONFIG_FILE = original_cfg
-        paths.CONFIG_DIR = original_dir
-        cfg_mod.CONFIG_DIR = original_dir
+        # --- 6. Restore originals --------------------------------------------
+        for attr, val in originals.items():
+            setattr(paths, attr, val)
+            setattr(cfg_mod, attr, val)
+
         clear_model_cache()
+        reset_session_model()
+        _config_cache = None
 
 
 # --- Simple getter/setter wrappers ---

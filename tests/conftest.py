@@ -37,40 +37,27 @@ except ImportError, AttributeError:
 def isolate_config_between_tests(tmp_path_factory):
     """Isolate config file changes between tests.
 
-    This prevents tests from modifying the user's real config file
-    (e.g., changing the selected model). Each test gets its own
-    temporary config file in a separate directory from tmp_path.
+    Prevents tests from modifying the user's real config file or data
+    directories. Each test gets a complete temporary ``.muse/`` directory
+    tree (config, data, cache, state) so that ALL path constants from
+    ``code_muse.config.paths`` are isolated — not just CONFIG_FILE.
 
-    xdist-safe: pytest's tmp_path_factory creates per-worker isolated
-    temp dirs, and tempfile.mkdtemp() is process-local, so each worker
-    gets its own config directory with no cross-contamination.
+    xdist-safe: ``tmp_path_factory`` creates per-worker isolated temp dirs.
     """
-    import tempfile
     from pathlib import Path
 
-    # Create a completely separate temp directory for config isolation
-    # (not using tmp_path which tests may use for their own purposes)
-    config_temp_dir = Path(tempfile.mkdtemp(prefix="code_muse_test_config_"))
+    config_temp_dir = Path(tmp_path_factory.mktemp("config_"))
 
     with cp_config.isolated_config(config_temp_dir):
-        # Clear session-local model cache (required for /model session sticky behavior)
-        cp_config.reset_session_model()
         yield
-        cp_config.reset_session_model()
-
-    # Clean up the temp directory
-    import shutil
-
-    try:
-        shutil.rmtree(config_temp_dir)
-    except Exception:
-        pass  # Best effort cleanup
 
 
 @pytest.fixture
 def mock_cleanup():
-    """Provide a MagicMock that has been called once to satisfy tests expecting a cleanup call.
-    Note: This is a test scaffold only; production code does not rely on this.
+    """Provide a MagicMock that has been called once.
+
+    Satisfies tests expecting a cleanup call.  This is a test scaffold only;
+    production code does not rely on it.
     """
     m = MagicMock()
     # Pre-call so assert_called_once() passes without code changes
