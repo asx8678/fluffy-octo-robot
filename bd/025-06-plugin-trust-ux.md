@@ -1,7 +1,7 @@
 ---
 id: "025-06"
 title: "Fix plugin trust chicken-and-egg at startup (P2)"
-status: open
+status: closed
 epic: "025"
 labels: ["ux", "plugins", "P2"]
 created: "2026-05-18"

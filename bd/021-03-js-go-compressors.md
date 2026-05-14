@@ -1,7 +1,7 @@
 ---
 id: "021-03"
 title: "Build JavaScript & Go AST Compressors"
-status: open
+status: closed
 epic: "021"
 labels: ["code-compressor", "js", "go", "ast", "P2"]
 created: "2025-07-16"

@@ -28,6 +28,7 @@ cdef class BM25Scorer:
     cdef list _corpus_tfs
     cdef list _corpus_docs
     cdef list _corpus_lens
+    cdef dict _corpus_lookup
 
     def __init__(
         self,
@@ -45,6 +46,7 @@ cdef class BM25Scorer:
         self._corpus_tfs = []
         self._corpus_docs = []
         self._corpus_lens = []
+        self._corpus_lookup = {}
 
     def fit(self, documents):
         """Compute corpus statistics for IDF calculation.
@@ -105,6 +107,10 @@ cdef class BM25Scorer:
         self._corpus_tfs = corpus_tfs
         self._corpus_docs = list(documents)
         self._corpus_lens = [len(doc_tokens) for doc_tokens in tokenized]
+        # Pre-build document-to-index lookup for O(1) scoring access
+        self._corpus_lookup = {
+            doc: i for i, doc in enumerate(self._corpus_docs)
+        }
 
     def score(self, query, document):
         """Score a single document against a query.
@@ -172,9 +178,6 @@ cdef class BM25Scorer:
         """
         cdef list results = []
         cdef str doc
-        cdef dict corpus_lookup = {}
-        cdef int i
-        cdef int n_corpus = len(self._corpus_docs)
         cdef list query_tokens
         cdef object tf
         cdef int doc_len
@@ -191,12 +194,9 @@ cdef class BM25Scorer:
         cdef str token
         cdef int term_id
 
-        for i in range(n_corpus):
-            corpus_lookup[self._corpus_docs[i]] = i
-
         cdef int idx
         for doc in documents:
-            idx = corpus_lookup.get(doc, -1)
+            idx = self._corpus_lookup.get(doc, -1)
             if idx != -1:
                 # Fast path: reuse pre-built tf array from fit()
                 query_tokens = self._tokenize(query)

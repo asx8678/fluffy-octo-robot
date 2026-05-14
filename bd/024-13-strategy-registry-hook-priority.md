@@ -1,7 +1,7 @@
 ---
 id: "024-13"
 title: "Strategy Registry Log Levels & Hook Priority Cleanup (P2)"
-status: open
+status: closed
 epic: "024"
 labels: ["cleanup", "logging", "hooks", "P2"]
 created: "2026-05-18"

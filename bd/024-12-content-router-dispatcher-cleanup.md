@@ -1,7 +1,7 @@
 ---
 id: "024-12"
 title: "Content Router & Dispatcher Cleanup (P2)"
-status: open
+status: closed
 epic: "024"
 labels: ["refactor", "performance", "content-router", "P2"]
 created: "2026-05-18"

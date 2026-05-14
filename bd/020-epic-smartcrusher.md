@@ -1,7 +1,7 @@
 ---
 id: "020"
 title: "Epic: SmartCrusher — JSON & Structured Data Compression"
-status: open
+status: closed
 epic: "020"
 labels: ["epic", "smartcrusher", "P1", "json-compression", "headroom-port"]
 created: "2025-07-16"

@@ -1,7 +1,7 @@
 ---
 id: "018-01"
 title: "Cacheable Prefix Detection — Find Static/Dynamic Boundary in Message Array"
-status: "open"
+status: "closed"
 epic: "018"
 labels: ["token", "cache", "prefix", "detection", "anthropic", "P3"]
 created: "2025-07-14"

@@ -1,7 +1,7 @@
 ---
 id: "025-04"
 title: "Fix config ↔ session_storage circular import (P2)"
-status: open
+status: closed
 epic: "025"
 labels: ["bug", "architecture", "P2"]
 created: "2026-05-18"

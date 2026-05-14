@@ -1,7 +1,7 @@
 ---
 id: "020-01"
 title: "Build JSON Pattern Detection — Array Templating & Field Analysis"
-status: open
+status: closed
 epic: "020"
 labels: ["smartcrusher", "json", "pattern-detection", "P1", "headroom-port"]
 created: "2025-07-16"

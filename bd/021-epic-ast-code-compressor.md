@@ -1,7 +1,7 @@
 ---
 id: "021"
 title: "Epic: AST-Aware Code Compression — Tree-Sitter Semantic Squashing"
-status: open
+status: closed
 epic: "021"
 labels: ["epic", "code-compressor", "P1", "ast", "tree-sitter", "headroom-port"]
 created: "2025-07-16"

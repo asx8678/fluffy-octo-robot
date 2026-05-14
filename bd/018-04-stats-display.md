@@ -1,7 +1,7 @@
 ---
 id: "018-04"
 title: "Stats Display Integration — Show Cached Token Savings in /stats Output"
-status: "open"
+status: "closed"
 epic: "018"
 labels: ["token", "cache", "stats", "display", "P3"]
 created: "2025-07-14"

@@ -353,7 +353,10 @@ def filter_huge_messages(
     model_name: str | None = None,
     cache: Any | None = None,  # CompactionCache when available
 ) -> list[ModelMessage]:
-    """Drop individual messages above a 50k-token budget, then prune orphans."""
+    """Drop messages above the configured token budget, then prune orphans."""
+    from code_muse.config.parser import get_filter_huge_message_threshold
+
+    threshold = get_filter_huge_message_threshold()
     filtered = [
         m
         for m in messages
@@ -362,7 +365,7 @@ def filter_huge_messages(
             if cache
             else estimate_tokens_for_message(m, model_name)
         )
-        < 50000
+        < threshold
     ]
     return filtered
 

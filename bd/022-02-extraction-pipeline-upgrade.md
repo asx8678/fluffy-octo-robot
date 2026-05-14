@@ -1,7 +1,7 @@
 ---
 id: "022-02"
 title: "Upgrade Memory Extraction Pipeline with Relevance Scoring"
-status: open
+status: closed
 epic: "022"
 labels: ["relevance-scoring", "memory", "extraction", "integration", "P2"]
 created: "2025-07-16"

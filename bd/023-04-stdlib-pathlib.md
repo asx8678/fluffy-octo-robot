@@ -1,7 +1,7 @@
 ---
 id: "023-04"
 title: "Phase 4: Stdlib Upgrades & Path Modernization"
-status: open
+status: closed
 epic: "023"
 labels: ["modernization", "py314", "stdlib", "pathlib", "P1"]
 created: "2025-07-16"

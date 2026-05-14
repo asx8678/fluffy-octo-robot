@@ -1,7 +1,7 @@
 ---
 id: "019"
 title: "Epic: Content Router — Output-Type Detection & Smart Routing"
-status: open
+status: closed
 epic: "019"
 labels: ["epic", "content-router", "P1", "structured-compression", "headroom-port"]
 created: "2025-07-16"

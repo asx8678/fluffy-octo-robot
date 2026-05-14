@@ -1,7 +1,7 @@
 ---
 id: "023-06"
 title: "Phase 6: PEP 750 t-Strings — Investigation & Audit"
-status: open
+status: closed
 epic: "023"
 labels: ["modernization", "py314", "tstrings", "P2"]
 created: "2025-07-16"

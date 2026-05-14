@@ -1,7 +1,7 @@
 ---
 id: "018-03"
 title: "Cache Hit/Miss Tracking — Record Cache Read/Write Tokens per Turn"
-status: "open"
+status: "closed"
 epic: "018"
 labels: ["token", "cache", "tracking", "hit", "miss", "P3"]
 created: "2025-07-14"

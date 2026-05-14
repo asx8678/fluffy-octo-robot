@@ -1,7 +1,7 @@
 ---
 id: "019-01"
 title: "Build Content Type Detector — Output Sniffing Heuristics"
-status: open
+status: closed
 epic: "019"
 labels: ["content-router", "detector", "P1", "headroom-port"]
 created: "2025-07-16"

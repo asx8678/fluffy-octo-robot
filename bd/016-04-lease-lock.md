@@ -1,7 +1,7 @@
 ---
 id: "016-04"
 title: "Lease Lock + Secret Scanning — Prevent Concurrent Extraction, Scan for Credentials"
-status: "open"
+status: "closed"
 epic: "016"
 labels: ["memory", "lease", "lock", "secret", "security", "P3"]
 created: "2025-07-14"

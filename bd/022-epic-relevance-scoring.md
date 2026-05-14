@@ -1,7 +1,7 @@
 ---
 id: "022"
 title: "Epic: Relevance Scoring — Smarter Memory Extraction via BM25 & Embeddings"
-status: open
+status: closed
 epic: "022"
 labels: ["epic", "relevance-scoring", "P2", "memory", "headroom-port"]
 created: "2025-07-16"

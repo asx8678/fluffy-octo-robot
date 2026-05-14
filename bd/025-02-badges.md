@@ -1,7 +1,7 @@
 ---
 id: "025-02"
 title: "Replace static badges with dynamic CI badges (P1)"
-status: open
+status: closed
 epic: "025"
 labels: ["docs", "readme", "P1"]
 created: "2026-05-18"

@@ -1,7 +1,7 @@
 ---
 id: "024-05"
 title: "Refactor interactive_mode God-Function (P2)"
-status: open
+status: closed
 epic: "024"
 labels: ["refactor", "complexity", "P2"]
 created: "2026-05-18"

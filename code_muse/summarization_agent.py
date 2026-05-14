@@ -155,6 +155,50 @@ def _shutdown_thread_pool():
 atexit.register(_shutdown_thread_pool)
 
 
+# Persistent event loop for summarization — created once, reused across calls.
+# Avoids the ~5-10ms overhead of new_event_loop() per compaction cycle.
+_summarization_loop: asyncio.AbstractEventLoop | None = None
+_summarization_loop_lock = threading.Lock()
+
+
+def _get_event_loop() -> asyncio.AbstractEventLoop:
+    """Return a persistent event loop for summarization.
+
+    Creates the loop once on first call; reuses it thereafter.
+    Thread-safe via _summarization_loop_lock.
+    """
+    global _summarization_loop
+    if _summarization_loop is not None and not _summarization_loop.is_closed():
+        return _summarization_loop
+    with _summarization_loop_lock:
+        if _summarization_loop is None or _summarization_loop.is_closed():
+            _summarization_loop = asyncio.new_event_loop()
+    return _summarization_loop
+
+
+def _shutdown_event_loop():
+    """Clean shutdown of the persistent summarization event loop."""
+    global _summarization_loop
+    loop = _summarization_loop
+    if loop is not None and not loop.is_closed():
+        try:
+            pending = asyncio.all_tasks(loop)
+            for task in pending:
+                task.cancel()
+            if pending:
+                loop.run_until_complete(
+                    asyncio.gather(*pending, return_exceptions=True)
+                )
+            loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.close()
+        except Exception:
+            pass
+    _summarization_loop = None
+
+
+atexit.register(_shutdown_event_loop)
+
+
 async def _run_agent_async(agent: Agent, prompt: str, message_history: list):
     return await agent.run(prompt, message_history=message_history)
 
@@ -191,31 +235,15 @@ def run_summarization_sync(prompt: str, message_history: list) -> list:
     prompt = prepared.user_prompt
 
     def _run_in_thread():
-        """
-        Run the async agent in a dedicated thread with its own event loop.
+        """Run the async agent using the persistent summarization event loop.
+
         Uses run_until_complete instead of asyncio.run to avoid shutting down
         the default executor (which may break plugins in the main thread).
-        Does NOT touch global event loop state.
+        The loop is reused across calls — no per-call creation/cleanup overhead.
         """
-        loop = asyncio.new_event_loop()
-        try:
-            coro = agent.run(prompt, message_history=message_history)
-            return loop.run_until_complete(coro)
-        finally:
-            # Clean up without shutting down the default executor
-            try:
-                # Cancel pending tasks
-                pending = asyncio.all_tasks(loop)
-                for task in pending:
-                    task.cancel()
-                if pending:
-                    # NOTE: asyncio.gather for already-running tasks; TaskGroup cannot adopt existing tasks.
-                    loop.run_until_complete(
-                        asyncio.gather(*pending, return_exceptions=True)
-                    )
-                loop.run_until_complete(loop.shutdown_asyncgens())
-            finally:
-                loop.close()
+        loop = _get_event_loop()
+        coro = agent.run(prompt, message_history=message_history)
+        return loop.run_until_complete(coro)
 
     try:
         # Always use thread pool since we're likely in an existing event loop

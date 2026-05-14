@@ -201,20 +201,33 @@ def streaming_retry(
 
 
 class _ToolErrorTracker:
-    """Track consecutive tool errors as a per-agent-run circuit breaker."""
+    """Track consecutive tool errors per-tool-name as a per-agent-run circuit breaker.
 
-    def __init__(self, max_errors: int = 3):
+    Each tool has its own consecutive-error counter, so one flaky tool (e.g.
+    browser screenshot timeout) does not abort calls to other healthy tools.
+
+    A global max_total_tool_errors acts as a safety net to prevent unbounded
+    total errors across all tools.
+    """
+
+    def __init__(self, max_errors: int = 3, max_total_errors: int = 20):
         self.max_errors = max_errors
-        self.consecutive_errors = 0
+        self.max_total_errors = max_total_errors
+        self.consecutive_errors: dict[str, int] = {}
+        self.total_errors: int = 0
 
-    def record_error(self) -> bool:
-        """Increment error count. Returns True if max exceeded."""
-        self.consecutive_errors += 1
-        return self.consecutive_errors >= self.max_errors
+    def record_error(self, tool_name: str) -> bool:
+        """Increment error count for *tool_name*. Returns True if max exceeded."""
+        count = self.consecutive_errors.get(tool_name, 0) + 1
+        self.consecutive_errors[tool_name] = count
+        self.total_errors += 1
+        if self.total_errors >= self.max_total_errors:
+            return True
+        return count >= self.max_errors
 
-    def record_success(self) -> None:
-        """Reset error count on a successful tool call."""
-        self.consecutive_errors = 0
+    def record_success(self, tool_name: str) -> None:
+        """Reset error count for *tool_name* on a successful tool call."""
+        self.consecutive_errors.pop(tool_name, None)
 
 
 _tool_error_tracker_ctx: contextvars.ContextVar[_ToolErrorTracker | None] = (
@@ -227,15 +240,24 @@ async def _track_pre_tool_call(
     tool_args: dict,
     context: Any = None,
 ) -> dict | None:
-    """Block further tool calls once the consecutive-error cap is hit."""
+    """Block further tool calls once the consecutive-error cap is hit for *tool_name*."""
     tracker = _tool_error_tracker_ctx.get()
     if tracker is None:
         return None
-    if tracker.consecutive_errors >= tracker.max_errors:
+    tool_errors = tracker.consecutive_errors.get(tool_name, 0)
+    if tool_errors >= tracker.max_errors:
         return {
             "blocked": True,
             "reason": (
-                f"Too many consecutive tool errors ({tracker.consecutive_errors})"
+                f"Too many consecutive errors ({tool_errors}) for tool "
+                f"'{tool_name}' — blocking further calls."
+            ),
+        }
+    if tracker.total_errors >= tracker.max_total_errors:
+        return {
+            "blocked": True,
+            "reason": (
+                f"Too many total tool errors ({tracker.total_errors})"
                 " — aborting run."
             ),
         }
@@ -254,9 +276,9 @@ async def _track_post_tool_call(
     if tracker is None:
         return None
     if isinstance(result, dict) and "error" in result:
-        tracker.record_error()
+        tracker.record_error(tool_name)
     else:
-        tracker.record_success()
+        tracker.record_success(tool_name)
     return None
 
 

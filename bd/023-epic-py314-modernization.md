@@ -1,7 +1,7 @@
 ---
 id: "023"
 title: "Epic: CPython 3.14 Modernization — Full-Stack Upgrade"
-status: open
+status: closed
 epic: "023"
 labels: ["epic", "modernization", "py314", "P0", "breaking"]
 created: "2025-07-16"

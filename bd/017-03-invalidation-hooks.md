@@ -1,7 +1,7 @@
 ---
 id: "017-03"
 title: "Invalidation Hooks — Clear Cache on File Mutations + Branch Changes"
-status: "open"
+status: "closed"
 epic: "017"
 labels: ["cache", "invalidation", "hook", "mutation", "P3"]
 created: "2025-07-14"

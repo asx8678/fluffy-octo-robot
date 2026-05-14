@@ -1,7 +1,7 @@
 ---
 id: "023-01"
 title: "Phase 1: Syntax & Typing Modernization"
-status: open
+status: closed
 epic: "023"
 labels: ["modernization", "py314", "syntax", "typing", "P0"]
 created: "2025-07-16"

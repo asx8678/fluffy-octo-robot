@@ -1,7 +1,7 @@
 ---
 id: "024-14"
 title: "Plugin System: Load Performance & Atomic Registration (P2)"
-status: open
+status: closed
 epic: "024"
 labels: ["performance", "plugins", "P2"]
 created: "2026-05-18"

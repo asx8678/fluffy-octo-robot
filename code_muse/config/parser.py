@@ -307,7 +307,7 @@ def get_max_consecutive_tool_errors(default: int = 3) -> int:
         return default
 
 
-def get_overall_run_timeout_seconds(default: int = 300) -> int:
+def get_overall_run_timeout_seconds(default: int = 600) -> int:
     """Max wall-clock time in seconds for a single agent run (0 = no limit)."""
     val = get_value("overall_run_timeout")
     try:
@@ -522,3 +522,18 @@ def get_owner_name():
 
 def get_puppy_name():
     return get_agent_name()
+
+
+def get_filter_huge_message_threshold(default: int = 50000) -> int:
+    """Return the max token threshold for filter_huge_messages.
+
+    Configurable by 'filter_huge_message_threshold' key.
+    Defaults to 50000 if unset or misconfigured.
+    Clamped to a minimum of 1000.
+    """
+    val = get_value("filter_huge_message_threshold")
+    try:
+        threshold = int(val) if val else default
+        return max(1000, threshold)
+    except ValueError, TypeError:
+        return default

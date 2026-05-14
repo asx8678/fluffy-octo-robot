@@ -1,5 +1,17 @@
 """JSON-schema sanitisation helpers for the Gemini API."""
 
+import json
+
+import orjson
+
+
+def _deep_copy_dict(obj: dict) -> dict:
+    """Fast deep-copy of a JSON-serializable dict via orjson round-trip.
+
+    3-5x faster than copy.deepcopy() for dict/list objects.
+    """
+    return json.loads(orjson.dumps(obj))
+
 
 def _flatten_union_to_object_gemini(union_items: list, defs: dict, resolve_fn) -> dict:
     """Flatten a union of object types into a single object with all properties.
@@ -7,8 +19,6 @@ def _flatten_union_to_object_gemini(union_items: list, defs: dict, resolve_fn) -
     For discriminated unions like EditFilePayload, we merge all object types
     into one with all properties (Gemini doesn't support anyOf/oneOf).
     """
-    import copy as copy_module
-
     merged_properties = {}
     has_string_type = False
 
@@ -25,7 +35,7 @@ def _flatten_union_to_object_gemini(union_items: list, defs: dict, resolve_fn) -
             elif ref_path.startswith("#/definitions/"):
                 ref_name = ref_path[14:]
             if ref_name and ref_name in defs:
-                item = copy_module.deepcopy(defs[ref_name])
+                item = _deep_copy_dict(defs[ref_name])
             else:
                 continue
 
@@ -41,7 +51,7 @@ def _flatten_union_to_object_gemini(union_items: list, defs: dict, resolve_fn) -
             for prop_name, prop_schema in props.items():
                 if prop_name not in merged_properties:
                     merged_properties[prop_name] = resolve_fn(
-                        copy_module.deepcopy(prop_schema)
+                        _deep_copy_dict(prop_schema)
                     )
 
     if not merged_properties:
@@ -64,13 +74,11 @@ def _sanitize_schema_for_gemini(schema: dict) -> dict:
       - For unions of objects: merges into single object with all properties
       - For simple unions (string | null): picks first non-null type
     """
-    import copy
-
     if not isinstance(schema, dict):
         return schema
 
     # Make a deep copy to avoid modifying original
-    schema = copy.deepcopy(schema)
+    schema = _deep_copy_dict(schema)
 
     # Extract $defs for reference resolution
     defs = schema.pop("$defs", schema.pop("definitions", {}))
@@ -146,7 +154,7 @@ def _sanitize_schema_for_gemini(schema: dict) -> dict:
                     ref_name = ref_path[14:]
 
                 if ref_name and ref_name in defs:
-                    resolved = resolve_refs(copy.deepcopy(defs[ref_name]))
+                    resolved = resolve_refs(_deep_copy_dict(defs[ref_name]))
                     other_props = {k: v for k, v in obj.items() if k != "$ref"}
                     if other_props:
                         resolved.update(resolve_refs(other_props))

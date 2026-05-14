@@ -20,19 +20,6 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
-def _setup_cython_hooks() -> None:
-    """Enable pyximport so .pyx modules compile on-the-fly.
-
-    Status is reported centrally by the core startup callback runner.
-    """
-    try:
-        import pyximport
-
-        pyximport.install(language_level=3, build_in_temp=True, inplace=True)
-    except Exception:
-        pass  # core will report Cython status
-
-
 def _on_startup() -> None:
     """Attempt to load memory injection (non-blocking)."""
     try:
@@ -261,7 +248,6 @@ def _memory_forget() -> str:
 # Register callbacks
 # ---------------------------------------------------------------------------
 
-register_callback("startup", _setup_cython_hooks)
 register_callback("startup", _on_startup)
 register_callback("get_model_system_prompt", _inject_memory_into_prompt)
 register_callback("custom_command_help", _memory_command_help)

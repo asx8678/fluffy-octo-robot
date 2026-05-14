@@ -1,7 +1,7 @@
 ---
 id: "024-17"
 title: "filter_engine __init__.py: Explicit Import Chain (P2)"
-status: open
+status: closed
 epic: "024"
 labels: ["cleanup", "imports", "P2", "coupling"]
 created: "2026-05-18"

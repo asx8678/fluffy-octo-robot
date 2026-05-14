@@ -1,7 +1,7 @@
 ---
 id: "021-01"
 title: "Install Tree-Sitter + Language Grammars for AST Compression"
-status: open
+status: closed
 epic: "021"
 labels: ["code-compressor", "tree-sitter", "setup", "P1"]
 created: "2025-07-16"

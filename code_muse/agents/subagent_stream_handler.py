@@ -13,7 +13,6 @@ Usage:
 
 import asyncio
 import logging
-import math
 from collections.abc import AsyncIterable
 from typing import Any
 
@@ -26,6 +25,8 @@ from pydantic_ai.messages import (
     ToolCallPart,
     ToolCallPartDelta,
 )
+
+from code_muse.agents._history import estimate_tokens
 
 logger = logging.getLogger(__name__)
 
@@ -57,29 +58,6 @@ def _fire_callback(event_type: str, event_data: Any, session_id: str | None) -> 
     except Exception as e:
         # Don't let callback errors break the stream handler
         logger.debug("Error firing stream event callback: %s", e)
-
-
-# =============================================================================
-# Token Estimation
-# =============================================================================
-
-
-def _estimate_tokens(content: str) -> int:
-    """Estimate token count from content string.
-
-    Uses the same ~2.5 characters per token heuristic as BaseAgent.estimate_token_count
-    and file_operations._read_file to keep streaming metrics consistent with compaction
-    decisions.
-
-    Args:
-        content: The text content to estimate tokens for
-
-    Returns:
-        Estimated token count (minimum 1 for non-empty content, 0 for empty)
-    """
-    if not content:
-        return 0
-    return max(1, math.floor(len(content) / 2.5))
 
 
 # =============================================================================
@@ -131,7 +109,7 @@ async def subagent_stream_handler(
             )
 
             # Update metrics from returned values
-            # (we need to track these at this level since they're modified in _handle_event)
+            # (tracked here since modified in _handle_event)
             if isinstance(event, PartStartEvent):
                 if isinstance(event.part, ToolCallPart):
                     tool_call_count += 1
@@ -139,9 +117,11 @@ async def subagent_stream_handler(
 
             elif isinstance(event, PartDeltaEvent):
                 delta = event.delta
-                if isinstance(delta, (TextPartDelta, ThinkingPartDelta)):
-                    if delta.content_delta:
-                        token_count += _estimate_tokens(delta.content_delta)
+                if (
+                    isinstance(delta, (TextPartDelta, ThinkingPartDelta))
+                    and delta.content_delta
+                ):
+                    token_count += estimate_tokens(delta.content_delta)
 
             elif isinstance(event, PartEndEvent):
                 active_tool_parts.discard(event.index)
@@ -222,14 +202,14 @@ async def _handle_event(
             content_delta = delta.content_delta
             if content_delta:
                 # Token count is updated in main handler
-                new_token_count = token_count + _estimate_tokens(content_delta)
+                new_token_count = token_count + estimate_tokens(content_delta)
                 manager.update_agent(session_id, token_count=new_token_count)
                 event_data["content_delta"] = content_delta
 
         elif isinstance(delta, ThinkingPartDelta):
             content_delta = delta.content_delta
             if content_delta:
-                new_token_count = token_count + _estimate_tokens(content_delta)
+                new_token_count = token_count + estimate_tokens(content_delta)
                 manager.update_agent(session_id, token_count=new_token_count)
                 event_data["content_delta"] = content_delta
 

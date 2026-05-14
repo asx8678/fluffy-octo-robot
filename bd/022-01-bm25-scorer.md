@@ -1,7 +1,7 @@
 ---
 id: "022-01"
 title: "Build BM25 Relevance Scorer — Pure Python Token-Based Scoring"
-status: open
+status: closed
 epic: "022"
 labels: ["relevance-scoring", "bm25", "P2"]
 created: "2025-07-16"

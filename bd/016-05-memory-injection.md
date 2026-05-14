@@ -1,7 +1,7 @@
 ---
 id: "016-05"
 title: "Memory Injection at Startup — Load memory_summary.md into System Prompt"
-status: "open"
+status: "closed"
 epic: "016"
 labels: ["memory", "injection", "startup", "system-prompt", "P3"]
 created: "2025-07-14"

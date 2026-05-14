@@ -203,7 +203,16 @@ class BaseAgent(ABC):
         except asyncio.CancelledError, KeyboardInterrupt, SystemExit:
             raise
         except BaseException as exc:
-            from code_muse.messaging import emit_warning
+            import traceback
+            from code_muse.messaging import emit_warning, emit_error
 
-            emit_warning(f"run swallowed exception: {exc}")
+            if isinstance(exc, BaseExceptionGroup):
+                for i, sub in enumerate(exc.exceptions, 1):
+                    tb = "".join(traceback.format_exception(type(sub), sub, sub.__traceback__))
+                    emit_error(f"Swallowed exception #{i}: {sub!r}")
+                    emit_warning(tb.rstrip())
+            else:
+                tb = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+                emit_error(f"run swallowed exception: {exc!r}")
+                emit_warning(tb.rstrip())
             return None

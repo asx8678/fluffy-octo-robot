@@ -1,7 +1,7 @@
 ---
 id: "020-03"
 title: "Register SmartCrusher as JSON Strategy + Wire to Content Router"
-status: open
+status: closed
 epic: "020"
 labels: ["smartcrusher", "integration", "registry", "P1"]
 created: "2025-07-16"

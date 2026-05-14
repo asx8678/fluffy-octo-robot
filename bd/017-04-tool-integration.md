@@ -1,7 +1,7 @@
 ---
 id: "017-04"
 title: "Tool Integration — Wire ScanCache into Glob, Grep, and FuzzyFind Tools"
-status: "open"
+status: "closed"
 epic: "017"
 labels: ["cache", "integration", "glob", "grep", "find", "P3"]
 created: "2025-07-14"

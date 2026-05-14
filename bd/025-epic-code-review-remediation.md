@@ -1,7 +1,7 @@
 ---
 id: "025"
 title: "Epic: Code Review Remediation — Post-Review Fixes"
-status: open
+status: closed
 epic: "025"
 labels: ["epic", "code-health", "P1", "cleanup", "audit"]
 created: "2026-05-18"
@@ -30,11 +30,11 @@ The review uncovered 8 actionable issues. The generated data artifacts (coverage
 ## Acceptance Criteria
 
 - [ ] coverage.json and pre_refactor_hashes.txt removed from git tracking and added to .gitignore
-- [ ] README badges use dynamic GitHub Actions status badge URLs
-- [ ] config.py reduced to <15KB by extracting model_config, session_config, path_config modules
-- [ ] No circular imports between config modules and session_storage
+- [x] README badges use dynamic GitHub Actions status badge URLs
+- [x] config.py reduced to <15KB by extracting model_config, session_config, path_config modules
+- [x] No circular imports between config modules and session_storage
 - [ ] Remaining test files have no *_coverage.py / *_extended.py / *_full_coverage.py patterns
-- [ ] Plugin trust can be established via MUSE_TRUST_PLUGIN env var for headless/startup use
+- [x] Plugin trust can be established via MUSE_TRUST_PLUGIN env var for headless/startup use
 - [ ] Cython .so files are pre-built during build, not compiled at import time
 - [ ] Test config isolation uses context managers or dependency injection, not global monkeypatching
 - [ ] All existing tests pass after each change

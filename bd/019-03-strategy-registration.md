@@ -1,7 +1,7 @@
 ---
 id: "019-03"
 title: "Register New Strategy Categories for Content Types"
-status: open
+status: closed
 epic: "019"
 labels: ["content-router", "registry", "strategies", "P1"]
 created: "2025-07-16"

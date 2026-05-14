@@ -1,7 +1,7 @@
 ---
 id: "024-04"
 title: "Redundant Import Cleanup in cli_runner.py (P2)"
-status: open
+status: closed
 epic: "024"
 labels: ["cleanup", "imports", "P2"]
 created: "2026-05-18"

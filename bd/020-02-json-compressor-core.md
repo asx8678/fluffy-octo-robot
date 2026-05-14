@@ -1,7 +1,7 @@
 ---
 id: "020-02"
 title: "Build SmartCrusher Compression Engine — Template Application & Flattening"
-status: open
+status: closed
 epic: "020"
 labels: ["smartcrusher", "compression", "json", "P1", "headroom-port"]
 created: "2025-07-16"

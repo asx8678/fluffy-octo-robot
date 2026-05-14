@@ -19,31 +19,6 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Cython JIT hooks — safe fallback to pure Python
-# ---------------------------------------------------------------------------
-
-
-def _setup_cython_hooks() -> None:
-    """Enable pyximport so .pyx modules compile on-the-fly.
-
-    Falls back gracefully when Cython is missing or compilation fails.
-    Status is reported centrally by the core startup callback runner.
-    """
-    try:
-        import pyximport
-
-        pyximport.install(
-            language_level=3,
-            build_in_temp=True,
-            inplace=True,
-        )
-    except ImportError:
-        pass  # core will report Cython status
-    except Exception:  # noqa: BLE001
-        pass  # core will report Cython status
-
-
-# ---------------------------------------------------------------------------
 # Startup hook — tee file cleanup
 # ---------------------------------------------------------------------------
 
@@ -170,7 +145,6 @@ def _on_custom_command_help() -> list[tuple[str, str]]:
 # ---------------------------------------------------------------------------
 
 register_callback("startup", _on_startup)
-register_callback("startup", _setup_cython_hooks)
 # Priority: intended 100 (runs first, before policy_engine/shell_safety=50).
 # Performs content-type detection and routing.
 register_callback("run_shell_command", filter_engine_callback, priority=10)

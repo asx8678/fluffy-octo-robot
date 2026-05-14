@@ -1,7 +1,7 @@
 ---
 id: "019-02"
 title: "Integrate Content Router into FilterDispatcher"
-status: open
+status: closed
 epic: "019"
 labels: ["content-router", "dispatcher", "integration", "P1"]
 created: "2025-07-16"

@@ -1,7 +1,7 @@
 ---
 id: "023-05"
 title: "Phase 5: Cleanup — Deprecated APIs, Ruff & Mypy Rules"
-status: open
+status: closed
 epic: "023"
 labels: ["modernization", "py314", "cleanup", "P1"]
 created: "2025-07-16"

@@ -1,7 +1,7 @@
 ---
 id: "017-01"
 title: "ScanCache Core — Partition-Keyed Directory Entry Cache with Eviction"
-status: "open"
+status: "closed"
 epic: "017"
 labels: ["cache", "filesystem", "scan", "core", "P3"]
 created: "2025-07-14"

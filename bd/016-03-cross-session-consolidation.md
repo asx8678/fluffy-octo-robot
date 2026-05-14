@@ -1,7 +1,7 @@
 ---
 id: "016-03"
 title: "Phase 2 — Cross-Session Consolidation into MEMORY.md + Skills"
-status: "open"
+status: "closed"
 epic: "016"
 labels: ["memory", "consolidation", "synthesis", "MEMORY.md", "P3"]
 created: "2025-07-14"

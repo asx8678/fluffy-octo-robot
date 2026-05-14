@@ -1,7 +1,7 @@
 ---
 id: "025-03"
 title: "Refactor config.py god-module (P2)"
-status: open
+status: closed
 epic: "025"
 labels: ["refactor", "architecture", "P2"]
 created: "2026-05-18"

@@ -1,7 +1,7 @@
 ---
 id: "016-02"
 title: "Phase 1 — Per-Session Knowledge Extraction via Background Agent"
-status: "open"
+status: "closed"
 epic: "016"
 labels: ["memory", "extraction", "session", "background", "P3"]
 created: "2025-07-14"

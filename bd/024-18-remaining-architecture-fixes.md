@@ -1,7 +1,7 @@
 ---
 id: "024-18"
 title: "Remaining Architecture: load_prompt Gating & Config Coupling (P3)"
-status: open
+status: closed
 epic: "024"
 labels: ["architecture", "config", "P3"]
 created: "2026-05-18"

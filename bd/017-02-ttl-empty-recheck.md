@@ -1,7 +1,7 @@
 ---
 id: "017-02"
 title: "TTL + Empty-Recheck Policy — Environment-Configurable Freshness Rules"
-status: "open"
+status: "closed"
 epic: "017"
 labels: ["cache", "ttl", "policy", "empty", "recheck", "P3"]
 created: "2025-07-14"

@@ -1,7 +1,7 @@
 ---
 id: "021-02"
 title: "Build Python AST Compressor — Signature Extraction + Body Dropping"
-status: open
+status: closed
 epic: "021"
 labels: ["code-compressor", "python", "ast", "P1", "headroom-port"]
 created: "2025-07-16"
