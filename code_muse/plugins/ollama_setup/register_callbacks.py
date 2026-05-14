@@ -158,7 +158,7 @@ def _test_model_auth(model_tag: str) -> tuple[bool, str]:
     Returns (authorized: bool, message: str).
     If unauthorized, message contains guidance for the user.
     """
-    import orjson as json as json_mod
+    import orjson as json_mod
     import urllib.request
 
     test_payload = json_mod.dumps(

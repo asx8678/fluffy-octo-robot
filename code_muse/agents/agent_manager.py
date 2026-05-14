@@ -1,7 +1,6 @@
 """Agent manager for handling different agent configurations."""
 
 import importlib
-import orjson as json
 import os
 import pkgutil
 import re
@@ -9,6 +8,8 @@ import threading
 import uuid
 from pathlib import Path
 
+import orjson
+import orjson as json
 from pydantic_ai.messages import ModelMessage
 
 from code_muse.agents.base_agent import BaseAgent
@@ -145,11 +146,11 @@ def _load_session_data() -> dict[str, str]:
     try:
         if session_file.exists():
             with open(session_file, encoding="utf-8") as f:
-                data = orjson.loads(f.read())
+                data = json.loads(f.read())
                 # Clean up dead sessions while loading
                 return _cleanup_dead_sessions(data)
         return {}
-    except json.JSONDecodeError, OSError:
+    except (json.JSONDecodeError, OSError):
         # File corrupted or permission issues, start fresh
         return {}
 

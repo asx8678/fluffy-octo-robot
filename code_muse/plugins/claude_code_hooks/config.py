@@ -9,10 +9,11 @@ Both configurations are loaded and merged so that hooks from both levels
 coexist and execute together.
 """
 
-import orjson as json
 import logging
 from pathlib import Path
 from typing import Any
+
+import orjson as json
 
 from code_muse.hook_engine.trust import compute_content_hash, is_hook_trusted
 
@@ -105,7 +106,7 @@ def load_hooks_config_with_sources() -> tuple[dict[str, Any | None], list[dict]]
     if global_config_path.exists():
         try:
             raw = global_config_path.read_text(encoding="utf-8")
-            config = orjson.loads(raw)
+            config = json.loads(raw)
             hooks_part = None
             if "hooks" in config and isinstance(config["hooks"], dict):
                 logger.info(
@@ -137,7 +138,7 @@ def load_hooks_config_with_sources() -> tuple[dict[str, Any | None], list[dict]]
     if project_config_path.exists():
         try:
             raw = project_config_path.read_text(encoding="utf-8")
-            config = orjson.loads(raw)
+            config = json.loads(raw)
             hooks_config = config.get("hooks")
             if hooks_config:
                 logger.info(f"Merging hooks configuration from {project_config_path}")
