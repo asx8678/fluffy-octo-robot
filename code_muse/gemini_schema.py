@@ -1,8 +1,6 @@
 """JSON-schema sanitisation helpers for the Gemini API."""
 
-import json
-
-import orjson
+import orjson as json
 
 
 def _deep_copy_dict(obj: dict) -> dict:
@@ -10,7 +8,7 @@ def _deep_copy_dict(obj: dict) -> dict:
 
     3-5x faster than copy.deepcopy() for dict/list objects.
     """
-    return json.loads(orjson.dumps(obj))
+    return orjson.loads(orjson.dumps(obj))
 
 
 def _flatten_union_to_object_gemini(union_items: list, defs: dict, resolve_fn) -> dict:

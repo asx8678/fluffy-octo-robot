@@ -1,4 +1,4 @@
-import json
+import orjson as json
 import logging
 import os
 import pathlib
@@ -512,14 +512,14 @@ class ModelFactory:
             # in extra_models.json (overlay loaded below).
             bundled_models = pathlib.Path(__file__).parent / "models.json"
             with open(bundled_models) as f:
-                config = json.load(f)
+                config = orjson.loads(f.read())
 
         # User-level models.json overrides bundled config
         user_models = pathlib.Path(MODELS_FILE)
         if user_models.exists():
             try:
                 with open(user_models) as f:
-                    config.update(json.load(f))
+                    config.update(orjson.loads(f.read()))
             except json.JSONDecodeError as exc:
                 logging.getLogger(__name__).warning(
                     f"Failed to load user models config from {user_models}: Invalid JSON - {exc}"
@@ -564,10 +564,10 @@ class ModelFactory:
                             f"claude_code_oauth plugin not available, loading {label} as plain JSON"
                         )
                         with open(source_path) as f:
-                            extra_config = json.load(f)
+                            extra_config = orjson.loads(f.read())
                 else:
                     with open(source_path) as f:
-                        extra_config = json.load(f)
+                        extra_config = orjson.loads(f.read())
                 config.update(extra_config)
             except json.JSONDecodeError as exc:
                 logging.getLogger(__name__).warning(
@@ -856,7 +856,7 @@ class ModelFactory:
                         if not flatten_tool_calls:
                             return super()._map_model_response(message)
 
-                        import json
+                        import orjson as json
 
                         from openai.types.chat import (
                             ChatCompletionAssistantMessageParam,
@@ -871,7 +871,7 @@ class ModelFactory:
                             elif isinstance(part, ToolCallPart):
                                 args = part.args
                                 if isinstance(args, dict):
-                                    args_str = json.dumps(args, sort_keys=True)
+                                    args_str = orjson.dumps(args, option=orjson.OPT_SORT_KEYS)
                                 else:
                                     args_str = "" if args is None else str(args)
                                 chunks.append(

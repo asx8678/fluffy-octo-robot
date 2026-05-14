@@ -54,6 +54,15 @@ from .messages import (
     UserInputRequest,
 )
 
+# Pre-allocated message templates for frequent emit types.
+# Uses model_copy(update=...) to avoid re-creating pydantic models from scratch.
+# The id and timestamp are regenerated per message; the structure is reused.
+_INFO_TEMPLATE = TextMessage(level=MessageLevel.INFO, text="", category=MessageCategory.SYSTEM)
+_WARNING_TEMPLATE = TextMessage(level=MessageLevel.WARNING, text="", category=MessageCategory.SYSTEM)
+_ERROR_TEMPLATE = TextMessage(level=MessageLevel.ERROR, text="", category=MessageCategory.SYSTEM)
+_SUCCESS_TEMPLATE = TextMessage(level=MessageLevel.SUCCESS, text="", category=MessageCategory.SYSTEM)
+_DEBUG_TEMPLATE = TextMessage(level=MessageLevel.DEBUG, text="", category=MessageCategory.SYSTEM)
+
 
 class MessageBus:
     """Central coordinator for bidirectional Agent <-> UI communication.
@@ -163,12 +172,24 @@ class MessageBus:
     ) -> None:
         """Emit a text message with the specified level.
 
+        Uses pre-allocated templates to reduce pydantic model allocation overhead.
         Args:
             level: Severity level (DEBUG, INFO, WARNING, ERROR, SUCCESS).
             text: Plain text content (no Rich markup!).
             category: Message category for routing.
         """
-        message = TextMessage(level=level, text=text, category=category)
+        _TEMPLATES = {
+            MessageLevel.INFO: _INFO_TEMPLATE,
+            MessageLevel.WARNING: _WARNING_TEMPLATE,
+            MessageLevel.ERROR: _ERROR_TEMPLATE,
+            MessageLevel.SUCCESS: _SUCCESS_TEMPLATE,
+            MessageLevel.DEBUG: _DEBUG_TEMPLATE,
+        }
+        template = _TEMPLATES.get(level)
+        if template is not None:
+            message = template.model_copy(update={"text": text, "id": str(uuid4())})
+        else:
+            message = TextMessage(level=level, text=text, category=category)
         self.emit(message)
 
     def emit_info(self, text: str) -> None:

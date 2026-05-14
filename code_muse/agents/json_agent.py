@@ -1,6 +1,6 @@
 """JSON-based agent configuration system."""
 
-import json
+import orjson as json
 import logging
 from pathlib import Path
 
@@ -27,7 +27,7 @@ class JSONAgent(BaseAgent):
         """Load configuration from JSON file."""
         try:
             with open(self.json_path, encoding="utf-8") as f:
-                return json.load(f)
+                return orjson.loads(f.read())
         except (json.JSONDecodeError, FileNotFoundError) as e:
             raise ValueError(
                 f"Failed to load JSON agent config from {self.json_path}: {e}"

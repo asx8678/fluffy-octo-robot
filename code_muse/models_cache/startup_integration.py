@@ -1,6 +1,6 @@
 """Startup cache integration — load cached models on session start."""
 
-import json
+import orjson as json
 import logging
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -28,7 +28,7 @@ def load_cached_models() -> list[dict[str, Any]] | None:
             return None
 
         with open(MODELS_CACHE_PATH, encoding="utf-8") as f:
-            cache = json.load(f)
+            cache = orjson.loads(f.read())
 
         fetched_at_str = cache.get("fetched_at")
         if not fetched_at_str:

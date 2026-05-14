@@ -5,7 +5,7 @@ and idle time. Tracks processed sessions via a persistent state file.
 """
 
 import hashlib
-import json
+import orjson as json
 import logging
 import os
 import time
@@ -61,7 +61,7 @@ def _read_state(state_file: Path) -> dict[str, Any]:
         return {"processed": []}
     try:
         with state_file.open("r", encoding="utf-8") as fh:
-            data = json.load(fh)
+            data = orjson.loads(fh.read())
             if isinstance(data, dict) and isinstance(data.get("processed"), list):
                 return data
     except Exception as exc:
@@ -73,7 +73,7 @@ def _write_state(state_file: Path, data: dict[str, Any]) -> None:
     """Persist the processed-sessions state file."""
     state_file.parent.mkdir(parents=True, exist_ok=True)
     with state_file.open("w", encoding="utf-8") as fh:
-        json.dump(data, fh, indent=2)
+        fh.write(orjson.dumps(data, option=orjson.OPT_INDENT_2).decode())
 
 
 def scan_eligible_sessions(sessions_dir: Path, state_file: Path) -> list[SessionInfo]:

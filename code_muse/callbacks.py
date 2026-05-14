@@ -88,6 +88,11 @@ _callbacks: dict[PhaseType, list[tuple[int, CallbackFunc]]] = {
     "should_skip_fallback_render": [],
 }
 
+# Pre-sorted cache: populated lazily by get_callbacks(), invalidated on
+# register/unregister/clear. Avoids sorting the (priority, func) tuples
+# on every dispatch.
+_sorted_cache: dict[PhaseType, list[CallbackFunc]] = {}
+
 logger = logging.getLogger(__name__)
 # FREE-THREADED: ThreadPoolExecutor is compatible with free-threaded Python 3.14 —
 # no GIL contention for I/O-bound callback work.
@@ -164,6 +169,7 @@ def commit_deferred() -> list[str]:
                 )
                 continue
             _callbacks[phase].append((priority, func))
+            _sorted_cache.pop(phase, None)  # Invalidate sorted cache
             committed.append((phase, func, priority))
             logger.debug(
                 f"Committed deferred callback {func.__name__} for "
@@ -175,6 +181,7 @@ def commit_deferred() -> list[str]:
             for idx, (_, existing_func) in enumerate(_callbacks[phase]):
                 if existing_func is func:
                     del _callbacks[phase][idx]
+                    _sorted_cache.pop(phase, None)  # Invalidate sorted cache
                     break
         logger.error(
             "Deferred commit failed; rolled back %d registrations",
@@ -225,6 +232,7 @@ def register_callback(phase: PhaseType, func: CallbackFunc, priority: int = 0) -
     # In deferred mode, buffer the registration for later atomic commit
     if _defer_mode:
         _deferred_registrations.append((phase, func, priority))
+        _sorted_cache.pop(phase, None)  # Invalidate sorted cache
         logger.debug(
             f"Buffered deferred callback {func.__name__} for "
             f"phase '{phase}' (priority={priority})"
@@ -241,6 +249,7 @@ def register_callback(phase: PhaseType, func: CallbackFunc, priority: int = 0) -
             return
 
     _callbacks[phase].append((priority, func))
+    _sorted_cache.pop(phase, None)  # Invalidate sorted cache
     logger.debug(
         f"Registered async callback {func.__name__} for phase '{phase}' (priority={priority})"
     )
@@ -253,6 +262,7 @@ def unregister_callback(phase: PhaseType, func: CallbackFunc) -> bool:
     for idx, (_existing_priority, existing_func) in enumerate(_callbacks[phase]):
         if existing_func is func:
             del _callbacks[phase][idx]
+            _sorted_cache.pop(phase, None)  # Invalidate sorted cache
             logger.debug(
                 f"Unregistered async callback {func.__name__} from phase '{phase}'"
             )
@@ -269,14 +279,28 @@ def clear_callbacks(phase: PhaseType | None = None) -> None:
         if phase in _callbacks:
             _callbacks[phase].clear()
             logger.debug(f"Cleared async callbacks for phase '{phase}'")
+    _sorted_cache.clear()
 
 
 def get_callbacks(phase: PhaseType) -> list[CallbackFunc]:
-    """Return callbacks for *phase* sorted by priority (highest first)."""
+    """Return callbacks for *phase* sorted by priority (highest first).
+
+    Uses a pre-sorted cache that is invalidated on register/unregister/clear.
+    """
+    cached = _sorted_cache.get(phase)
+    if cached is not None:
+        return cached
+
     callbacks = _callbacks.get(phase, [])
+    if not callbacks:
+        _sorted_cache[phase] = []
+        return []
+
     # Sort by priority descending, then by registration order (stable sort)
     sorted_callbacks = sorted(callbacks, key=lambda item: item[0], reverse=True)
-    return [func for _priority, func in sorted_callbacks]
+    result = [func for _priority, func in sorted_callbacks]
+    _sorted_cache[phase] = result
+    return result
 
 
 def count_callbacks(phase: PhaseType | None = None) -> int:
@@ -312,6 +336,8 @@ def fire_callbacks(phase: PhaseType, *args, **kwargs) -> None:
 
 
 def _trigger_callbacks_sync(phase: PhaseType, *args, **kwargs) -> list[Any]:
+    if not _callbacks.get(phase):
+        return []
     callbacks = get_callbacks(phase)
     if not callbacks:
         logger.debug(f"No callbacks registered for phase '{phase}'")
@@ -358,6 +384,8 @@ async def _trigger_callbacks(phase: PhaseType, *args, **kwargs) -> list[Any]:
     Intended priority chain for ``run_shell_command``:
         filter_engine (100) → policy_engine / shell_safety (50) → shell_minimizer (0)
     """
+    if not _callbacks.get(phase):
+        return []
     callbacks = get_callbacks(phase)
 
     if not callbacks:

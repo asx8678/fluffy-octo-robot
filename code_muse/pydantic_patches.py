@@ -220,7 +220,7 @@ def patch_tool_call_callbacks() -> None:
 
             # --- JSON repair (moved from patch_tool_call_json_repair) ---
             try:
-                import json_repair
+                import orjson as json_repair
 
                 if isinstance(call.args, str) and call.args:
                     repaired = json_repair.repair_json(call.args)
@@ -235,9 +235,9 @@ def patch_tool_call_callbacks() -> None:
                 tool_args = call.args
             elif isinstance(call.args, str):
                 try:
-                    import json
+                    import orjson as json
 
-                    tool_args = json.loads(call.args)
+                    tool_args = orjson.loads(call.args)
                 except json.JSONDecodeError, TypeError, ValueError:
                     tool_args = {"raw": call.args}
 

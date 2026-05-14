@@ -12,7 +12,7 @@ cloning or when content changes.
 
 import contextlib
 import hashlib
-import json
+import orjson as json
 import logging
 import os
 from pathlib import Path
@@ -86,7 +86,7 @@ def _atomic_write_private_json(file_path: Path, data: dict) -> None:
             0o600,
         )
         with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+            f.write(orjson.dumps(data, option=orjson.OPT_INDENT_2).decode())
             f.flush()
             os.fsync(f.fileno())
         os.replace(str(tmp_path), str(file_path))
@@ -105,7 +105,7 @@ def _load_trust_db() -> dict[str, dict]:
         return {}
     try:
         with open(_TRUST_FILE, encoding="utf-8") as f:
-            data = json.load(f)
+            data = orjson.loads(f.read())
         if isinstance(data, dict):
             return data
     except json.JSONDecodeError, OSError:

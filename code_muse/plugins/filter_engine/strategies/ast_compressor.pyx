@@ -199,6 +199,7 @@ def _walk_cython(
                 kept_lines.add(i)
             else:
                 kept_lines.add(i)
+                break
 
     if extra_handler is not None:
         extra_handler(node, start_line, end_line, kept_lines, lines, level)
@@ -291,24 +292,7 @@ def compress_javascript(
     if ast is None:
         return _fallback_compress(source)
 
-    lines = source.split("\n")
-    kept_lines: set[int] = set()
-    line_map = _build_line_map(source)
-
-    def _walk(node: ASTNode, depth: int = 0) -> None:
-        start_line = _byte_to_line(node.start_byte, line_map)
-
-        if node.type in JS_KEEP_TYPES:
-            for i in range(start_line, min(start_line + 1, len(lines))):
-                kept_lines.add(i)
-            if level >= 3:
-                for j in range(start_line + 1, min(start_line + 3, len(lines))):
-                    kept_lines.add(j)
-
-        for child in node.children:
-            _walk(child, depth + 1)
-
-    _walk(ast)
+    kept_lines = _collect_lines(source, ast, JS_KEEP_TYPES, level)
     return _build_output(source, kept_lines, comment_prefix="//")
 
 

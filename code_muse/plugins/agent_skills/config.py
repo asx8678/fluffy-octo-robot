@@ -1,6 +1,6 @@
 """Plugin-level config helpers for agent_skills."""
 
-import json
+import orjson as json
 import logging
 from pathlib import Path
 
@@ -25,7 +25,7 @@ def get_skill_directories() -> list[Path]:
     if config_value:
         try:
             # Parse as JSON
-            directories = json.loads(config_value)
+            directories = orjson.loads(config_value)
             # Ensure it's a list
             if isinstance(directories, list):
                 return [Path(d) for d in directories]
@@ -65,7 +65,7 @@ def add_skill_directory(path: str | Path) -> bool:
 
     try:
         # Save back to config as JSON
-        set_value("skill_directories", json.dumps([str(d) for d in directories]))
+        set_value("skill_directories", orjson.dumps([str(d) for d in directories]))
         logger.info(f"Added skill directory: {path}")
         return True
     except Exception as e:
@@ -95,7 +95,7 @@ def remove_skill_directory(path: str | Path) -> bool:
 
     try:
         # Save back to config as JSON
-        set_value("skill_directories", json.dumps([str(d) for d in directories]))
+        set_value("skill_directories", orjson.dumps([str(d) for d in directories]))
         logger.info(f"Removed skill directory: {path}")
         return True
     except Exception as e:
@@ -138,7 +138,7 @@ def get_disabled_skills() -> set[str]:
     if config_value:
         try:
             # Parse as JSON
-            disabled_list = json.loads(config_value)
+            disabled_list = orjson.loads(config_value)
             # Ensure it's a list and convert to set
             if isinstance(disabled_list, list):
                 return set(disabled_list)
@@ -173,4 +173,4 @@ def set_skill_disabled(skill_name: str, disabled: bool) -> None:
         logger.info(f"Enabled skill: {skill_name}")
 
     # Save back to config as JSON
-    set_value("disabled_skills", json.dumps(list(disabled_skills)))
+    set_value("disabled_skills", orjson.dumps(list(disabled_skills)))

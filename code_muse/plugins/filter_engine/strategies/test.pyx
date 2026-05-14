@@ -4,7 +4,7 @@
 Supports pytest, vitest/jest, cargo test, and generic test runners.
 """
 
-import json
+import orjson as json
 import re
 from typing import Any
 
@@ -145,7 +145,7 @@ def compress_vitest_jest(
     """
     # Try JSON mode first
     try:
-        data = json.loads(stdout)
+        data = orjson.loads(stdout)
         if isinstance(data, dict) and "testResults" in data:
             return _compress_jest_json(data, stderr, verbosity)
     except ValueError:
@@ -334,7 +334,7 @@ def _compress_cargo_ndjson(
 
     for line in json_lines:
         try:
-            obj = json.loads(line)
+            obj = orjson.loads(line)
             event = obj.get("event", "")
             if event == "started":
                 total += 1

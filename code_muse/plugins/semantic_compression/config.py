@@ -1,6 +1,6 @@
 """Plugin-level config helpers for semantic_compression."""
 
-import json
+import orjson as json
 import logging
 
 from code_muse.config import get_value, set_config_value
@@ -44,7 +44,7 @@ def _parse_json_tool_list(config_value: str | None) -> set[str]:
     if not config_value:
         return set()
     try:
-        parsed = json.loads(config_value)
+        parsed = orjson.loads(config_value)
         if isinstance(parsed, list):
             return {str(item).strip() for item in parsed if item}
     except json.JSONDecodeError as e:
@@ -54,7 +54,7 @@ def _parse_json_tool_list(config_value: str | None) -> set[str]:
 
 def _serialize_tool_list(tool_names: set[str]) -> str:
     """Serialize a set of tool names to a JSON list string."""
-    return json.dumps(sorted(tool_names))
+    return orjson.dumps(sorted(tool_names))
 
 
 def get_compression_allowlist() -> set[str]:

@@ -4,7 +4,7 @@ Compresses output from make, cargo, go, npm, docker, pip, and other
 build tools into concise summaries.
 """
 
-import json
+import orjson as json
 import re
 
 from code_muse.plugins.filter_engine.registry import get_registry
@@ -89,7 +89,7 @@ def compress_cargo_build(
         total = 0
         for line in json_lines:
             try:
-                obj = json.loads(line)
+                obj = orjson.loads(line)
                 if obj.get("reason") == "compiler-message":
                     msg = obj.get("message", {})
                     if msg.get("level") == "error":

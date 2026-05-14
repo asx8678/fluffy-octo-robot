@@ -14,7 +14,7 @@ Removes unsupported parameters:
 - "verbosity" - Not supported by Codex API
 """
 
-import json
+import orjson as json
 import logging
 from typing import Any
 
@@ -124,7 +124,7 @@ class ChatGPTCodexAsyncClient(httpx.AsyncClient):
             Tuple of (modified body bytes or None, whether stream was forced)
         """
         try:
-            data = json.loads(body.decode("utf-8"))
+            data = orjson.loads(body.decode("utf-8"))
         except Exception:
             return None, False
 
@@ -217,7 +217,7 @@ class ChatGPTCodexAsyncClient(httpx.AsyncClient):
         if not modified:
             return None, False
 
-        return json.dumps(data).encode("utf-8"), forced_stream
+        return orjson.dumps(data).encode("utf-8"), forced_stream
 
     async def _convert_stream_to_response(
         self, response: httpx.Response
@@ -241,7 +241,7 @@ class ChatGPTCodexAsyncClient(httpx.AsyncClient):
                 break
 
             try:
-                event = json.loads(data_str)
+                event = orjson.loads(data_str)
                 event_type = event.get("type", "")
 
                 if event_type == "response.output_text.delta":
@@ -307,7 +307,7 @@ class ChatGPTCodexAsyncClient(httpx.AsyncClient):
                 )
 
         # Create a new response with the complete body
-        body_bytes = json.dumps(response_body).encode("utf-8")
+        body_bytes = orjson.dumps(response_body).encode("utf-8")
         logger.debug(f"Reconstructed response body: {len(body_bytes)} bytes")
 
         new_response = httpx.Response(

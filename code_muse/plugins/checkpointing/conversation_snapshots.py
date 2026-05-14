@@ -1,6 +1,6 @@
 """Conversation snapshot serialization for checkpointing."""
 
-import json
+import orjson as json
 import logging
 from datetime import UTC, datetime
 from pathlib import Path
@@ -42,7 +42,7 @@ def create_snapshot(
         snapshot_dir.mkdir(parents=True, exist_ok=True)
 
         snapshot_path = snapshot_dir / f"snapshot_{timestamp.replace(':', '_')}.json"
-        snapshot_path.write_text(json.dumps(snapshot, indent=2), encoding="utf-8")
+        snapshot_path.write_text(orjson.dumps(snapshot, option=orjson.OPT_INDENT_2), encoding="utf-8")
 
         logger.info(f"Conversation snapshot saved to {snapshot_path}")
         return snapshot_path
@@ -54,7 +54,7 @@ def create_snapshot(
 def load_snapshot(path: Path) -> dict[str, Any] | None:
     """Load and validate a snapshot JSON file."""
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = orjson.loads(path.read_text(encoding="utf-8"))
         required_keys = {"turn_id", "timestamp", "tool_name", "messages", "agent_state"}
         if not required_keys.issubset(data.keys()):
             logger.warning(f"Snapshot at {path} is missing required keys")

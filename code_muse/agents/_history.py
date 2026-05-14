@@ -11,7 +11,7 @@ that retain message objects.
 """
 
 import dataclasses
-import json
+import orjson as json
 import math
 import pathlib
 import weakref
@@ -243,7 +243,7 @@ def estimate_context_overhead(
 
         schema = getattr(tool_func, "schema", None)
         if schema is not None:
-            schema_str = json.dumps(schema) if isinstance(schema, dict) else str(schema)
+            schema_str = orjson.dumps(schema) if isinstance(schema, dict) else str(schema)
             total += estimate_tokens(schema_str)
         else:
             annotations = get_annotations(tool_func)

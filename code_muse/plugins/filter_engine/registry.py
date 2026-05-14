@@ -4,7 +4,7 @@ Maps command categories to compression strategy functions.  Handles
 registration, duplicate detection, and priority-based overrides.
 """
 
-import json
+import orjson as json
 import logging
 import re
 from collections.abc import Callable
@@ -133,7 +133,7 @@ def _register_content_stubs() -> None:
         if not stdout or not stdout.strip():
             return None
         try:
-            data = json.loads(stdout)
+            data = orjson.loads(stdout)
         except ValueError:
             # Not valid JSON — let passthrough handle it
             return None

@@ -6,7 +6,7 @@ agent prompts in a temporary directory via headless ``code-muse``, and
 """
 
 import importlib.util
-import json
+import orjson as json
 import shlex
 import shutil
 import subprocess
@@ -80,7 +80,7 @@ def _parse_tool_calls_from_stdout(stdout: str) -> list[ToolCall]:
         if not line:
             continue
         try:
-            obj = json.loads(line)
+            obj = orjson.loads(line)
             if isinstance(obj, dict) and "tool_name" in obj and "tool_args" in obj:
                 tool_calls.append(
                     ToolCall(
@@ -118,7 +118,7 @@ def _extract_json_objects_with_tool_fields(text: str) -> list[ToolCall]:
             if depth == 0:
                 candidate = text[start:i]
                 try:
-                    obj = json.loads(candidate)
+                    obj = orjson.loads(candidate)
                     if (
                         isinstance(obj, dict)
                         and "tool_name" in obj

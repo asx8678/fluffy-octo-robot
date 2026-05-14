@@ -14,7 +14,7 @@ This module also handles:
 
 import asyncio
 import base64
-import json
+import orjson as json
 import logging
 import time
 from collections.abc import Callable, MutableMapping
@@ -132,7 +132,7 @@ class ClaudeCacheAsyncClient(httpx.AsyncClient):
                 payload_b64 += "=" * padding
 
             payload_bytes = base64.urlsafe_b64decode(payload_b64)
-            payload = json.loads(payload_bytes.decode("utf-8"))
+            payload = orjson.loads(payload_bytes.decode("utf-8"))
 
             now = time.time()
 
@@ -232,7 +232,7 @@ class ClaudeCacheAsyncClient(httpx.AsyncClient):
         prefixed on outgoing requests and unprefixed on incoming responses.
         """
         try:
-            data = json.loads(body.decode("utf-8"))
+            data = orjson.loads(body.decode("utf-8"))
         except (json.JSONDecodeError, UnicodeDecodeError):
             return None
 
@@ -254,7 +254,7 @@ class ClaudeCacheAsyncClient(httpx.AsyncClient):
         if not modified:
             return None
 
-        return json.dumps(data).encode("utf-8")
+        return orjson.dumps(data).encode("utf-8")
 
     @staticmethod
     def _transform_headers_for_claude_code(
@@ -693,7 +693,7 @@ class ClaudeCacheAsyncClient(httpx.AsyncClient):
     @staticmethod
     def _inject_cache_control(body: bytes) -> bytes | None:
         try:
-            data = json.loads(body.decode("utf-8"))
+            data = orjson.loads(body.decode("utf-8"))
         except (json.JSONDecodeError, UnicodeDecodeError):
             return None
 
@@ -756,7 +756,7 @@ class ClaudeCacheAsyncClient(httpx.AsyncClient):
         if not modified:
             return None
 
-        return json.dumps(data).encode("utf-8")
+        return orjson.dumps(data).encode("utf-8")
 
 
 def _inject_cache_control_in_payload(payload: dict[str, Any]) -> None:

@@ -1,7 +1,7 @@
 # cython: language_level=3
 """Redaction helpers to prevent secret leakage in logs and output."""
 
-import json
+import orjson as json
 import re
 import urllib.parse
 from typing import Any
@@ -83,9 +83,9 @@ cpdef str _redact_json_string(str value):
     if not stripped.startswith(("{", "[")):
         return value
     try:
-        parsed = json.loads(stripped)
+        parsed = orjson.loads(stripped)
         redacted = redact_secrets(parsed)
-        return json.dumps(redacted, separators=(",", ":"))
+        return orjson.dumps(redacted).decode()
     except Exception:
         return value
 

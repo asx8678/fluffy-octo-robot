@@ -9,7 +9,7 @@ Hooks from both sources are loaded and can be managed independently in the TUI.
 """
 
 import copy
-import json
+import orjson as json
 import logging
 from pathlib import Path
 from typing import Any, Literal
@@ -38,7 +38,7 @@ def _load_global_hooks_config() -> dict[str, Any]:
     if not path.exists():
         return {}
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = orjson.loads(path.read_text(encoding="utf-8"))
         # Handle both wrapped {"hooks": {...}} and direct format
         if "hooks" in data and isinstance(data["hooks"], dict):
             return data.get("hooks", {})
@@ -54,7 +54,7 @@ def _load_project_hooks_config() -> dict[str, Any]:
     if not path.exists():
         return {}
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = orjson.loads(path.read_text(encoding="utf-8"))
         return data.get("hooks", {})
     except Exception as exc:
         logger.warning("Failed to parse project hooks from %s: %s", path, exc)
@@ -115,12 +115,12 @@ def save_hooks_config(hooks: dict[str, Any]) -> Path:
     existing: dict[str, Any] = {}
     if path.exists():
         try:
-            existing = json.loads(path.read_text(encoding="utf-8"))
+            existing = orjson.loads(path.read_text(encoding="utf-8"))
         except Exception:
             existing = {}
     existing["hooks"] = hooks
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(existing, indent=2) + "\n", encoding="utf-8")
+    path.write_text(orjson.dumps(existing, option=orjson.OPT_INDENT_2) + "\n", encoding="utf-8")
     logger.debug("Saved hooks config to %s", path)
     return path
 
@@ -132,7 +132,7 @@ def save_global_hooks_config(hooks: dict[str, Any]) -> Path:
     """
     path = Path(_GLOBAL_HOOKS_FILE)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(hooks, indent=2) + "\n", encoding="utf-8")
+    path.write_text(orjson.dumps(hooks, option=orjson.OPT_INDENT_2) + "\n", encoding="utf-8")
     logger.debug("Saved global hooks config to %s", path)
     return path
 

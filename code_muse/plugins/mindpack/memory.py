@@ -4,7 +4,7 @@ Provides a structured, flexible storage system for expert reports.
 Supports in-memory buffering, persistent caching, and workspace-local storage.
 """
 
-import json
+import orjson as json
 import logging
 import pathlib
 
@@ -55,7 +55,7 @@ class ReportStore:
                 if not self.config.save_raw_transcripts:
                     data_dict = redact_secrets(data_dict)
                 with open(file_path, "w") as f:
-                    json.dump(data_dict, f, indent=2)
+                    f.write(orjson.dumps(data_dict, option=orjson.OPT_INDENT_2).decode())
                 logger.debug("ReportStore: saved %s to %s", filename, file_path)
 
     def add_report(self, report: MindPackExpertReport) -> None:

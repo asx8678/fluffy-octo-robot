@@ -4,7 +4,7 @@ Handles browser-based Device Flow authentication, session-token exchange /
 caching, and model registration persistence.
 """
 
-import json
+import orjson as json
 import logging
 import time
 from dataclasses import dataclass
@@ -142,14 +142,14 @@ def save_device_token(host: str, oauth_token: str, user: str = "") -> bool:
         data: dict[str, Any] = {}
         if path.exists():
             with open(path, encoding="utf-8") as fh:
-                data = json.load(fh)
+                data = orjson.loads(fh.read())
         data[host] = {
             "oauth_token": oauth_token,
             "user": user,
             "created_at": time.time(),
         }
         with open(path, "w", encoding="utf-8") as fh:
-            json.dump(data, fh, indent=2)
+            fh.write(orjson.dumps(data, option=orjson.OPT_INDENT_2).decode())
         path.chmod(0o600)
         return True
     except Exception as exc:
@@ -165,7 +165,7 @@ def load_device_tokens() -> list[CopilotToken]:
         if not path.exists():
             return tokens
         with open(path, encoding="utf-8") as fh:
-            data = json.load(fh)
+            data = orjson.loads(fh.read())
         if isinstance(data, dict):
             for host, entry in data.items():
                 if not isinstance(entry, dict):
@@ -294,7 +294,7 @@ def _persist_session(st: SessionToken, host: str, oauth_token: str = "") -> None
         data: dict[str, Any] = {}
         if path.exists():
             with open(path, encoding="utf-8") as fh:
-                data = json.load(fh)
+                data = orjson.loads(fh.read())
         data[host] = {
             "token": st.token,
             "expires_at": st.expires_at,
@@ -302,7 +302,7 @@ def _persist_session(st: SessionToken, host: str, oauth_token: str = "") -> None
             "oauth_fingerprint": oauth_token[:16] if oauth_token else "",
         }
         with open(path, "w", encoding="utf-8") as fh:
-            json.dump(data, fh, indent=2)
+            fh.write(orjson.dumps(data, option=orjson.OPT_INDENT_2).decode())
         path.chmod(0o600)
     except Exception as exc:
         logger.debug("Could not persist session token: %s", exc)
@@ -320,7 +320,7 @@ def _load_persisted_session(host: str, oauth_token: str = "") -> SessionToken | 
         if not path.exists():
             return None
         with open(path, encoding="utf-8") as fh:
-            data = json.load(fh)
+            data = orjson.loads(fh.read())
         entry = data.get(host)
         if entry:
             # Verify the stored fingerprint matches the current OAuth token
@@ -408,7 +408,7 @@ def load_copilot_models() -> dict[str, Any]:
         path = get_copilot_models_path()
         if path.exists():
             with open(path, encoding="utf-8") as fh:
-                data = json.load(fh)
+                data = orjson.loads(fh.read())
             if isinstance(data, dict):
                 return data
             logger.warning("copilot_models.json is not a JSON object — ignoring")
@@ -422,7 +422,7 @@ def save_copilot_models(models: dict[str, Any]) -> bool:
     try:
         path = get_copilot_models_path()
         with open(path, "w", encoding="utf-8") as fh:
-            json.dump(models, fh, indent=2)
+            fh.write(orjson.dumps(models, option=orjson.OPT_INDENT_2).decode())
         return True
     except Exception as exc:
         logger.error("Failed to save Copilot models: %s", exc)

@@ -5,7 +5,7 @@ autosave sessions with live preview of message content.
 """
 
 import asyncio
-import json
+import orjson as json
 import sys
 from datetime import datetime
 from io import StringIO
@@ -36,7 +36,7 @@ def _get_session_metadata(base_dir: Path, session_name: str) -> dict:
     meta_path = base_dir / f"{session_name}_meta.json"
     try:
         with meta_path.open("r", encoding="utf-8") as f:
-            return json.load(f)
+            return orjson.loads(f.read())
     except Exception:
         return {}
 

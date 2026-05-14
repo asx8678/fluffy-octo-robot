@@ -329,9 +329,9 @@ def _handle_call_action(
     args = tool_args or {}
     if isinstance(args, str):
         try:
-            import json
+            import orjson as json
 
-            args = json.loads(args)
+            args = orjson.loads(args)
         except json.JSONDecodeError:
             return UniversalConstructorOutput(
                 action="call",
@@ -934,7 +934,7 @@ def register_universal_constructor(agent):
 
             # Create a data processor
             code = '''
-            import json
+            import orjson as json
             TOOL_META = {"name": "csv_to_json", "description": "Convert CSV to JSON"}
             def csv_to_json(csv_text: str) -> list:
                 lines = csv_text.strip().split("\\n")

@@ -297,14 +297,14 @@ def compile_pipeline(name: str, raw: dict) -> CompiledPipeline:
 
     # 3. match_output rules are checked in CompiledPipeline.apply(), not here
 
-    # 4. strip_lines_matching / keep_lines_matching
+    # 4. strip_lines_matching / keep_lines_matching (pre-compiled)
     if raw.get("strip_lines_matching"):
-        patterns = list(raw["strip_lines_matching"])
-        stages.append(lambda t, pts=patterns: p.strip_lines_regex(t, pts))
+        compiled = [re.compile(ptn, re.IGNORECASE) for ptn in list(raw["strip_lines_matching"])]
+        stages.append(lambda t, pts=compiled: p.strip_lines_regex(t, pts))
 
     if raw.get("keep_lines_matching"):
-        patterns = list(raw["keep_lines_matching"])
-        stages.append(lambda t, pts=patterns: p.keep_lines_regex(t, pts))
+        compiled = [re.compile(ptn, re.IGNORECASE) for ptn in list(raw["keep_lines_matching"])]
+        stages.append(lambda t, pts=compiled: p.keep_lines_regex(t, pts))
 
     # 5. truncate_lines_at
     if raw.get("truncate_lines_at") is not None:

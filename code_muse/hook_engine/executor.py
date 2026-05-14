@@ -13,7 +13,7 @@ Claude Code Hook Compatibility:
 """
 
 import asyncio
-import json
+import orjson as json
 import logging
 import os
 import re
@@ -73,7 +73,7 @@ def _build_stdin_payload(event_data: EventData) -> bytes:
     if "duration_ms" in event_data.context:
         payload["tool_duration_ms"] = event_data.context["duration_ms"]
 
-    return json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    return orjson.dumps(payload).encode("utf-8")
 
 
 async def execute_hook(
@@ -214,7 +214,7 @@ def _substitute_variables(
         "tool_name": event_data.tool_name,
         "event_type": event_data.event_type,
         "file": _extract_file_path(event_data.tool_args) or "",
-        "CLAUDE_TOOL_INPUT": json.dumps(event_data.tool_args),
+        "CLAUDE_TOOL_INPUT": orjson.dumps(event_data.tool_args),
     }
     if event_data.context:
         if "result" in event_data.context:
@@ -245,7 +245,7 @@ def _build_environment(
     env = build_minimal_hook_env() if hook_source == "project" else os.environ.copy()
 
     env["CLAUDE_PROJECT_DIR"] = os.getcwd()
-    env["CLAUDE_TOOL_INPUT"] = json.dumps(event_data.tool_args)
+    env["CLAUDE_TOOL_INPUT"] = orjson.dumps(event_data.tool_args)
     env["CLAUDE_TOOL_NAME"] = event_data.tool_name
     env["CLAUDE_HOOK_EVENT"] = event_data.event_type
     env["CLAUDE_CODE_HOOK"] = "1"

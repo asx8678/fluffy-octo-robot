@@ -8,7 +8,7 @@ import ast
 import contextlib
 import hashlib
 import hmac
-import json
+import orjson as json
 import logging
 import os
 import re
@@ -79,7 +79,7 @@ _APPROVAL_HMAC_KEY = hashlib.sha256(b"uc_approval_v1:muse_integrity").digest()
 
 def _compute_entry_hmac(entry: dict) -> str:
     """Compute HMAC for an approval entry dict."""
-    payload = json.dumps(entry, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    payload = orjson.dumps(entry, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hmac.new(_APPROVAL_HMAC_KEY, payload, hashlib.sha256).hexdigest()
 
 
@@ -160,7 +160,7 @@ def _atomic_write_private_json(file_path: Path, data: dict) -> None:
             0o600,
         )
         with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+            f.write(orjson.dumps(data, option=orjson.OPT_INDENT_2).decode())
             f.flush()
             os.fsync(f.fileno())
         os.replace(str(tmp_path), str(file_path))
@@ -183,7 +183,7 @@ def _load_approval_db() -> dict[str, dict]:
         return {}
     try:
         with open(_APPROVAL_FILE, encoding="utf-8") as f:
-            data = json.load(f)
+            data = orjson.loads(f.read())
         if not isinstance(data, dict):
             return {}
         # Verify and strip HMAC from every entry
@@ -277,7 +277,7 @@ def validate_full_tool_name(name: str) -> str | None:
     Reserved module name checks only apply to the final (leaf) segment,
     since namespace segments don't shadow Python modules — a tool named
     "json.validate_files" is invoked as "uc:json.validate_files", not
-    "import json".
+    "import orjson as json".
 
     Returns:
         Error message if invalid, None if valid.

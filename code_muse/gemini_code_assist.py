@@ -6,7 +6,7 @@ Generative Language API. The Code Assist API supports OAuth authentication
 and has a different request/response format.
 """
 
-import json
+import orjson as json
 import logging
 import uuid
 from collections.abc import AsyncIterator
@@ -159,7 +159,7 @@ class GeminiCodeAssistModel(Model):
                         content = part.content
                         if not isinstance(content, (str, int, float, bool, type(None))):
                             try:
-                                content = json.dumps(content, default=str)
+                                content = orjson.dumps(content, default=str)
                             except (TypeError, ValueError):
                                 content = str(content)
                         contents.append(
@@ -332,7 +332,7 @@ class StreamedResponse:
                     break
 
                 try:
-                    data = json.loads(data_str)
+                    data = orjson.loads(data_str)
                     # Unwrap Code Assist format
                     inner = data.get("response", data)
 

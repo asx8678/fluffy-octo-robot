@@ -6,7 +6,7 @@ SDK dependency.
 """
 
 import base64
-import json
+import orjson as json
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -480,7 +480,7 @@ class GeminiModel(Model):
                         json_str = line[6:]
                         if json_str:
                             try:
-                                yield json.loads(json_str)
+                                yield orjson.loads(json_str)
                             except json.JSONDecodeError:
                                 continue
 

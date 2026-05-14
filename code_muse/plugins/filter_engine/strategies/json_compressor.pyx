@@ -3,7 +3,7 @@
 Takes analyzed JSON patterns and produces compact output.
 """
 
-import json
+import orjson as json
 from typing import Any
 
 from code_muse.plugins.filter_engine.strategies.json_patterns import analyze_json
@@ -30,7 +30,7 @@ def _format_compact(obj: Any) -> str:
 
     # Scalar fast-paths — return immediately without stack overhead.
     if isinstance(obj, str):
-        return json.dumps(obj)
+        return orjson.dumps(obj).decode()
     if isinstance(obj, bool):
         return "true" if obj else "false"
     if isinstance(obj, (int, float)):
@@ -62,7 +62,7 @@ def _format_compact(obj: Any) -> str:
         # kind == "val"
         value = data
         if isinstance(value, str):
-            result.append(json.dumps(value))
+            result.append(orjson.dumps(value).decode())
         elif isinstance(value, bool):
             result.append("true" if value else "false")
         elif isinstance(value, (int, float)):
@@ -79,7 +79,7 @@ def _format_compact(obj: Any) -> str:
                 for i in range(len(items) - 1, -1, -1):
                     k, v = items[i]
                     stack.append(("val", v))
-                    stack.append(("raw", f"{json.dumps(k)}:"))
+                    stack.append(("raw", f"{orjson.dumps(k).decode()}:"))
                     if i > 0:
                         stack.append(("raw", ","))
         elif isinstance(value, list):
@@ -98,7 +98,7 @@ def _format_compact(obj: Any) -> str:
                 second = _format_compact(value[1])
                 result.append(f"[{first},{second},...{len(value)}items]")
         else:
-            result.append(json.dumps(value))
+            result.append(orjson.dumps(value).decode())
 
     return "".join(result)
 
@@ -125,7 +125,7 @@ def compress_json(
 
     if not isinstance(data, (dict, list)):
         # Scalar — just return it compactly
-        return json.dumps(data)
+        return orjson.dumps(data).decode()
 
     analysis = analyze_json(data)
 
@@ -139,7 +139,7 @@ def compress_json(
     elif isinstance(data, list):
         return _compress_list(data, analysis, level, max_output_chars)
 
-    return json.dumps(data)
+    return orjson.dumps(data).decode()
 
 
 def _compress_homogeneous_array(
@@ -178,7 +178,7 @@ def _compress_homogeneous_array(
             inner += f",...{len(data) - 20}more"
         return f"[{inner}]"[:max_chars]
 
-    return json.dumps(data)[:max_chars]
+    return orjson.dumps(data).decode()[:max_chars]
 
 
 def _compress_dict(
@@ -215,9 +215,9 @@ def _compress_dict(
         return _format_compact(kept)[:max_chars]
 
     if level >= 1:
-        return json.dumps(data)[:max_chars]
+        return orjson.dumps(data).decode()[:max_chars]
 
-    return json.dumps(data)[:max_chars]
+    return orjson.dumps(data).decode()[:max_chars]
 
 
 def _compress_list(
@@ -232,8 +232,8 @@ def _compress_list(
             return _format_compact(data)[:max_chars]
         return f"[{len(data)} items]"[:max_chars]
     if level >= 1:
-        return json.dumps(data)[:max_chars]
-    return json.dumps(data)[:max_chars]
+        return orjson.dumps(data).decode()[:max_chars]
+    return orjson.dumps(data).decode()[:max_chars]
 
 
 def _select_fields(

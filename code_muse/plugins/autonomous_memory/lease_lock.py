@@ -4,7 +4,7 @@ Prevents concurrent memory extraction / consolidation jobs from
 stepping on each other across multiple processes.
 """
 
-import json
+import orjson as json
 import logging
 import os
 import time
@@ -48,7 +48,7 @@ def acquire_memory_lease(
     if lock_path.exists():
         try:
             with lock_path.open("r", encoding="utf-8") as fh:
-                data = json.load(fh)
+                data = orjson.loads(fh.read())
             old_pid = int(data.get("pid", 0))
             acquired_at = float(data.get("acquired_at", 0))
         except Exception:
@@ -75,7 +75,7 @@ def acquire_memory_lease(
     acquired_at = time.time()
     try:
         with lock_path.open("w", encoding="utf-8") as fh:
-            json.dump({"pid": my_pid, "acquired_at": acquired_at}, fh)
+            fh.write(orjson.dumps({"pid": my_pid, "acquired_at": acquired_at}).decode())
     except OSError as exc:
         logger.warning(f"Could not write memory lease {lock_path}: {exc}")
         return None
@@ -90,7 +90,7 @@ def release_lease(handle: LeaseHandle) -> None:
 
     try:
         with handle.lock_path.open("r", encoding="utf-8") as fh:
-            data = json.load(fh)
+            data = orjson.loads(fh.read())
         current_pid = int(data.get("pid", 0))
     except Exception:
         current_pid = 0

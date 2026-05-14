@@ -7,11 +7,12 @@ No sys.path insertion — user plugins are loaded via importlib with
 unique module names to prevent stdlib/project shadowing.
 """
 
+import concurrent.futures
 import contextlib
 import hashlib
 import importlib
 import importlib.util
-import json
+import orjson as json
 import logging
 import os
 import re
@@ -91,7 +92,7 @@ def _load_trust_manifest() -> dict:
         return {}
     try:
         text = path.read_text(encoding="utf-8")
-        data = json.loads(text)
+        data = orjson.loads(text)
         if isinstance(data, dict):
             return data
     except (json.JSONDecodeError, OSError) as exc:
@@ -247,41 +248,63 @@ def _should_skip_entry(item: Path, parent: Path) -> bool:
 # ---------------------------------------------------------------------------
 
 
+def _import_single_builtin_plugin(
+    plugins_dir: Path, item: Path, failed_names: list[str] | None = None
+) -> str | None:
+    """Import a single built-in plugin. Returns plugin name or None on failure."""
+    if not item.is_dir() or item.name.startswith("_"):
+        return None
+    plugin_name = item.name
+    callbacks_file = item / "register_callbacks.py"
+    if not callbacks_file.exists():
+        return None
+    try:
+        module_name = f"code_muse.plugins.{plugin_name}.register_callbacks"
+        importlib.import_module(module_name)
+        return plugin_name
+    except ImportError as e:
+        logger.warning(
+            "Failed to import callbacks from built-in plugin %s: %s", plugin_name, e
+        )
+        if failed_names is not None:
+            failed_names.append(plugin_name)
+    except Exception as e:
+        logger.error(
+            "Unexpected error loading built-in plugin %s: %s", plugin_name, e
+        )
+        if failed_names is not None:
+            failed_names.append(plugin_name)
+    return None
+
+
 def _load_builtin_plugins(
     plugins_dir: Path, failed_names: list[str] | None = None
 ) -> list[str]:
-    """Load built-in plugins from the package plugins directory.
+    """Load built-in plugins from the package plugins directory in parallel.
 
     Returns list of successfully loaded plugin names.
     """
-    loaded = []
+    plugin_dirs = [
+        item for item in plugins_dir.iterdir()
+        if item.is_dir() and not item.name.startswith("_")
+    ]
+    if not plugin_dirs:
+        return []
 
-    for item in plugins_dir.iterdir():
-        if item.is_dir() and not item.name.startswith("_"):
-            plugin_name = item.name
-            callbacks_file = item / "register_callbacks.py"
-
-            if callbacks_file.exists():
-                try:
-                    module_name = f"code_muse.plugins.{plugin_name}.register_callbacks"
-                    importlib.import_module(module_name)
-                    loaded.append(plugin_name)
-                except ImportError as e:
-                    logger.warning(
-                        "Failed to import callbacks from built-in plugin %s: %s",
-                        plugin_name,
-                        e,
-                    )
-                    if failed_names is not None:
-                        failed_names.append(plugin_name)
-                except Exception as e:
-                    logger.error(
-                        "Unexpected error loading built-in plugin %s: %s",
-                        plugin_name,
-                        e,
-                    )
-                    if failed_names is not None:
-                        failed_names.append(plugin_name)
+    loaded: list[str] = []
+    # FREE-THREADED: ThreadPoolExecutor is compatible with free-threaded Python 3.14.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        futures = {
+            executor.submit(_import_single_builtin_plugin, plugins_dir, item, failed_names): item
+            for item in plugin_dirs
+        }
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                result = future.result()
+                if result is not None:
+                    loaded.append(result)
+            except Exception as e:
+                logger.error("Unexpected thread error loading plugin: %s", e)
 
     return loaded
 
@@ -411,7 +434,7 @@ def _load_single_user_plugin(
 def _load_user_plugins(
     user_plugins_dir: Path, failed_names: list[str] | None = None
 ) -> list[str]:
-    """Load user plugins from ~/.muse/plugins/.
+    """Load user plugins from ~/.muse/plugins/ in parallel.
 
     Each plugin should be a directory containing a register_callbacks.py file.
     Plugins are loaded via importlib with unique module names — no sys.path
@@ -440,6 +463,7 @@ def _load_user_plugins(
     else:
         trust_plugin_set = set()
 
+    plugin_items = []
     for item in user_plugins_dir.iterdir():
         if not item.is_dir():
             continue
@@ -464,11 +488,29 @@ def _load_user_plugins(
             if not is_plugin_trusted(plugin_name, content_hash):
                 record_plugin_trust(plugin_name, content_hash, str(item))
 
-        result = _load_single_user_plugin(
-            item, plugin_name, user_plugins_dir, failed_names, trust_plugin_set
-        )
-        if result is not None:
-            loaded.append(result)
+        plugin_items.append((item, plugin_name))
+
+    if not plugin_items:
+        return loaded
+
+    # FREE-THREADED: ThreadPoolExecutor is compatible with free-threaded Python 3.14.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        futures = {
+            executor.submit(
+                _load_single_user_plugin, item, name, user_plugins_dir, failed_names, trust_plugin_set
+            ): name
+            for item, name in plugin_items
+        }
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                result = future.result()
+                if result is not None:
+                    loaded.append(result)
+            except Exception as e:
+                plugin_name = futures[future]
+                logger.error("Unexpected thread error loading user plugin '%s': %s", plugin_name, e)
+                if failed_names is not None:
+                    failed_names.append(plugin_name)
 
     return loaded
 

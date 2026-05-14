@@ -1,6 +1,6 @@
 """Core review orchestration — builds context, calls LLM, parses result."""
 
-import json
+import orjson as json
 import logging
 
 from code_muse.plugins.auto_review.cache import get_review_cache
@@ -176,11 +176,11 @@ async def _call_reviewer_llm(prompt: str) -> dict | None:
             end = text.rfind("}") + 1
             if start >= 0 and end > start:
                 json_str = text[start:end]
-                return json.loads(json_str)
+                return orjson.loads(json_str)
 
         # Try parsing entire response as JSON
         try:
-            return json.loads(text)
+            return orjson.loads(text)
         except json.JSONDecodeError:
             pass
 

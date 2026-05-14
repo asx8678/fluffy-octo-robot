@@ -1,6 +1,6 @@
 """mitmproxy capture addon — injected into mitmdump via -s flag."""
 
-import json
+import orjson as json
 import os
 from datetime import UTC, datetime
 from pathlib import Path
@@ -65,7 +65,7 @@ class TrafficCapture:
         if out_dir:
             os.makedirs(out_dir, exist_ok=True)
         with open(self.output, "w") as f:
-            json.dump(
+            f.write(orjson.dumps(
                 {
                     "meta": {
                         "captured_at": datetime.now(UTC).isoformat(),
@@ -74,10 +74,9 @@ class TrafficCapture:
                     },
                     "flows": self.flows,
                 },
-                f,
-                indent=2,
+                option=orjson.OPT_INDENT_2,
                 default=str,
-            )
+            ).decode())
 
 
 addons = [TrafficCapture()]

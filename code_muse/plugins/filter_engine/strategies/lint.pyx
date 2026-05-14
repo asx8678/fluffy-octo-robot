@@ -4,7 +4,7 @@ Groups linter output by rule code / message type to produce compact summaries.
 Also handles ``grep`` and ``find`` output for the lint category.
 """
 
-import json
+import orjson as json
 import re
 from collections import defaultdict
 from typing import Any
@@ -39,7 +39,7 @@ def compress_ruff(
     """
     # Try JSON first
     try:
-        data = json.loads(stdout)
+        data = orjson.loads(stdout)
         if isinstance(data, list):
             return _compress_ruff_json(data, stderr, verbosity)
     except ValueError:
@@ -160,7 +160,7 @@ def compress_eslint(
     """
     # Try JSON first
     try:
-        data = json.loads(stdout)
+        data = orjson.loads(stdout)
         if isinstance(data, list):
             return _compress_eslint_json(data, stderr, verbosity)
     except ValueError:
@@ -288,7 +288,7 @@ def compress_golangci(
     """
     # Try JSON first
     try:
-        data = json.loads(stdout)
+        data = orjson.loads(stdout)
         if isinstance(data, dict) and "Issues" in data:
             return _compress_golangci_json(data, stderr, verbosity)
     except ValueError:

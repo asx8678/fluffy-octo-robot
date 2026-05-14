@@ -5,7 +5,7 @@ catalog bundled with the client, refreshed on startup.
 """
 
 import dataclasses
-import json
+import orjson as json
 import logging
 import os
 from datetime import UTC, datetime
@@ -76,7 +76,7 @@ def write_models_cache(models: list[ModelInfo] | None = None) -> Path | None:
         cache_path = Path(DATA_DIR) / "models_cache.json"
         os.makedirs(cache_path.parent, exist_ok=True)
         with open(cache_path, "w", encoding="utf-8") as f:
-            json.dump(cache_data, f, indent=2, default=str)
+            f.write(orjson.dumps(cache_data, option=orjson.OPT_INDENT_2, default=str).decode())
 
         logger.info(f"Wrote models cache ({len(models)} models) to {cache_path}")
         return cache_path

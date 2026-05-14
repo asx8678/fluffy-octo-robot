@@ -1,6 +1,6 @@
 """Utility functions for the AWS Bedrock plugin."""
 
-import json
+import orjson as json
 import logging
 from typing import Any
 
@@ -20,7 +20,7 @@ def load_extra_models() -> dict[str, Any]:
 
     try:
         with open(extra_models_path, encoding="utf-8") as f:
-            return json.load(f)
+            return orjson.loads(f.read())
     except (json.JSONDecodeError, OSError) as e:
         logger.error("Error loading extra_models.json: %s", e)
         return {}
@@ -34,7 +34,7 @@ def save_extra_models(models: dict[str, Any]) -> bool:
         extra_models_path.parent.mkdir(parents=True, exist_ok=True)
         temp_path = extra_models_path.with_suffix(".tmp")
         with open(temp_path, "w", encoding="utf-8") as f:
-            json.dump(models, f, indent=2, ensure_ascii=False)
+            f.write(orjson.dumps(models, option=orjson.OPT_INDENT_2).decode())
         temp_path.replace(extra_models_path)
         return True
     except Exception as e:

@@ -4,7 +4,7 @@ Reads a session's messages file and produces a basic markdown summary.
 Future iterations will drive this via a headless LLM agent.
 """
 
-import json
+import orjson as json
 import logging
 import os
 import re
@@ -54,7 +54,7 @@ def _parse_messages_jsonl(path: Path) -> list[dict[str, Any]]:
                 if not line:
                     continue
                 try:
-                    messages.append(json.loads(line))
+                    messages.append(orjson.loads(line))
                 except json.JSONDecodeError:
                     continue
     except Exception as exc:
@@ -66,7 +66,7 @@ def _parse_messages_json(path: Path) -> list[dict[str, Any]]:
     """Best-effort parse of a JSON array messages file."""
     try:
         with path.open("r", encoding="utf-8") as fh:
-            data = json.load(fh)
+            data = orjson.loads(fh.read())
             if isinstance(data, list):
                 return data
     except Exception as exc:

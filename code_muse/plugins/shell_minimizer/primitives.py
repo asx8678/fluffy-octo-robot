@@ -168,31 +168,29 @@ def tail_lines_only(input: str, tail: int) -> str:
 # ---------------------------------------------------------------------------
 
 
-def strip_lines_regex(input: str, patterns: list[str]) -> str:
-    """Drop every line that matches any regex in *patterns*.
+def strip_lines_regex(input: str, compiled: list[re.Pattern]) -> str:
+    """Drop every line that matches any compiled regex pattern.
 
-    Patterns are compiled with ``re.IGNORECASE``.  Lines are split on
-    universal newlines.
+    *compiled* must be a list of pre-compiled ``re.Pattern`` objects.
+    Lines are split on universal newlines.
     """
-    if not input or not patterns:
+    if not input or not compiled:
         return input
 
-    compiled = [re.compile(p, re.IGNORECASE) for p in patterns]
     lines = input.splitlines()
     kept = [line for line in lines if not any(c.search(line) for c in compiled)]
     return "\n".join(kept)
 
 
-def keep_lines_regex(input: str, patterns: list[str]) -> str:
-    """Keep only lines that match at least one regex in *patterns*.
+def keep_lines_regex(input: str, compiled: list[re.Pattern]) -> str:
+    """Keep only lines that match at least one compiled regex pattern.
 
-    Patterns are compiled with ``re.IGNORECASE``.  Non-matching lines are
-    dropped.
+    *compiled* must be a list of pre-compiled ``re.Pattern`` objects.
+    Non-matching lines are dropped.
     """
-    if not input or not patterns:
+    if not input or not compiled:
         return input
 
-    compiled = [re.compile(p, re.IGNORECASE) for p in patterns]
     lines = input.splitlines()
     kept = [line for line in lines if any(c.search(line) for c in compiled)]
     return "\n".join(kept)
@@ -418,23 +416,23 @@ if __name__ == "__main__":
 
     # --- strip_lines_regex ---------------------------------------------------
 
-    _check("strip_re: empty", strip_lines_regex("", [r"err"]), "")
+    _check("strip_re: empty", strip_lines_regex("", [re.compile(r"err", re.IGNORECASE)]), "")
     _check("strip_re: no patterns", strip_lines_regex("a\nb", []), "a\nb")
     _check(
         "strip_re: drop error/warning lines",
         strip_lines_regex(
-            "info\nERROR: bad\nWARNING: meh\nok", [r"^error:", r"^warning:"]
+            "info\nERROR: bad\nWARNING: meh\nok", [re.compile(r"^error:", re.IGNORECASE), re.compile(r"^warning:", re.IGNORECASE)]
         ),
         "info\nok",
     )
 
     # --- keep_lines_regex ----------------------------------------------------
 
-    _check("keep_re: empty", keep_lines_regex("", [r"err"]), "")
+    _check("keep_re: empty", keep_lines_regex("", [re.compile(r"err", re.IGNORECASE)]), "")
     _check("keep_re: no patterns", keep_lines_regex("a\nb", []), "a\nb")
     _check(
         "keep_re: keep only error lines",
-        keep_lines_regex("info\nERROR: bad\nok\nWARN: x", [r"error|warn"]),
+        keep_lines_regex("info\nERROR: bad\nok\nWARN: x", [re.compile(r"error|warn", re.IGNORECASE)]),
         "ERROR: bad\nWARN: x",
     )
 

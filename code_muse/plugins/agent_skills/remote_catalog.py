@@ -11,7 +11,7 @@ Schema source:
 https://www.llmspec.dev/skills/skills.json
 """
 
-import json
+import orjson as json
 import logging
 import time
 from dataclasses import dataclass
@@ -103,7 +103,7 @@ def _read_cache(cache_path: Path) -> dict[str, Any | None]:
         if not cache_path.exists():
             return None
         raw = cache_path.read_text(encoding="utf-8")
-        data = json.loads(raw)
+        data = orjson.loads(raw)
         if not isinstance(data, dict):
             logger.warning(f"Cache JSON is not an object: {cache_path}")
             return None
@@ -120,7 +120,7 @@ def _write_cache(cache_path: Path, data: dict[str, Any]) -> bool:
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         # Stable formatting so diffs are readable when debugging.
         cache_path.write_text(
-            json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+            orjson.dumps(data, indent=2, option=orjson.OPT_SORT_KEYS) + "\n", encoding="utf-8"
         )
         return True
     except Exception as e:

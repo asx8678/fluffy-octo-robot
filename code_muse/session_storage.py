@@ -1,6 +1,6 @@
 """Session persistence layer - public API (save, load, list, cleanup)."""
 
-import json
+import orjson as json
 from pathlib import Path
 from typing import Any
 
@@ -45,11 +45,13 @@ def save_session(
 
     session_data = _wrap_messages(history)
 
+    # Compute token count once (used in both dirty-hit and write paths)
+    total_tokens = sum(token_estimator(message) for message in history)
+
     # Dirty-flag check: skip disk writes if the session data is unchanged
     hash_key = (str(base_dir), session_name)
     current_hash = _hash_session_data(session_data)
     if current_hash is not None and _LAST_SAVED_HASHES.get(hash_key) == current_hash:
-        total_tokens = sum(token_estimator(message) for message in history)
         return SessionMetadata(
             session_name=session_name,
             timestamp=timestamp,
@@ -68,7 +70,6 @@ def save_session(
     # Write compat .pkl file (same JSON content, different extension)
     _atomic_write_json(paths.pickle_path, session_data)
 
-    total_tokens = sum(token_estimator(message) for message in history)
     metadata = SessionMetadata(
         session_name=session_name,
         timestamp=timestamp,
@@ -91,7 +92,7 @@ def load_session(
     json_path = _canonical_json_path(base_dir, session_name)
     if json_path.exists():
         with json_path.open("r", encoding="utf-8") as f:
-            data = json.load(f)
+            data = orjson.loads(f.read())
         return _unwrap_messages(data)
 
     # 2. Try compat .pkl path
@@ -246,7 +247,7 @@ async def restore_autosave_interactively(base_dir: Path) -> None:
         meta_path = base_dir / f"{name}_meta.json"
         try:
             async with aiofiles.open(meta_path, encoding="utf-8") as meta_file:
-                data = json.loads(await meta_file.read())
+                data = orjson.loads(await meta_file.read())
             timestamp = data.get("timestamp")
             message_count = data.get("message_count")
         except Exception:

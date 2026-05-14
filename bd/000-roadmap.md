@@ -97,3 +97,16 @@ Smarter memory extraction with relevance scoring. Reduces extraction costs and i
 ## Phase 8 — Python 3.14 Modernization (Epic 023)
 
 Full-stack upgrade to CPython 3.14. Removes legacy typing, adopts PEP 758 exception grouping syntax, PEP 749 annotationlib, free-threaded readiness, pathlib migration, t-string audit, and strict py314 tooling targets. Drops support for Python <3.14.
+
+## Phase 9 — Performance Optimization: Libraries, Callbacks & Startup (Epic 027)
+
+Focused optimization sweep targeting library consistency (json→orjson across 53 files), callback dispatch overhead (cached sorted lists, fast-path empty guards), startup time (parallel plugin loading, deferred models.json), and remaining Cython coverage gaps (JS/Go/Rust/C++ AST walkers). All items are performance-only with zero behavior changes.
+
+## Extended Epic Inventory (continued)
+
+| ID | Epic | Source | Status | Priority | Est. Lines |
+|----|------|--------|--------|----------|------------|
+| 024 | Code Health & Integration Audit | Code Review | closed | P0 | ~600 |
+| 025 | Code Review Remediation | Code Review | open | P0 | ~500 |
+| 026 | Findings Remediation | AI Review | open | P0 | ~2,000 |
+| 027 | Performance Optimization | Deep Review | open | P0 | ~800 |

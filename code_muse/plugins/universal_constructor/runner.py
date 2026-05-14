@@ -12,7 +12,7 @@ overhead for simple types.
 """
 
 import contextlib
-import json
+import orjson as json
 import logging
 import multiprocessing
 import os
@@ -111,7 +111,7 @@ def _run_in_subprocess(
         if not callable(func):
             raise TypeError(f"'{function_name}' is not callable")
 
-        args: dict[str, Any] = json.loads(args_json) if args_json else {}
+        args: dict[str, Any] = orjson.loads(args_json) if args_json else {}
         if not isinstance(args, dict):
             raise TypeError("tool_args must deserialize to a dict")
 
@@ -119,7 +119,7 @@ def _run_in_subprocess(
 
         # JSON-only serialization: reject non-serializable results
         try:
-            result_json = json.dumps({"success": True, "result": raw_result})
+            result_json = orjson.dumps({"success": True, "result": raw_result})
         except (TypeError, ValueError) as e:
             raise TypeError(f"Tool result is not JSON-serializable: {e}") from e
 
@@ -133,7 +133,7 @@ def _run_in_subprocess(
             "traceback": traceback.format_exc(),
         }
         with open(result_path, "w", encoding="utf-8") as f:
-            json.dump(error_info, f)
+            f.write(orjson.dumps(error_info).decode())
 
     finally:
         # Write captured stdout/stderr
@@ -159,7 +159,7 @@ def _run_in_interpreter(
     # Reuse the same subprocess worker logic — interpreter pools still
     # need file-based I/O for stdout/stderr capture because sub-interpreters
     # do not share sys.stdout with the main interpreter.
-    args_json = json.dumps(args) if args else "{}"
+    args_json = orjson.dumps(args) if args else "{}"
     _run_in_subprocess(
         module_path, function_name, args_json, result_path, stdout_path, stderr_path
     )
@@ -220,7 +220,7 @@ def run_tool_subprocess(
             - execution_time: float seconds
     """
     args = args or {}
-    args_json = json.dumps(args)
+    args_json = orjson.dumps(args)
 
     with (
         tempfile.NamedTemporaryFile(
@@ -297,7 +297,7 @@ def run_tool_subprocess(
 
             try:
                 with open(result_path, encoding="utf-8") as f:
-                    result_data = json.load(f)
+                    result_data = orjson.loads(f.read())
             except (json.JSONDecodeError, OSError) as e:
                 return {
                     "success": False,
@@ -398,7 +398,7 @@ def run_tool_subprocess(
         # Read result
         try:
             with open(result_path, encoding="utf-8") as f:
-                result_data = json.load(f)
+                result_data = orjson.loads(f.read())
         except (json.JSONDecodeError, OSError) as e:
             return {
                 "success": False,

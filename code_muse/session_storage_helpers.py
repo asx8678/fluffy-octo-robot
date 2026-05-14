@@ -21,7 +21,7 @@ Backward compatibility:
 
 import hashlib
 import hmac
-import json
+import orjson as json
 import os
 import pickle
 import warnings
@@ -52,7 +52,7 @@ def _hash_session_data(data: dict[str, Any]) -> str | None:
     """Return a SHA-256 hash of serialised session data for dirty-flag comparison."""
     try:
         return hashlib.sha256(
-            json.dumps(data, sort_keys=True).encode("utf-8")
+            orjson.dumps(data, option=orjson.OPT_SORT_KEYS)
         ).hexdigest()
     except TypeError, ValueError:
         return None
@@ -285,7 +285,7 @@ def _atomic_write_json(path: Path, data: dict[str, Any]) -> None:
     """Write JSON data atomically to *path*."""
     tmp = path.with_suffix(".tmp")
     with tmp.open("w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
+        f.write(orjson.dumps(data, option=orjson.OPT_INDENT_2).decode())
     tmp.replace(path)
 
 
@@ -311,7 +311,7 @@ def _try_load_pkl(path: Path, *, allow_legacy: bool = False) -> Any:
     # Try JSON first (current save_session writes JSON to .pkl)
     if not _is_binary_pickle(raw):
         try:
-            data = json.loads(raw)
+            data = orjson.loads(raw)
             return _unwrap_messages(data)
         except json.JSONDecodeError:
             pass

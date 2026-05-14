@@ -7,7 +7,7 @@ Cloud models supported (the Ollama "Recommended Models" cloud tier):
     kimi-k2.6:cloud, kimi-k2.5:cloud, glm-5:cloud, glm-5.1:cloud, minimax-m2.7:cloud, qwen3.5:cloud
 """
 
-import json
+import orjson as json
 import logging
 import shutil
 import subprocess
@@ -116,7 +116,7 @@ def _register_model(model_tag: str) -> bool:
     if extra_path.exists():
         try:
             with open(extra_path, encoding="utf-8") as fh:
-                extra_models = json.load(fh)
+                extra_models = orjson.loads(fh.read())
                 if not isinstance(extra_models, dict):
                     emit_error("extra_models.json must be a dict, not a list")
                     return False
@@ -142,7 +142,7 @@ def _register_model(model_tag: str) -> bool:
     tmp = extra_path.with_suffix(".tmp")
     try:
         with open(tmp, "w", encoding="utf-8") as fh:
-            json.dump(extra_models, fh, indent=4, ensure_ascii=False)
+            fh.write(orjson.dumps(extra_models, option=orjson.OPT_INDENT_4).decode())
         tmp.replace(extra_path)
     except Exception as exc:
         emit_error(f"Failed to write extra_models.json: {exc}")
@@ -158,7 +158,7 @@ def _test_model_auth(model_tag: str) -> tuple[bool, str]:
     Returns (authorized: bool, message: str).
     If unauthorized, message contains guidance for the user.
     """
-    import json as json_mod
+    import orjson as json as json_mod
     import urllib.request
 
     test_payload = json_mod.dumps(
