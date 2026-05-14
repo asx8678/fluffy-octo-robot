@@ -36,7 +36,7 @@ def log(name: str, status: str, detail: str = "") -> None:
 
 # ── Check 1: compress_git_status porcelain-only parser ───────────────
 def check_git_status_parser() -> None:
-    git_py = FILTER_ENGINE / "strategies/git.py"
+    git_py = FILTER_ENGINE / "strategies/git.pyx"
     source = git_py.read_text()
     # Look for the porcelain-specific checks
     has_porcelain = 'line.startswith("##")' in source or "xy = line[:2]" in source
@@ -98,7 +98,7 @@ def check_semantic_compression_mutation() -> None:
 
 # ── Check 4: AST compressor language reach ───────────────────────────
 def check_ast_compressor_reach() -> None:
-    code_py = FILTER_ENGINE / "strategies/code.py"
+    code_py = FILTER_ENGINE / "strategies/code.pyx"
     FILTER_ENGINE / "strategies/ast_compressor.py"
     code_src = code_py.read_text()
 
