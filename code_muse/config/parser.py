@@ -403,15 +403,6 @@ def get_total_tokens_limit(default: int = 0) -> int:
         return default
 
 
-def get_max_agent_steps(default: int = 15) -> int:
-    """Max number of agent loop steps before truncation (0 = no limit)."""
-    val = get_value("max_agent_steps")
-    try:
-        return int(val) if val else default
-    except ValueError, TypeError:
-        return default
-
-
 def get_max_tool_calls(default: int = 0) -> int:
     """Max total tool calls for a single agent run (0 = no limit)."""
     val = get_value("max_tool_calls")

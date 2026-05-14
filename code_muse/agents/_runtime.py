@@ -75,7 +75,6 @@ from code_muse.callbacks import (
 )
 from code_muse.config import (
     get_enable_streaming,
-    get_max_agent_steps,
     get_max_consecutive_tool_errors,
     get_max_hook_retries,
     get_max_tool_calls,
@@ -257,8 +256,7 @@ async def _track_pre_tool_call(
         return {
             "blocked": True,
             "reason": (
-                f"Too many total tool errors ({tracker.total_errors})"
-                " — aborting run."
+                f"Too many total tool errors ({tracker.total_errors}) — aborting run."
             ),
         }
     return None
@@ -575,17 +573,6 @@ async def run(
                     )
 
                 result = await _retry_call()
-
-            # ---- Max agent steps guard ----
-            max_steps = get_max_agent_steps()
-            if max_steps > 0 and hasattr(result, "all_messages"):
-                step_count = len(result.all_messages())
-                if step_count >= max_steps:
-                    emit_warning(
-                        f"⚠️  Agent run reached {step_count} steps (max {max_steps}). "
-                        f"Truncating result. Consider increasing 'max_agent_steps' via /set.",
-                        message_group="token_context_status",
-                    )
 
         finally:
             _tool_error_tracker_ctx.reset(tracker_token)

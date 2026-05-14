@@ -38,7 +38,6 @@ from code_muse.config.parser import (  # noqa: F401
     get_frontend_emitter_queue_size,
     get_grep_output_verbose,
     get_http2,
-    get_max_agent_steps,
     get_max_consecutive_tool_errors,
     get_max_hook_retries,
     get_max_tool_calls,
