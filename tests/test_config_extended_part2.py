@@ -55,7 +55,7 @@ class TestConfigExtendedPart2:
     def test_get_compaction_strategy(self, mock_config_file):
         """Test getting compaction strategy configuration"""
         # Test default strategy
-        with patch("code_muse.config.get_value") as mock_get:
+        with patch("code_muse.config.parser.get_value") as mock_get:
             mock_get.return_value = None
             result = get_compaction_strategy()
             assert result == "truncation"  # Default value
@@ -63,13 +63,13 @@ class TestConfigExtendedPart2:
 
         # Test valid strategies
         for strategy in ["summarization", "truncation"]:
-            with patch("code_muse.config.get_value") as mock_get:
+            with patch("code_muse.config.parser.get_value") as mock_get:
                 mock_get.return_value = strategy.upper()  # Test case normalization
                 result = get_compaction_strategy()
                 assert result == strategy.lower()
 
         # Test invalid strategy falls back to default
-        with patch("code_muse.config.get_value") as mock_get:
+        with patch("code_muse.config.parser.get_value") as mock_get:
             mock_get.return_value = "invalid_strategy"
             result = get_compaction_strategy()
             assert result == "truncation"  # Default fallback
@@ -77,32 +77,32 @@ class TestConfigExtendedPart2:
     def test_get_compaction_threshold(self, mock_config_file):
         """Test getting compaction threshold configuration"""
         # Test default threshold
-        with patch("code_muse.config.get_value") as mock_get:
+        with patch("code_muse.config.parser.get_value") as mock_get:
             mock_get.return_value = None
             result = get_compaction_threshold()
             assert result == 0.85  # Default value
             mock_get.assert_called_once_with("compaction_threshold")
 
         # Test valid threshold
-        with patch("code_muse.config.get_value") as mock_get:
+        with patch("code_muse.config.parser.get_value") as mock_get:
             mock_get.return_value = "0.75"
             result = get_compaction_threshold()
             assert result == 0.75
 
         # Test threshold clamping - minimum
-        with patch("code_muse.config.get_value") as mock_get:
+        with patch("code_muse.config.parser.get_value") as mock_get:
             mock_get.return_value = "0.3"  # Below minimum
             result = get_compaction_threshold()
             assert result == 0.5  # Clamped to minimum
 
         # Test threshold clamping - maximum
-        with patch("code_muse.config.get_value") as mock_get:
+        with patch("code_muse.config.parser.get_value") as mock_get:
             mock_get.return_value = "0.98"  # Above maximum
             result = get_compaction_threshold()
             assert result == 0.95  # Clamped to maximum
 
         # Test invalid value falls back to default
-        with patch("code_muse.config.get_value") as mock_get:
+        with patch("code_muse.config.parser.get_value") as mock_get:
             mock_get.return_value = "invalid"
             result = get_compaction_threshold()
             assert result == 0.85  # Default fallback
@@ -136,14 +136,14 @@ class TestConfigExtendedPart2:
     def test_compaction_config_edge_cases(self, mock_config_file):
         """Test edge cases for compaction configuration"""
         # Test compaction strategy with whitespace (note: actual implementation doesn't strip)
-        with patch("code_muse.config.get_value") as mock_get:
+        with patch("code_muse.config.parser.get_value") as mock_get:
             mock_get.return_value = "  summarization  "
             result = get_compaction_strategy()
             # The actual implementation doesn't strip whitespace, so it falls back to default
             assert result == "truncation"  # Default fallback for non-exact match
 
         # Test compaction strategy with exact match
-        with patch("code_muse.config.get_value") as mock_get:
+        with patch("code_muse.config.parser.get_value") as mock_get:
             mock_get.return_value = "summarization"
             result = get_compaction_strategy()
             assert result == "summarization"
@@ -157,7 +157,7 @@ class TestConfigExtendedPart2:
         ]
 
         for input_val, expected in test_cases:
-            with patch("code_muse.config.get_value") as mock_get:
+            with patch("code_muse.config.parser.get_value") as mock_get:
                 mock_get.return_value = input_val
                 result = get_compaction_threshold()
                 assert result == expected

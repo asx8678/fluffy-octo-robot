@@ -12,6 +12,7 @@ from typing import Any
 
 from pydantic_ai import Agent as PydanticAgent
 from pydantic_ai.capabilities import ProcessHistory
+from pydantic_ai.usage import UsageLimits
 
 from code_muse.agents._compaction import make_history_processor
 from code_muse.config import (
@@ -255,6 +256,7 @@ def build_pydantic_agent(
             toolsets=toolsets,
             capabilities=[ProcessHistory(history_processor)],
             model_settings=model_settings,
+            usage_limits=UsageLimits(request_limit=0),
         )
 
     agent_tools = agent.get_available_tools()
