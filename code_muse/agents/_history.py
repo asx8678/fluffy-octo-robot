@@ -36,7 +36,12 @@ def _prep_for_orjson(obj):
 # across messages (same tool results reused), so caching by object identity
 # eliminates redundant json/orjson work during compaction.
 _stringify_part_lru: OrderedDict[int, str] = OrderedDict()
-_STRINGIFY_PART_LRU_MAX = 2048
+_STRINGIFY_PART_LRU_MAX = 1024
+
+
+def _evict_stringify_cache(msg_id: int) -> None:
+    """Remove a stale entry from the stringify_part LRU cache after GC."""
+    _stringify_part_lru.pop(msg_id, None)
 
 
 def clear_stringify_part_cache() -> None:
@@ -95,6 +100,7 @@ def stringify_part(part: Any) -> str:
     if len(_stringify_part_lru) >= _STRINGIFY_PART_LRU_MAX:
         _stringify_part_lru.popitem(last=False)
     _stringify_part_lru[msg_id] = result
+    weakref.finalize(part, _evict_stringify_cache, msg_id)
     return result
 
 

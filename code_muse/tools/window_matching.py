@@ -20,19 +20,46 @@ def _find_best_window(
     Return (start, end) indices of the window with the highest
     Jaro-Winkler similarity to `needle`, along with that score.
     If nothing clears JW_THRESHOLD, return (None, score).
+
+    Performance: pre-joins haystack once and uses string slicing
+    instead of per-iteration join, reducing O(n) allocations to O(1).
     """
     needle = needle.rstrip("\n")
     needle_lines = needle.splitlines()
     win_size = len(needle_lines)
+
+    if win_size == 0:
+        return (None, 0.0)
+
     best_score = 0.0
     best_span: tuple[int, int | None] = None
-    # Pre-join the needle once; join windows on the fly
-    for i in range(len(haystack_lines) - win_size + 1):
-        window = "\n".join(haystack_lines[i : i + win_size])
+
+    n_haystack = len(haystack_lines)
+    # Short-circuit: haystack smaller than needle
+    if n_haystack < win_size:
+        return (None, 0.0)
+
+    # Pre-join haystack once — O(n) allocation instead of O(n) per iteration
+    joined_haystack = "\n".join(haystack_lines)
+
+    # Build line offset index: offsets[i] = char position of line i start
+    offsets = [0]
+    for line in haystack_lines:
+        offsets.append(offsets[-1] + len(line) + 1)  # +1 for newline
+
+    for i in range(n_haystack - win_size + 1):
+        # String slice instead of "\n".join(list_slice) — no allocation
+        start = offsets[i]
+        end = offsets[i + win_size] - 1  # exclude trailing newline
+        window = joined_haystack[start:end]
         score = _jaro_winkler_similarity(window, needle)
+
         if score > best_score:
             best_score = score
             best_span = (i, i + win_size)
+            # Early termination: near-perfect match found
+            if score > 0.95:
+                break
 
     return best_span, best_score
 

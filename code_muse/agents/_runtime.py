@@ -75,6 +75,7 @@ from code_muse.callbacks import (
 )
 from code_muse.config import (
     get_enable_streaming,
+    get_max_agent_steps,
     get_max_consecutive_tool_errors,
     get_max_hook_retries,
     get_max_tool_calls,
@@ -553,6 +554,19 @@ async def run(
 
                 result = await _retry_call()
 
+            # ---- Max agent steps guard ----
+            max_steps = get_max_agent_steps()
+            if max_steps > 0 and hasattr(result, "all_messages"):
+                step_count = len(result.all_messages())
+                if step_count >= max_steps:
+                    from code_muse.io import emit_warning
+
+                    emit_warning(
+                        f"⚠️  Agent run reached {step_count} steps (max {max_steps}). "
+                        f"Truncating result. Consider increasing 'max_agent_steps' via /set.",
+                        message_group="token_context_status",
+                    )
+
         finally:
             _tool_error_tracker_ctx.reset(tracker_token)
             # Restore the handler we cleared (non-streaming models).
@@ -659,9 +673,7 @@ async def run(
         except LookupError:
             active_tasks = set()
         if active_tasks:
-            emit_warning(
-                f"Cancelling {len(active_tasks)} active subagent task(s)..."
-            )
+            emit_warning(f"Cancelling {len(active_tasks)} active subagent task(s)...")
             for task in list(active_tasks):
                 if not task.done():
                     loop.call_soon_threadsafe(task.cancel)
@@ -735,7 +747,9 @@ async def run(
                 success=run_success,
                 error=run_error,
                 response_text=run_response_text,
-                metadata={"stats": dataclasses.asdict(run_stats)} if run_stats else None,
+                metadata={"stats": dataclasses.asdict(run_stats)}
+                if run_stats
+                else None,
             )
 
         if key_listener_stop_event is not None:

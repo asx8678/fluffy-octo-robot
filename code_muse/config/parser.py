@@ -303,7 +303,7 @@ def get_max_consecutive_tool_errors(default: int = 3) -> int:
     val = get_value("max_consecutive_tool_errors")
     try:
         return int(val) if val else default
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return default
 
 
@@ -312,7 +312,7 @@ def get_overall_run_timeout_seconds(default: int = 300) -> int:
     val = get_value("overall_run_timeout")
     try:
         return int(val) if val else default
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return default
 
 
@@ -321,7 +321,16 @@ def get_total_tokens_limit(default: int = 0) -> int:
     val = get_value("total_tokens_limit")
     try:
         return int(val) if val else default
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
+        return default
+
+
+def get_max_agent_steps(default: int = 15) -> int:
+    """Max number of agent loop steps before truncation (0 = no limit)."""
+    val = get_value("max_agent_steps")
+    try:
+        return int(val) if val else default
+    except ValueError, TypeError:
         return default
 
 
@@ -330,7 +339,7 @@ def get_max_tool_calls(default: int = 0) -> int:
     val = get_value("max_tool_calls")
     try:
         return int(val) if val else default
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return default
 
 
@@ -344,7 +353,7 @@ def get_message_limit(default: int = 1000) -> int:
     val = get_value("message_limit")
     try:
         return int(val) if val else default
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return default
 
 
@@ -361,7 +370,7 @@ def get_resume_message_count() -> int:
         configured_value = int(val) if val else 50
         # Enforce reasonable bounds: minimum 1, maximum 100
         return max(1, min(configured_value, 100))
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return 50
 
 
@@ -377,7 +386,7 @@ def get_compaction_threshold():
         threshold = float(val) if val else 0.85
         # Clamp between reasonable bounds
         return max(0.5, min(0.95, threshold))
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return 0.85
 
 
@@ -486,7 +495,7 @@ def get_max_hook_retries() -> int:
     try:
         n = int(val)
         return max(1, n)  # At least 1 to avoid nonsensical values
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return 3
 
 
