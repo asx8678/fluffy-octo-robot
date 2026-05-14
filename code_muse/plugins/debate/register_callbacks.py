@@ -182,6 +182,11 @@ def _register_debate_tools() -> list[dict[str, Any]]:
                     latency_ms=elapsed_ms,
                 )
 
+                # Use fresh state counts after recording
+                # (response.review_count may be stale by 1)
+                current_count = DebateState.review_count()
+                current_budget = DebateState.remaining_budget()
+
                 # Show rich verdict display
                 emit_info(
                     show_verdict(
@@ -189,11 +194,20 @@ def _register_debate_tools() -> list[dict[str, Any]]:
                         summary=verdict.summary,
                         issues=[iss.model_dump() for iss in verdict.issues],
                         confidence=verdict.confidence,
-                        review_count=response.review_count,
-                        remaining_budget=response.remaining_budget,
+                        review_count=current_count,
+                        remaining_budget=current_budget,
                     )
                 )
-                return response.model_dump()
+                return {
+                    "verdict": {
+                        "kind": verdict.kind.value,
+                        "summary": verdict.summary,
+                        "confidence": verdict.confidence,
+                        "issues": [iss.model_dump() for iss in verdict.issues],
+                    },
+                    "review_count": current_count,
+                    "remaining_budget": current_budget,
+                }
 
             # Reviewer unreachable — return fallback so planner isn't stuck
             return {

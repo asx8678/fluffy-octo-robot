@@ -264,9 +264,10 @@ async def run_review(request: ReviewRequest) -> ReviewResponse | None:
     else:
         verdict = _json_to_verdict(raw)
 
-    # Record the review *before* building the response so counters
-    # are consistent in the returned ReviewResponse.
-    DebateState.record_review(request.checkpoint, verdict.kind)
+    # NOTE: We do NOT call DebateState.record_review here — the caller
+    # (the request_review tool function) handles all state recording
+    # so that summary and latency_ms are captured.  Recording here would
+    # cause double-counting.
 
     return ReviewResponse(
         verdict=verdict,
