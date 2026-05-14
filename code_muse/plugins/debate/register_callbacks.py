@@ -8,6 +8,8 @@ Registers:
     - ``pre_tool_call`` hook — gates ``request_review`` calls when the
       budget is exhausted or a loop is detected (returns
       ``{"blocked": True}``).
+    - ``load_prompt`` hook — injects the planner addendum into the
+      agent's system prompt when debate mode is enabled.
     - ``agent_run_start`` / ``agent_run_end`` hooks — track the agent-run
       lifecycle so the debate state knows when reviews are in-context.
     - ``startup`` / ``shutdown`` hooks — session initialisation & cleanup.
@@ -16,6 +18,7 @@ Registers:
 
 import logging
 import time
+from pathlib import Path
 from typing import Any
 
 from code_muse.callbacks import register_callback
@@ -26,6 +29,8 @@ from code_muse.plugins.debate.schemas import ReviewRequest
 from code_muse.plugins.debate.state import DebateState
 from code_muse.plugins.debate.telemetry import get_session_stats, record_review_latency
 from code_muse.plugins.debate.ui import render_verdict_summary
+
+_PROMPTS_DIR = Path(__file__).parent / "prompts"
 
 logger = logging.getLogger(__name__)
 
@@ -205,6 +210,31 @@ async def _on_pre_tool_call(
 
 
 # ---------------------------------------------------------------------------
+# load_prompt hook — inject planner addendum into system prompt
+# ---------------------------------------------------------------------------
+
+
+def _on_load_prompt() -> str | None:
+    """Inject the planner addendum into the agent's system prompt.
+
+    When debate mode is enabled, the planner must be told it operates
+    under checkpoint review rules — call ``request_review`` after each
+    proposal, wait for verdict, revise if told to.
+
+    Returns the addendum text, or ``None`` when debate mode is disabled.
+    """
+    if not is_debate_enabled():
+        return None
+
+    path = _PROMPTS_DIR / "planner_addendum.txt"
+    try:
+        return path.read_text(encoding="utf-8").strip()
+    except OSError:
+        logger.warning("Could not read planner_addendum.txt")
+        return None
+
+
+# ---------------------------------------------------------------------------
 # Slash commands
 # ---------------------------------------------------------------------------
 
@@ -248,6 +278,7 @@ register_callback("agent_run_start", _on_agent_run_start)
 register_callback("agent_run_end", _on_agent_run_end)
 register_callback("register_tools", _register_debate_tools)
 register_callback("pre_tool_call", _on_pre_tool_call)
+register_callback("load_prompt", _on_load_prompt)
 register_callback("custom_command", _on_custom_command)
 register_callback("custom_command_help", _on_custom_command_help)
 

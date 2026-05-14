@@ -24,9 +24,12 @@ Key Design Decisions
    the reviewer LLM and returns the verdict.
 2. ``pre_tool_call`` hook is used ONLY for gating (budget enforcement,
    loop detection) — returns ``{'blocked': True}`` when limits are hit.
-3. ``agent_run_start`` / ``agent_run_end`` hooks track the agent lifecycle
+3. ``load_prompt`` hook injects the planner addendum into the system
+   prompt when debate mode is enabled — tells the planner it must
+   call ``request_review`` after each proposal.
+4. ``agent_run_start`` / ``agent_run_end`` hooks track the agent lifecycle
    so the debate state knows when reviews are in-context.
-4. Zero core Muse files modified — plugin only.
+5. Zero core Muse files modified — plugin only.
 """
 
 from code_muse.plugins.debate.config import (
