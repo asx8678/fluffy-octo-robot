@@ -4,12 +4,14 @@ build-backend = "hatchling.build"
 
 [project]
 name = "code-muse"
-version = "0.1.39"
+version = "0.1.40"
 description = "Muse — eternal guide of creators in the arts and sciences. An elegant AI coding assistant."
 readme = "README.md"
+# Only 3.14+ is supported due to free-threaded Python features
 requires-python = ">=3.14,<3.16"
 dependencies = [
     "orjson>=3.10.0",
+    "packaging>=24.0",
     "pydantic-ai-slim[openai,anthropic]>=1.93.0",
     "typer>=0.25.1",
     "httpx[http2]>=0.28.1",
@@ -37,15 +39,6 @@ dependencies = [
     "cython>=3.2.4",
     "setuptools>=82.0.1",
 ]
-dev-dependencies = [
-    "pytest>=9.0.3",
-    "pytest-cov>=7.1.0",
-    "pytest-asyncio>=1.3.0",
-    "pytest-xdist>=3.8.0",
-    "ruff>=0.15.12",
-    "pexpect>=4.9.0",
-    "mypy>=1.16.0",
-]
 authors = [
     {name = "Michael Pfaffenberger"}
 ]
@@ -69,8 +62,6 @@ Homepage = "https://github.com/asx8678/muse"
 
 [project.scripts]
 muse = "code_muse.main:main_entry"
-# muse = "code_muse.main:main_entry" (duplicate — already defined above)
-# (legacy alias removed)
 
 [tool.logfire]
 ignore_no_config = true
@@ -97,6 +88,7 @@ select = ["E", "F", "UP", "B", "SIM", "I"]
 [tool.ruff.lint.per-file-ignores]
 "code_muse/main.py" = ["E402"]
 "code_muse/cli_runner.py" = ["E402"]
+"code_muse/cli_runner/__init__.py" = ["E402"]
 "code_muse/messaging/__init__.py" = ["E402"]
 "code_muse/plugins/mindpack/orchestration.py" = ["E402"]
 "code_muse/tools/chrome_cdp/*.py" = ["E501"]
