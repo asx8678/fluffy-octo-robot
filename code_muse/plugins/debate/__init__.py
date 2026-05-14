@@ -10,12 +10,12 @@ Architecture
 File structure under ``code_muse/plugins/debate/``:
 
 - ``schemas.py``      — Pydantic models (Verdict, ReviewRequest, ReviewResponse)
-- ``config.py``       — Configuration accessors (muse.cfg)
-- ``state.py``        — Session state, budget & agent-run tracking
+- ``config.py``       — Configuration accessors (muse.cfg) + toggle
+- ``state.py``        — Session state, budget, agent-run tracking, review history
 - ``reviewer.py``     — Reviewer LLM caller (pydantic-ai Agent)
-- ``ui.py``           — Terminal rendering
-- ``telemetry.py``    — Latency and verdict metrics
-- ``register_callbacks.py`` — Hook & tool registration
+- ``ui.py``           — Terminal rendering: verdicts, progress, history, status
+- ``telemetry.py``    — Latency, verdict metrics, NDJSON logging, success rates
+- ``register_callbacks.py`` — Hook & tool registration, slash commands
 - ``prompts/``        — Prompt templates for planner and reviewer
 
 Key Design Decisions
@@ -29,7 +29,15 @@ Key Design Decisions
    call ``request_review`` after each proposal.
 4. ``agent_run_start`` / ``agent_run_end`` hooks track the agent lifecycle
    so the debate state knows when reviews are in-context.
-5. Zero core Muse files modified — plugin only.
+5. Terminal UI uses Muse standard emit functions (``emit_info``,
+   ``emit_success``, ``emit_warning``) — no Rich Live/Console
+   allocations from plugin code.
+6. Telemetry writes NDJSON lines to ``~/.muse/state/debate_telemetry.jsonl``
+   for offline analysis, plus in-memory session snapshots.
+7. ``/debate`` slash commands: ``on``, ``off``, ``toggle``, ``status``,
+   ``stats``, ``metrics``, ``history``, ``reset`` — all wired through
+   ``custom_command`` and ``custom_command_help`` hooks.
+8. Zero core Muse files modified — plugin only.
 """
 
 from code_muse.plugins.debate.config import (
@@ -37,6 +45,7 @@ from code_muse.plugins.debate.config import (
     get_debate_max_reviews,
     get_debate_reviewer_model,
     is_debate_enabled,
+    set_debate_enabled,
 )
 from code_muse.plugins.debate.schemas import (
     Issue,
@@ -56,6 +65,7 @@ __all__ = [
     "VerdictKind",
     # Config
     "is_debate_enabled",
+    "set_debate_enabled",
     "get_debate_reviewer_model",
     "get_debate_max_reviews",
     "get_debate_max_loops",

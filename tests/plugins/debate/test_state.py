@@ -1,4 +1,4 @@
-"""Tests for DebateState — budget, loop detection, agent-run lifecycle."""
+"""Tests for DebateState — budget, loop detection, agent-run lifecycle, history."""
 
 import pytest
 
@@ -118,6 +118,51 @@ class TestAgentRunLifecycle:
 
 
 # ---------------------------------------------------------------------------
+# Review history
+# ---------------------------------------------------------------------------
+
+
+class TestReviewHistory:
+    def test_initially_empty(self):
+        assert DebateState.review_history() == []
+
+    def test_record_review_appends_history(self):
+        DebateState.record_review(1, VerdictKind.APPROVE, "Looks good", 150.0)
+        history = DebateState.review_history()
+        assert len(history) == 1
+        assert history[0]["checkpoint"] == 1
+        assert history[0]["verdict"] == "approve"
+        assert history[0]["summary"] == "Looks good"
+        assert history[0]["latency_ms"] == 150.0
+
+    def test_multiple_reviews_build_history(self):
+        DebateState.record_review(1, VerdictKind.APPROVE, "OK", 100.0)
+        DebateState.record_review(2, VerdictKind.REVISE, "Fix X", 200.0)
+        DebateState.record_review(2, VerdictKind.APPROVE, "Fixed", 180.0)
+        history = DebateState.review_history()
+        assert len(history) == 3
+        assert history[1]["verdict"] == "revise"
+        assert history[2]["checkpoint"] == 2
+
+    def test_history_returns_copy(self):
+        DebateState.record_review(1, VerdictKind.APPROVE, "OK", 100.0)
+        h1 = DebateState.review_history()
+        h1.append({"fake": True})
+        assert len(DebateState.review_history()) == 1
+
+    def test_reset_clears_history(self):
+        DebateState.record_review(1, VerdictKind.APPROVE, "OK", 50.0)
+        DebateState.reset()
+        assert DebateState.review_history() == []
+
+    def test_default_summary_and_latency(self):
+        DebateState.record_review(3, VerdictKind.REJECT)
+        history = DebateState.review_history()
+        assert history[0]["summary"] == ""
+        assert history[0]["latency_ms"] == 0.0
+
+
+# ---------------------------------------------------------------------------
 # Reset
 # ---------------------------------------------------------------------------
 
@@ -134,3 +179,4 @@ class TestReset:
         assert not DebateState.is_active()
         assert DebateState.agent_name() is None
         assert DebateState.current_checkpoint() == 0
+        assert DebateState.review_history() == []

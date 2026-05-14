@@ -13,7 +13,10 @@ Registers:
     - ``agent_run_start`` / ``agent_run_end`` hooks — track the agent-run
       lifecycle so the debate state knows when reviews are in-context.
     - ``startup`` / ``shutdown`` hooks — session initialisation & cleanup.
-    - ``/debate`` slash commands and help entries.
+    - ``stream_event`` hook — renders inline review indicators during
+      planner streaming (before tool execution).
+    - ``/debate`` slash commands: ``on``, ``off``, ``toggle``, ``status``,
+      ``stats``, ``metrics``, ``history``, ``reset``.
 """
 
 import logging
@@ -23,12 +26,30 @@ from typing import Any
 
 from code_muse.callbacks import register_callback
 from code_muse.messaging import emit_info, emit_success, emit_warning
-from code_muse.plugins.debate.config import is_debate_enabled
+from code_muse.plugins.debate.config import (
+    get_debate_max_loops,
+    get_debate_max_reviews,
+    is_debate_enabled,
+    set_debate_enabled,
+)
 from code_muse.plugins.debate.reviewer import run_review
 from code_muse.plugins.debate.schemas import ReviewRequest
 from code_muse.plugins.debate.state import DebateState
-from code_muse.plugins.debate.telemetry import get_session_stats, record_review_latency
-from code_muse.plugins.debate.ui import render_verdict_summary
+from code_muse.plugins.debate.telemetry import (
+    get_latency_stats,
+    get_session_stats,
+    get_success_rate,
+    get_verdict_breakdown,
+    record_review_latency,
+    reset_telemetry,
+)
+from code_muse.plugins.debate.ui import (
+    render_progress_bar,
+    render_review_history,
+    render_status_panel,
+    show_reviewing,
+    show_verdict,
+)
 
 _PROMPTS_DIR = Path(__file__).parent / "prompts"
 
@@ -41,8 +62,9 @@ logger = logging.getLogger(__name__)
 
 
 def _on_startup() -> None:
-    """Reset debate state on app boot."""
+    """Reset debate state and telemetry on app boot."""
     DebateState.reset()
+    reset_telemetry()
     logger.debug("Debate Mode plugin initialised")
 
 
@@ -135,8 +157,10 @@ def _register_debate_tools() -> list[dict[str, Any]]:
                     "remaining_budget": 0,
                 }
 
+            # Show progress indicator while review is running
+            emit_info(show_reviewing(checkpoint, proposal))
+
             # Build the review request and call the reviewer LLM.
-            # run_review() records the review in DebateState internally.
             start = time.monotonic()
             request = ReviewRequest(
                 proposal=proposal,
@@ -144,19 +168,31 @@ def _register_debate_tools() -> list[dict[str, Any]]:
                 checkpoint=checkpoint,
             )
             response = await run_review(request)
-            elapsed_kind = response.verdict.kind if response else None
-
-            if elapsed_kind is not None:
-                record_review_latency(start, elapsed_kind)
+            elapsed_ms = (time.monotonic() - start) * 1000
 
             if response is not None:
-                line = render_verdict_summary(
-                    response.verdict.kind,
-                    response.verdict.summary,
-                    response.review_count,
-                    response.remaining_budget,
+                verdict = response.verdict
+                record_review_latency(start, verdict.kind)
+
+                # Record in debate state with history
+                DebateState.record_review(
+                    checkpoint=checkpoint,
+                    verdict_kind=verdict.kind,
+                    summary=verdict.summary,
+                    latency_ms=elapsed_ms,
                 )
-                emit_info(line)
+
+                # Show rich verdict display
+                emit_info(
+                    show_verdict(
+                        kind=verdict.kind,
+                        summary=verdict.summary,
+                        issues=[iss.model_dump() for iss in verdict.issues],
+                        confidence=verdict.confidence,
+                        review_count=response.review_count,
+                        remaining_budget=response.remaining_budget,
+                    )
+                )
                 return response.model_dump()
 
             # Reviewer unreachable — return fallback so planner isn't stuck
@@ -235,36 +271,136 @@ def _on_load_prompt() -> str | None:
 
 
 # ---------------------------------------------------------------------------
-# Slash commands
+# Slash commands: /debate on|off|toggle|status|stats|metrics|history|reset
 # ---------------------------------------------------------------------------
 
 
 def _on_custom_command(command: str, name: str) -> bool | None:
-    """Handle ``/debate`` slash commands."""
+    """Handle ``/debate`` slash commands.
+
+    Subcommands:
+        on      — Enable debate mode
+        off     — Disable debate mode
+        toggle  — Toggle debate mode on/off
+        status  — Show full status panel
+        stats   — Show session statistics summary
+        metrics — Show detailed latency and verdict breakdown
+        history — Show review history table
+        reset   — Reset all debate state and telemetry
+    """
     if name != "debate":
         return None
 
     parts = command.split(maxsplit=1)
-    sub = parts[1].strip().lower() if len(parts) > 1 else ""
+    sub = parts[1].strip().lower() if len(parts) > 1 else "status"
 
+    # --- Toggle commands ---
+    if sub == "on":
+        set_debate_enabled(True)
+        emit_success("⚖️ Debate mode enabled")
+        return True
+
+    if sub == "off":
+        set_debate_enabled(False)
+        emit_warning("⚖️ Debate mode disabled")
+        return True
+
+    if sub == "toggle":
+        current = is_debate_enabled()
+        set_debate_enabled(not current)
+        new_state = "enabled" if not current else "disabled"
+        emoji = "✅" if not current else "⚠️"
+        emit_info(f"{emoji} Debate mode {new_state}")
+        return True
+
+    # --- Status command ---
+    if sub == "status":
+        stats = get_session_stats()
+        panel = render_status_panel(
+            enabled=is_debate_enabled(),
+            active=DebateState.is_active(),
+            agent_name=DebateState.agent_name(),
+            review_count=DebateState.review_count(),
+            remaining_budget=DebateState.remaining_budget(),
+            max_reviews=get_debate_max_reviews(),
+            consecutive_revisions=DebateState.consecutive_revisions(),
+            max_loops=get_debate_max_loops(),
+            avg_latency_ms=stats.get("avg_latency_ms", 0.0),
+        )
+        emit_info(panel)
+        return True
+
+    # --- Stats command ---
     if sub == "stats":
         stats = get_session_stats()
-        emit_info(f"📊 Debate stats: {stats}")
+        success = get_success_rate()
+        bar = render_progress_bar(stats["total_reviews"], get_debate_max_reviews())
+        lines = [
+            "📊 Debate Session Stats:",
+            f"   Reviews: {stats['total_reviews']}",
+            f"   Budget:  {bar}",
+            f"   Success: {success:.1%}",
+            f"   Avg latency: {stats['avg_latency_ms']:.0f}ms",
+        ]
+        emit_info("\n".join(lines))
         return True
 
+    # --- Metrics command (detailed) ---
+    if sub == "metrics":
+        stats = get_session_stats()
+        latency = get_latency_stats()
+        breakdown = get_verdict_breakdown()
+        success = get_success_rate()
+        lines = [
+            "📈 Debate Metrics:",
+            f"   Total reviews:   {stats['total_reviews']}",
+            f"   Success rate:    {success:.1%}",
+            "",
+            "   Verdict breakdown:",
+            f"     ✅ Approve: {breakdown.get('approve', 0)}",
+            f"     🔄 Revise:  {breakdown.get('revise', 0)}",
+            f"     ❌ Reject:  {breakdown.get('reject', 0)}",
+            "",
+            "   Latency:",
+            f"     Avg:  {latency['avg_ms']:.0f}ms",
+            f"     Min:  {latency['min_ms']:.0f}ms",
+            f"     Max:  {latency['max_ms']:.0f}ms",
+            f"     Total: {latency['total_ms']:.0f}ms",
+            "",
+            f"   Reviews/min: {stats.get('reviews_per_minute', 0):.1f}",
+        ]
+        emit_info("\n".join(lines))
+        return True
+
+    # --- History command ---
+    if sub == "history":
+        history = DebateState.review_history()
+        emit_info(render_review_history(history))
+        return True
+
+    # --- Reset command ---
     if sub == "reset":
         DebateState.reset()
-        emit_success("🔄 Debate state reset")
+        reset_telemetry()
+        emit_success("🔄 Debate state and telemetry reset")
         return True
 
-    emit_info("Usage: /debate stats | /debate reset")
+    # --- Unknown subcommand ---
+    emit_info("Usage: /debate on|off|toggle|status|stats|metrics|history|reset")
     return True
 
 
 def _on_custom_command_help() -> list[tuple[str, str]]:
+    """Return help entries for the ``/debate`` command family."""
     return [
-        ("debate stats", "Show debate-mode session statistics"),
-        ("debate reset", "Reset debate-mode session state"),
+        ("debate on", "Enable debate mode"),
+        ("debate off", "Disable debate mode"),
+        ("debate toggle", "Toggle debate mode on/off"),
+        ("debate status", "Show full debate status panel"),
+        ("debate stats", "Show session statistics summary"),
+        ("debate metrics", "Show detailed latency & verdict breakdown"),
+        ("debate history", "Show review history table"),
+        ("debate reset", "Reset all debate state and telemetry"),
     ]
 
 
@@ -281,5 +417,51 @@ register_callback("pre_tool_call", _on_pre_tool_call)
 register_callback("load_prompt", _on_load_prompt)
 register_callback("custom_command", _on_custom_command)
 register_callback("custom_command_help", _on_custom_command_help)
+
+
+# ---------------------------------------------------------------------------
+# stream_event hook — inline verdict rendering during planner output
+# ---------------------------------------------------------------------------
+
+
+# Track which tool-call part indices are request_review so we can
+# render a compact indicator at part_end time.
+_pending_review_indices: set[int] = set()
+
+
+def _on_stream_event(
+    event_type: str, event_data: Any, agent_session_id: str | None = None
+) -> None:
+    """Render inline review indicators during planner streaming.
+
+    When the planner starts emitting a ``request_review`` tool call
+    (``part_start``), this hook fires a compact indicator *before* the
+    tool executes — giving the user immediate feedback that a review
+    is pending.
+
+    The actual verdict is rendered by the tool function via
+    :func:`show_verdict`, so this hook only shows a brief inline
+    cue at the point the planner produces the call.
+    """
+    if not is_debate_enabled():
+        return
+
+    if event_type == "part_start":
+        part = event_data.get("part")
+        part_type = event_data.get("part_type", "")
+        if part_type == "ToolCallPart" and part is not None:
+            tool_name = getattr(part, "tool_name", None) or ""
+            if tool_name == "request_review":
+                idx = event_data.get("index", -1)
+                _pending_review_indices.add(idx)
+                emit_info("⚖️  Review requested — awaiting verdict…")
+
+    elif event_type == "part_end":
+        idx = event_data.get("index", -1)
+        if idx in _pending_review_indices:
+            _pending_review_indices.discard(idx)
+
+
+register_callback("stream_event", _on_stream_event)
 
 logger.debug("Debate Mode plugin callbacks registered")

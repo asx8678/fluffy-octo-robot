@@ -8,6 +8,7 @@ All mutations go through :class:`DebateState` so counters stay consistent.
 """
 
 import threading
+from typing import Any
 
 from code_muse.plugins.debate.config import (
     get_debate_max_loops,
@@ -23,6 +24,9 @@ _review_count: int = 0
 _current_checkpoint: int = 0
 _consecutive_revisions: int = 0
 _last_verdict: VerdictKind | None = None
+
+# Review history: list of dicts with checkpoint, verdict, summary, latency_ms
+_review_history: list[dict[str, Any]] = []
 
 # Agent-run lifecycle tracking
 _active: bool = False
@@ -84,14 +88,22 @@ class DebateState:
             return _consecutive_revisions >= get_debate_max_loops()
 
     @staticmethod
-    def record_review(checkpoint: int, verdict_kind: VerdictKind) -> None:
+    def record_review(
+        checkpoint: int,
+        verdict_kind: VerdictKind,
+        summary: str = "",
+        latency_ms: float = 0.0,
+    ) -> None:
         """Record a completed review and update all counters.
 
         Args:
             checkpoint: The checkpoint number the planner submitted.
             verdict_kind: The reviewer's verdict.
+            summary: One-sentence summary from the reviewer.
+            latency_ms: Wall-clock time of the review call in milliseconds.
         """
-        global _review_count, _current_checkpoint, _consecutive_revisions, _last_verdict
+        global _review_count, _current_checkpoint
+        global _consecutive_revisions, _last_verdict, _review_history
 
         with _lock:
             _review_count += 1
@@ -102,6 +114,15 @@ class DebateState:
                 _consecutive_revisions += 1
             else:
                 _consecutive_revisions = 0
+
+            _review_history.append(
+                {
+                    "checkpoint": checkpoint,
+                    "verdict": verdict_kind.value,
+                    "summary": summary,
+                    "latency_ms": round(latency_ms, 1),
+                }
+            )
 
     # ------------------------------------------------------------------
     # Agent-run lifecycle
@@ -139,6 +160,12 @@ class DebateState:
                 _active = False
                 _agent_name = None
 
+    @staticmethod
+    def review_history() -> list[dict[str, Any]]:
+        """Return a snapshot of the review history for this session."""
+        with _lock:
+            return list(_review_history)
+
     # ------------------------------------------------------------------
     # Reset
     # ------------------------------------------------------------------
@@ -147,7 +174,7 @@ class DebateState:
     def reset() -> None:
         """Reset all session state (used in tests or on shutdown)."""
         global _review_count, _current_checkpoint, _consecutive_revisions
-        global _last_verdict, _active, _agent_name
+        global _last_verdict, _active, _agent_name, _review_history
 
         with _lock:
             _review_count = 0
@@ -156,3 +183,4 @@ class DebateState:
             _last_verdict = None
             _active = False
             _agent_name = None
+            _review_history = []
