@@ -41,7 +41,6 @@ _TYPE_PROVIDER_OVERRIDES = {
     "openai": "openai",
     "openrouter": "openrouter",
     "claude_code": "claude_code",
-    "chatgpt_oauth": "chatgpt",
     "gemini": "google",
     "gemini_oauth": "google",
     "aws_bedrock": "aws_bedrock",

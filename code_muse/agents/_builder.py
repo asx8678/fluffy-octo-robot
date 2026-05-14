@@ -162,7 +162,10 @@ def assemble_full_system_prompt(agent: Any, model_name: str | None = None) -> st
 
     This is the canonical system prompt assembly path.
     """
-    cache_key = (agent.name if hasattr(agent, 'name') else str(id(agent)), model_name or agent.get_model_name())
+    cache_key = (
+        agent.name if hasattr(agent, "name") else str(id(agent)),
+        model_name or agent.get_model_name(),
+    )
     cached = _system_prompt_cache.get(cache_key)
     if cached is not None:
         return cached
@@ -228,7 +231,7 @@ def build_pydantic_agent(
 
     agent._muse_rules = None
     # Clear system prompt cache for this agent
-    agent_key = (agent.name if hasattr(agent, 'name') else str(id(agent)), None)
+    agent_key = (agent.name if hasattr(agent, "name") else str(id(agent)), None)
     keys_to_clear = [k for k in _system_prompt_cache if k[0] == agent_key[0]]
     for k in keys_to_clear:
         _system_prompt_cache.pop(k, None)

@@ -124,7 +124,6 @@ def _maybe_run_onboarding() -> None:
             import concurrent.futures
 
             from code_muse.command_line.onboarding_wizard import run_onboarding_wizard
-            from code_muse.config import set_model_name
 
             # FREE-THREADED: ThreadPoolExecutor works with free-threaded Python 3.14.
             with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -132,19 +131,13 @@ def _maybe_run_onboarding() -> None:
                 result = future.result(timeout=300)
 
             if result == "chatgpt":
-                emit_info("🔐 Starting ChatGPT OAuth flow...")
-                from code_muse.plugins.chatgpt_oauth.oauth_flow import run_oauth_flow
-
-                run_oauth_flow()
-                set_model_name("chatgpt-gpt-5.4")
-            elif result == "claude":
-                emit_info("🔐 Starting Claude Code OAuth flow...")
-                from code_muse.plugins.claude_code_oauth.register_callbacks import (
-                    _perform_authentication,
+                emit_info(
+                    "ChatGPT OAuth models require the chatgpt_oauth plugin which has been removed."
                 )
-
-                _perform_authentication()
-                set_model_name("claude-code-claude-opus-4-7")
+            elif result == "claude":
+                emit_info(
+                    "Claude Code models require the claude_code_oauth plugin which has been removed."
+                )
             elif result == "completed":
                 emit_info("🎉 Tutorial complete! Happy coding!")
             elif result == "skipped":
@@ -207,7 +200,7 @@ async def _run_main_input_loop(message_renderer, terminal_session):
 
         try:
             task = await _read_user_input(message_renderer, terminal_session)
-        except (KeyboardInterrupt, asyncio.CancelledError):
+        except KeyboardInterrupt, asyncio.CancelledError:
             _handle_keyboard_interrupt(terminal_session)
             continue
         except EOFError:

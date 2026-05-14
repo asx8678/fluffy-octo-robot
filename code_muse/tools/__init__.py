@@ -28,7 +28,7 @@ from code_muse.tools.file_operations import (
     register_read_file,
 )
 from code_muse.tools.image_tools import register_load_image
-from code_muse.tools.meetin_proxy import register_mitmproxy
+from code_muse.tools.mitmproxy import register_mitmproxy
 from code_muse.tools.skills_tools import (
     register_activate_skill,
     register_list_or_search_skills,
@@ -265,7 +265,7 @@ def _register_uc_tool_wrapper(agent, uc_tool_name: str):
         sig = inspect.signature(func)
         # Get annotations from the original function
         annotations = get_annotations(func).copy()
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         sig = None
         annotations = {}
 
@@ -324,7 +324,7 @@ def _register_uc_tool_wrapper(agent, uc_tool_name: str):
                     parameters=new_params, return_annotation=return_annotation
                 )
                 uc_tool_wrapper.__signature__ = new_sig
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 pass  # Signature manipulation failed, continue without it
 
         return uc_tool_wrapper
@@ -418,9 +418,7 @@ register_tool_metadata(
     timeout=30,
     category="file_mods",
 )
-register_tool_metadata(
-    "edit_file", destructive=True, timeout=30, category="file_mods"
-)
+register_tool_metadata("edit_file", destructive=True, timeout=30, category="file_mods")
 register_tool_metadata(
     "delete_snippet",
     destructive=True,

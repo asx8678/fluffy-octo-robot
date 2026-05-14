@@ -187,9 +187,7 @@ def get_api_key(env_var_name: str) -> str | None:
 
 # Model types that use the Anthropic Messages API under the hood.
 # These all need Anthropic-specific settings (thinking, effort, etc.).
-_ANTHROPIC_MODEL_TYPES = frozenset(
-    {"anthropic", "aws_bedrock", "claude_code"}
-)
+_ANTHROPIC_MODEL_TYPES = frozenset({"anthropic", "aws_bedrock", "claude_code"})
 
 
 def _is_anthropic_model(model_name: str, model_config: dict[str, Any]) -> bool:
@@ -312,8 +310,7 @@ def make_model_settings(
         model_settings_dict["openai_reasoning_effort"] = get_openai_reasoning_effort()
 
         uses_responses_api = (
-            model_type == "chatgpt_oauth"
-           
+            False
             or (model_type == "openai" and "codex" in model_name)
             or (model_type == "custom_openai" and "codex" in model_name)
         )
@@ -552,23 +549,19 @@ class ModelFactory:
                 continue
             try:
                 # Use filtered loading for Claude Code OAuth models to show only latest versions
-                if use_filtered:
-                    try:
-                        from code_muse.plugins.claude_code_oauth.utils import (
-                            load_claude_models_filtered,
-                        )
-
-                        extra_config = load_claude_models_filtered()
-                    except ImportError:
-                        # Plugin not available, fall back to standard JSON loading
-                        logging.getLogger(__name__).debug(
-                            f"claude_code_oauth plugin not available, loading {label} as plain JSON"
-                        )
-                        with open(source_path) as f:
-                            extra_config = json.loads(f.read())
-                else:
+                try:
                     with open(source_path) as f:
                         extra_config = json.loads(f.read())
+                except json.JSONDecodeError as exc:
+                    logging.getLogger(__name__).warning(
+                        f"Failed to load {label} config from {source_path}: Invalid JSON - {exc}"
+                    )
+                    continue
+                except Exception as exc:
+                    logging.getLogger(__name__).warning(
+                        f"Failed to load {label} config from {source_path}: {exc}"
+                    )
+                    continue
                 config.update(extra_config)
             except json.JSONDecodeError as exc:
                 logging.getLogger(__name__).warning(
@@ -745,8 +738,6 @@ class ModelFactory:
                 provider_identity, anthropic_client=anthropic_client
             )
             return AnthropicModel(model_name=model_config["name"], provider=provider)
-        # NOTE: 'claude_code' model type is now handled by the claude_code_oauth plugin
-        # via the register_model_type callback. See plugins/claude_code_oauth/register_callbacks.py
 
         elif model_type == "azure_openai":
             azure_endpoint_config = model_config.get("azure_endpoint")
@@ -871,7 +862,9 @@ class ModelFactory:
                             elif isinstance(part, ToolCallPart):
                                 args = part.args
                                 if isinstance(args, dict):
-                                    args_str = json.dumps(args, option=orjson.OPT_SORT_KEYS)
+                                    args_str = json.dumps(
+                                        args, option=orjson.OPT_SORT_KEYS
+                                    )
                                 else:
                                     args_str = "" if args is None else str(args)
                                 chunks.append(
@@ -1151,9 +1144,6 @@ class ModelFactory:
                 api_version=GEMINI_OAUTH_CONFIG["api_version"],
             )
             return model
-
-        # NOTE: 'chatgpt_oauth' model type is now handled by the chatgpt_oauth plugin
-        # via the register_model_type callback. See plugins/chatgpt_oauth/register_callbacks.py
 
         elif model_type == "round_robin":
             # Get the list of model names to use in the round-robin

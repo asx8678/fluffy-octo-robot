@@ -241,7 +241,7 @@ class QueueConsole:
                 )
 
             return user_response
-        except (KeyboardInterrupt, EOFError):
+        except KeyboardInterrupt, EOFError:
             # Handle interruption gracefully
             input_console.print("\n[yellow]Input cancelled[/yellow]")
             self.queue.emit_simple(MessageType.WARNING, "User input cancelled")

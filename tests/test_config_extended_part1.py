@@ -13,7 +13,6 @@ from code_muse.config import (
     get_compaction_threshold,
     get_diff_context_lines,
     get_global_model_name,
-    
     get_owner_name,
     get_protected_token_count,
     get_value,

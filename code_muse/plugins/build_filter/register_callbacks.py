@@ -14,7 +14,6 @@ from code_muse.messaging import emit_info
 
 # Import strategies so they self-register with the strategy registry
 from code_muse.plugins.build_filter.strategies import build  # noqa: F401
-from code_muse.plugins.filter_engine.verbosity import get_verbosity
 
 logger = logging.getLogger(__name__)
 
@@ -84,14 +83,12 @@ async def build_filter_callback(
     build commands, or ``None`` to passthrough to the filter engine.
     """
     if not _is_build_command(command):
-        return None  # Let filter_engine handle it
 
     verbosity = get_verbosity()
     if verbosity.value >= 4:  # RAW: no filtering
         return None
 
     try:
-        from code_muse.plugins.filter_engine.registry import get_registry
         from code_muse.tools.command_runner import _execute_shell_command
         from code_muse.tools.subagent_context import is_subagent
 
@@ -120,23 +117,6 @@ async def build_filter_callback(
 
         if filtered is None:
             return None
-
-        # Track token savings (best-effort)
-        try:
-            from code_muse.plugins.token_tracking.record import record_command
-
-            record_command(
-                command=command,
-                raw_stdout=output.stdout or "",
-                raw_stderr=output.stderr or "",
-                compressed_stdout=filtered.stdout or "",
-                compressed_stderr=filtered.stderr or "",
-                category="build",
-                strategy="compress_build",
-                exit_code=output.exit_code or 0,
-            )
-        except Exception:
-            pass
 
         return {"pre_executed": True, "output": filtered}
 

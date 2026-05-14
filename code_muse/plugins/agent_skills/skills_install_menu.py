@@ -651,7 +651,7 @@ def _prompt_and_install(entry: SkillCatalogEntry) -> bool:
                 return False
             force = False
 
-    except (KeyboardInterrupt, EOFError):
+    except KeyboardInterrupt, EOFError:
         emit_warning("Installation cancelled")
         return False
 

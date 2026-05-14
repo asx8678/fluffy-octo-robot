@@ -8,8 +8,6 @@ import re
 
 import orjson as json
 
-from code_muse.plugins.filter_engine.registry import get_registry
-from code_muse.plugins.filter_engine.verbosity import VerbosityLevel
 from code_muse.tools.command_runner import ShellCommandOutput
 
 

@@ -182,7 +182,6 @@ def handle_tutorial_command(command: str) -> bool:
         reset_onboarding,
         run_onboarding_wizard,
     )
-    from code_muse.model_switching import set_model_and_reload_agent
 
     # Always reset so user can re-run the tutorial anytime
     reset_onboarding()
@@ -194,19 +193,13 @@ def handle_tutorial_command(command: str) -> bool:
         result = future.result(timeout=300)  # 5 min timeout
 
     if result == "chatgpt":
-        emit_info("🔐 Starting ChatGPT OAuth flow...")
-        from code_muse.plugins.chatgpt_oauth.oauth_flow import run_oauth_flow
-
-        run_oauth_flow()
-        set_model_and_reload_agent("chatgpt-gpt-5.4")
-    elif result == "claude":
-        emit_info("🔐 Starting Claude Code OAuth flow...")
-        from code_muse.plugins.claude_code_oauth.register_callbacks import (
-            _perform_authentication,
+        emit_info(
+            "ChatGPT OAuth models require the chatgpt_oauth plugin which has been removed."
         )
-
-        _perform_authentication()
-        set_model_and_reload_agent("claude-code-claude-opus-4-7")
+    elif result == "claude":
+        emit_info(
+            "Claude Code models require the claude_code_oauth plugin which has been removed."
+        )
     elif result == "completed":
         emit_info("🎉 Tutorial complete! Happy coding!")
     elif result == "skipped":

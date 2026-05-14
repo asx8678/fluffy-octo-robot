@@ -55,10 +55,9 @@ def _run_coro(coro):
 
 
 def test_colors_menu_keybindings():
+    from code_muse.command_line.colors_menu import _split_panel_selector
     from prompt_toolkit.formatted_text import ANSI
     from prompt_toolkit.layout.controls import FormattedTextControl as RealFTC
-
-    from code_muse.command_line.colors_menu import _split_panel_selector
 
     choices = ["Red", "Blue", "───", "Green"]
     on_change = MagicMock()
@@ -104,12 +103,11 @@ def test_colors_menu_keybindings():
 
 
 def test_diff_menu_keybindings():
-    from prompt_toolkit.formatted_text import ANSI
-
     from code_muse.command_line.diff_menu import (
         DiffConfiguration,
         _split_panel_selector,
     )
+    from prompt_toolkit.formatted_text import ANSI
 
     choices = ["Python", "JavaScript"]
     on_change = MagicMock()
@@ -134,12 +132,11 @@ def test_diff_menu_keybindings():
 
 
 def test_diff_menu_cancel():
-    from prompt_toolkit.formatted_text import ANSI
-
     from code_muse.command_line.diff_menu import (
         DiffConfiguration,
         _split_panel_selector,
     )
+    from prompt_toolkit.formatted_text import ANSI
 
     choices = ["Python"]
     on_change = MagicMock()
@@ -435,5 +432,3 @@ def test_autosave_menu_keybindings():
 
         mock_app.run_async = run_and_capture
         _run_coro(interactive_autosave_picker())
-
-

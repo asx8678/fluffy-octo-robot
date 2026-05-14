@@ -20,8 +20,7 @@ class PreparedPrompt:
     Attributes:
         instructions: The system instructions to use for the agent
         user_prompt: The user prompt (possibly modified)
-        is_claude_code: Whether this is a claude-code model (set by the
-            claude_code_oauth plugin via the ``prepare_model_prompt`` hook).
+        is_claude_code: Whether this is a claude-code model.
     """
 
     instructions: str
@@ -40,7 +39,7 @@ def prepare_prompt_for_model(
     Core fires two hooks to let plugins customize prompt prep:
 
     1. ``prepare_model_prompt`` — first winner with ``handled=True`` takes
-       over entirely (used by the claude_code_oauth plugin).
+       over entirely.
     2. ``get_model_system_prompt`` — legacy per-model system-prompt hook;
        still fired for compatibility with plugins (e.g. agent_skills) that
        rely on it.

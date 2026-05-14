@@ -121,7 +121,8 @@ def _write_cache(cache_path: Path, data: dict[str, Any]) -> bool:
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         # Stable formatting so diffs are readable when debugging.
         cache_path.write_text(
-            json.dumps(data, indent=2, option=orjson.OPT_SORT_KEYS) + "\n", encoding="utf-8"
+            json.dumps(data, indent=2, option=orjson.OPT_SORT_KEYS) + "\n",
+            encoding="utf-8",
         )
         return True
     except Exception as e:

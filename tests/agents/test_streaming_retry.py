@@ -274,9 +274,7 @@ class TestModelAllowsStreaming:
 
         # crof.ai's kimi-k2.5-lightning has intermittent SSE issues;
         # "streaming": false in models.json forces non-streaming requests.
-        mock_config = {
-            "crof-kimi-k2.5-lightning": {"streaming": False}
-        }
+        mock_config = {"crof-kimi-k2.5-lightning": {"streaming": False}}
         with patch(
             "code_muse.agents._runtime.ModelFactory.load_config",
             return_value=mock_config,

@@ -45,7 +45,6 @@ def _fire_stream_event(event_type: str, event_data: Any) -> None:
     part_end), fires asynchronously via task.
     """
     if event_type == "part_delta":
-        # Fire synchronously for perf — tps_meter plugin consumes these
         _fire_stream_event_sync(event_type, event_data)
         return
 

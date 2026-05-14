@@ -2,6 +2,7 @@
 
 Run as: python build_extensions.py build_ext --inplace
 """
+
 import os
 
 from Cython.Build import cythonize

@@ -52,9 +52,7 @@ _LAST_SAVED_HASHES: dict[tuple[str, str], str | None] = {}
 def _hash_session_data(data: dict[str, Any]) -> str | None:
     """Return a SHA-256 hash of serialised session data for dirty-flag comparison."""
     try:
-        return hashlib.sha256(
-            json.dumps(data, option=orjson.OPT_SORT_KEYS)
-        ).hexdigest()
+        return hashlib.sha256(json.dumps(data, option=orjson.OPT_SORT_KEYS)).hexdigest()
     except TypeError, ValueError:
         return None
 

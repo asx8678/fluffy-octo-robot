@@ -380,7 +380,6 @@ async def _trigger_callbacks(phase: PhaseType, *args, **kwargs) -> list[Any]:
     are ignored.
 
     Intended priority chain for ``run_shell_command``:
-        filter_engine (100) → policy_engine / shell_safety (50) → shell_minimizer (0)
     """
     if not _callbacks.get(phase):
         return []
@@ -519,7 +518,6 @@ async def on_run_shell_command(*args, **kwargs) -> Any:
 
     Intended priority chain for ``run_shell_command``:
 
-        1. ``filter_engine`` (priority 100) — intercepts and transforms shell output
         2. ``policy_engine`` / ``shell_safety`` (priority 50) — enforces allow/deny/ask-user rules
         3. ``shell_minimizer`` (priority 0) — compresses known command output
 

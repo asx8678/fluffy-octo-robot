@@ -200,7 +200,7 @@ class BaseAgent(ABC):
         """
         try:
             return await run(self, prompt, **kwargs)
-        except (asyncio.CancelledError, KeyboardInterrupt, SystemExit):
+        except asyncio.CancelledError, KeyboardInterrupt, SystemExit:
             raise
         except BaseException as exc:
             import traceback
@@ -209,11 +209,15 @@ class BaseAgent(ABC):
 
             if isinstance(exc, BaseExceptionGroup):
                 for i, sub in enumerate(exc.exceptions, 1):
-                    tb = "".join(traceback.format_exception(type(sub), sub, sub.__traceback__))
+                    tb = "".join(
+                        traceback.format_exception(type(sub), sub, sub.__traceback__)
+                    )
                     emit_error(f"Swallowed exception #{i}: {sub!r}")
                     emit_warning(tb.rstrip())
             else:
-                tb = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+                tb = "".join(
+                    traceback.format_exception(type(exc), exc, exc.__traceback__)
+                )
                 emit_error(f"run swallowed exception: {exc!r}")
                 emit_warning(tb.rstrip())
             return None

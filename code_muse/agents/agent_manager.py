@@ -150,7 +150,7 @@ def _load_session_data() -> dict[str, str]:
                 # Clean up dead sessions while loading
                 return _cleanup_dead_sessions(data)
         return {}
-    except (json.JSONDecodeError, OSError):
+    except json.JSONDecodeError, OSError:
         # File corrupted or permission issues, start fresh
         return {}
 

@@ -257,8 +257,6 @@ def test_unknown_command():
 
 - **`example_custom_command/`** (this plugin) - Basic command examples
 - **`customizable_commands/`** - Markdown file commands
-- **`claude_code_oauth/`** - OAuth integration example
-- **`chatgpt_oauth/`** - Another OAuth example
 - **`file_permission_handler/`** - File system integration
 
 ## Further Reading

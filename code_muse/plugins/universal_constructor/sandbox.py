@@ -356,7 +356,7 @@ def _extract_tool_meta(code: str) -> dict[str, Any | None]:
                             # Safely evaluate the dict using ast.literal_eval
                             meta_str = ast.unparse(node.value)
                             return ast.literal_eval(meta_str)
-                        except (ValueError, SyntaxError):
+                        except ValueError, SyntaxError:
                             return None
     return None
 

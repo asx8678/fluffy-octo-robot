@@ -13,7 +13,6 @@ from unittest.mock import Mock, patch
 
 import httpx
 import pytest
-
 from code_muse.plugins.chatgpt_oauth.config import (
     CHATGPT_OAUTH_CONFIG,
     get_chatgpt_models_path,

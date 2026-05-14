@@ -106,7 +106,6 @@ def _on_custom_command_help() -> list[tuple[str, str]]:
     ]
 
 
-# Priority: intended 50 (runs second, after filter_engine=100, before shell_minimizer=0)
 # Enforces allow/deny/ask-user rules before shell execution completes.
 register_callback("run_shell_command", _on_run_shell_command, priority=50)
 register_callback("pre_tool_call", _on_pre_tool_call, priority=50)

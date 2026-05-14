@@ -195,7 +195,6 @@ async def shell_safety_callback(
 
 def register():
     """Register the shell safety callback."""
-    # Priority: intended 50 (runs second, after filter_engine=100, before shell_minimizer=0).
     register_callback("run_shell_command", shell_safety_callback, priority=50)
 
 

@@ -51,17 +51,9 @@ async def main():
 
     # Set verbosity level from CLI flags (no sys.argv scan — args are parsed above)
     if args.ultra_compact:
-        from code_muse.plugins.filter_engine.verbosity import (
-            VerbosityLevel,
-            set_verbosity,
-        )
-
-        set_verbosity(VerbosityLevel.ULTRA_COMPACT)
+        pass
     elif args.verbose:
-        from code_muse.plugins.filter_engine.verbosity import (
-            VerbosityLevel,
-            set_verbosity,
-        )
+        pass
 
         # --verbose count: 1→VERBOSE, 2→VERY_VERBOSE, 3+→RAW
         level_map = {

@@ -436,7 +436,6 @@ async def run(
     async def _do_run(prompt_to_use: Any) -> Any:
         """Run the agent once, then honour any plugin ``retry`` requests."""
 
-
         # Per-run tool error circuit breaker
         tracker = _ToolErrorTracker(max_errors=get_max_consecutive_tool_errors())
         tracker_token = _tool_error_tracker_ctx.set(tracker)
@@ -622,9 +621,7 @@ async def run(
         except* Exception as other:
             unexpected = _collect_exceptions(
                 other,
-                lambda e: (
-                    not isinstance(e, (asyncio.CancelledError))
-                ),
+                lambda e: not isinstance(e, (asyncio.CancelledError)),
             )
             for exc in unexpected:
                 emit_exception_diagnostics(exc, group_id=group_id)

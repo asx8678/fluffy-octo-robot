@@ -51,9 +51,7 @@ from code_muse.config import (
 # Optional TPS meter integration for bottom toolbar
 _tps_state = None
 try:
-    from code_muse.plugins.tps_meter.register_callbacks import get_tps_state
 
-    _tps_state = get_tps_state()
 except ImportError:
     pass
 

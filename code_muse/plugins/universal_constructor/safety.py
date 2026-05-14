@@ -201,7 +201,7 @@ def _load_approval_db() -> dict[str, dict]:
             if hmac.compare_digest(stored_hmac, expected):
                 verified[key] = entry
         return verified
-    except (json.JSONDecodeError, OSError):
+    except json.JSONDecodeError, OSError:
         return {}
 
 
@@ -396,7 +396,9 @@ def check_code_safety(code: str) -> SafetyCheckResult:
             else:
                 # Check for attribute calls on aliased dangerous imports
                 # E.g., sp.run(...) where sp is an alias for subprocess
-                if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
+                if isinstance(node.func, ast.Attribute) and isinstance(
+                    node.func.value, ast.Name
+                ):
                     obj_name = node.func.value.id
                     attr_name = node.func.attr
                     module_name = import_aliases.get(obj_name)
@@ -407,7 +409,9 @@ def check_code_safety(code: str) -> SafetyCheckResult:
                             or safe_name in _DANGEROUS_IMPORTS_BLOCK
                         ):
                             line = getattr(node, "lineno", "?")
-                            dangerous_found.append(f"{obj_name}.{attr_name}() at line {line}")
+                            dangerous_found.append(
+                                f"{obj_name}.{attr_name}() at line {line}"
+                            )
 
     if dangerous_found:
         result.blocked = True
@@ -507,5 +511,5 @@ def is_path_within_uc_dir(file_path: Path, uc_dir: Path) -> bool:
         resolved_dir = uc_dir.resolve()
         resolved_file.relative_to(resolved_dir)
         return True
-    except (ValueError, OSError):
+    except ValueError, OSError:
         return False

@@ -57,11 +57,21 @@ from .messages import (
 # Pre-allocated message templates for frequent emit types.
 # Uses model_copy(update=...) to avoid re-creating pydantic models from scratch.
 # The id and timestamp are regenerated per message; the structure is reused.
-_INFO_TEMPLATE = TextMessage(level=MessageLevel.INFO, text="", category=MessageCategory.SYSTEM)
-_WARNING_TEMPLATE = TextMessage(level=MessageLevel.WARNING, text="", category=MessageCategory.SYSTEM)
-_ERROR_TEMPLATE = TextMessage(level=MessageLevel.ERROR, text="", category=MessageCategory.SYSTEM)
-_SUCCESS_TEMPLATE = TextMessage(level=MessageLevel.SUCCESS, text="", category=MessageCategory.SYSTEM)
-_DEBUG_TEMPLATE = TextMessage(level=MessageLevel.DEBUG, text="", category=MessageCategory.SYSTEM)
+_INFO_TEMPLATE = TextMessage(
+    level=MessageLevel.INFO, text="", category=MessageCategory.SYSTEM
+)
+_WARNING_TEMPLATE = TextMessage(
+    level=MessageLevel.WARNING, text="", category=MessageCategory.SYSTEM
+)
+_ERROR_TEMPLATE = TextMessage(
+    level=MessageLevel.ERROR, text="", category=MessageCategory.SYSTEM
+)
+_SUCCESS_TEMPLATE = TextMessage(
+    level=MessageLevel.SUCCESS, text="", category=MessageCategory.SYSTEM
+)
+_DEBUG_TEMPLATE = TextMessage(
+    level=MessageLevel.DEBUG, text="", category=MessageCategory.SYSTEM
+)
 
 
 class MessageBus:

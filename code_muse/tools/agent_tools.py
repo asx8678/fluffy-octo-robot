@@ -28,7 +28,6 @@ from code_muse.callbacks import (
 )
 from code_muse.config import (
     DATA_DIR,
-    
 )
 from code_muse.messaging import (
     SubAgentInvocationMessage,
@@ -254,7 +253,7 @@ def _load_session_history(session_id: str) -> list[ModelMessage]:
                     return ModelMessagesTypeAdapter.validate_python(raw_messages)
                 except Exception:
                     return raw_messages
-        except (UnicodeDecodeError, ValueError):
+        except UnicodeDecodeError, ValueError:
             pass
 
     return []
@@ -546,7 +545,6 @@ def register_invoke_agent(agent):
                         temp_agent.run(
                             prompt,
                             message_history=message_history,
-                    
                             event_stream_handler=stream_handler,
                         )
                     )

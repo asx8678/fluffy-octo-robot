@@ -85,7 +85,7 @@ def get_max_saved_sessions() -> int:
         try:
             val = int(cfg_val)
             return max(0, val)  # Ensure non-negative
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             pass
     return 20
 
@@ -302,7 +302,7 @@ def save_command_to_history(command: str):
             command = command.encode("utf-8", errors="surrogatepass").decode(
                 "utf-8", errors="replace"
             )
-        except (UnicodeEncodeError, UnicodeDecodeError):
+        except UnicodeEncodeError, UnicodeDecodeError:
             # If that fails, do a more aggressive cleanup
             command = "".join(
                 char if ord(char) < 0xD800 or ord(char) > 0xDFFF else "\ufffd"
