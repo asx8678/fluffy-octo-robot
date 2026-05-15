@@ -34,7 +34,7 @@ def register_command(
     name: str,
     description: str,
     usage: str = "",
-    aliases: list[str | None] = None,
+    aliases: list[str] | None = None,
     category: str = "core",
     detailed_help: str | None = None,
 ):

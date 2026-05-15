@@ -6,6 +6,7 @@ ways git lets you wreck a remote branch.
 
 import re
 from dataclasses import dataclass
+from re import Pattern
 
 
 @dataclass
@@ -22,7 +23,7 @@ _SHELL_OPERATOR_RE = re.compile(r"(?:^|&&|\|\||;|\|)\s*git\s+push\b", re.MULTILI
 
 # Ordered by specificity — first match wins.
 # Each tuple: (compiled regex, human-readable name, what it catches)
-_FORCE_PUSH_PATTERNS: list[tuple[re.Pattern, str, str]] = [
+_FORCE_PUSH_PATTERNS: list[tuple[Pattern[str], str, str]] = [
     (
         re.compile(r"\bgit\s+push\b.*--force-with-lease"),
         "--force-with-lease",

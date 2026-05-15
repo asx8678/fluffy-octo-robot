@@ -2,7 +2,7 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Any, Literal
 
 ToolTier = Literal["high", "medium", "low"]
 ToolCategory = Literal[
@@ -50,10 +50,10 @@ class ToolRegistry:
     def __init__(self) -> None:
         self._tools: dict[str, ToolMetadata] = {}
         self._aliases: dict[str, str] = {}
-        self._register_funcs: dict[str, Callable] = {}
+        self._register_funcs: dict[str, Callable[..., Any]] = {}
 
     def register(
-        self, metadata: ToolMetadata, register_func: Callable | None = None
+        self, metadata: ToolMetadata, register_func: Callable[..., Any] | None = None
     ) -> None:
         """Register a tool and its aliases."""
         self._tools[metadata.name] = metadata

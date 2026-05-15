@@ -110,7 +110,7 @@ def _build_lookup() -> dict[str, frozenset[str]]:
         "Bash" -> frozenset({"Bash", "agent_run_shell_command"})
         "agent_run_shell_command" -> frozenset({"Bash", "agent_run_shell_command"})
     """
-    groups: dict[str, set] = {}
+    groups: dict[str, set[str]] = {}
 
     for provider_aliases in PROVIDER_ALIASES.values():
         for provider_name, internal_name in provider_aliases.items():

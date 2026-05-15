@@ -9,6 +9,7 @@ while providing the performance benefits of caching.
 
 from collections import OrderedDict
 from dataclasses import dataclass
+from typing import Any
 
 # Maximum number of cached assessments (LRU eviction after this)
 MAX_CACHE_SIZE = 200
@@ -90,7 +91,7 @@ class CommandSafetyCache:
         self._misses = 0
 
     @property
-    def stats(self) -> dict:
+    def stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         total = self._hits + self._misses
         hit_rate = (self._hits / total * 100) if total > 0 else 0
@@ -107,7 +108,7 @@ class CommandSafetyCache:
 _cache = CommandSafetyCache()
 
 
-def get_cache_stats() -> dict:
+def get_cache_stats() -> dict[str, Any]:
     """Get statistics about the cache performance."""
     return _cache.stats
 

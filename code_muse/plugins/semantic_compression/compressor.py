@@ -20,6 +20,7 @@ Code blocks (``` fenced ```) are detected and left untouched.
 """
 
 import re
+from re import Pattern
 
 # ---------------------------------------------------------------------------
 # Tier 1 — always safe deletions
@@ -37,7 +38,7 @@ _RE_INTENSIFIERS = re.compile(
 )
 
 # Filler phrase → replacement
-_FILLER_PHRASES: list[tuple[re.Pattern, str]] = [
+_FILLER_PHRASES: list[tuple[Pattern[str], str]] = [
     (re.compile(r"\bin order to\b", re.IGNORECASE), "to"),
     (re.compile(r"\bdue to the fact that\b", re.IGNORECASE), "because"),
     (re.compile(r"\bin terms of\b", re.IGNORECASE), ""),
@@ -103,7 +104,7 @@ _PASSIVE_BY_RE = re.compile(
 )
 
 # Nominalization → verb (common patterns)
-_NOMINALIZATIONS: list[tuple[re.Pattern, str]] = [
+_NOMINALIZATIONS: list[tuple[Pattern[str], str]] = [
     (re.compile(r"\bmade? a decision\b", re.IGNORECASE), "decided"),
     (re.compile(r"\bmade? an? analysis\b", re.IGNORECASE), "analyzed"),
     (re.compile(r"\bgave? consideration\b", re.IGNORECASE), "considered"),
@@ -124,7 +125,7 @@ _NOMINALIZATIONS: list[tuple[re.Pattern, str]] = [
 ]
 
 # Redundant pairs → single
-_REDUNDANT_PAIRS: list[tuple[re.Pattern, str]] = [
+_REDUNDANT_PAIRS: list[tuple[Pattern[str], str]] = [
     (re.compile(r"\beach and every\b", re.IGNORECASE), "every"),
     (re.compile(r"\bfirst and foremost\b", re.IGNORECASE), "first"),
     (re.compile(r"\bbasic and fundamental\b", re.IGNORECASE), "fundamental"),

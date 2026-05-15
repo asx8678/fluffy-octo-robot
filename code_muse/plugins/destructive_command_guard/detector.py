@@ -10,6 +10,7 @@ calls, no caching, no yolo-mode checks. Covers:
 
 import re
 from dataclasses import dataclass
+from re import Pattern
 
 
 @dataclass
@@ -91,7 +92,7 @@ _PREFILTER_SUBSTRINGS = (
 # ---------------------------------------------------------------------------
 
 # Unix destructive patterns
-_UNIX_DESTRUCTIVE_PATTERNS: list[tuple[re.Pattern, str, str]] = [
+_UNIX_DESTRUCTIVE_PATTERNS: list[tuple[Pattern[str], str, str]] = [
     # —— Tier 1 ——————————————————————————————————————————————————————————————
     # 1. rm -rf /  /  rm -rf /*  (recursive delete of root filesystem)
     (
@@ -179,7 +180,7 @@ _UNIX_DESTRUCTIVE_PATTERNS: list[tuple[re.Pattern, str, str]] = [
 ]
 
 # Windows PowerShell destructive patterns
-_POWERSHELL_DESTRUCTIVE_PATTERNS: list[tuple[re.Pattern, str, str]] = [
+_POWERSHELL_DESTRUCTIVE_PATTERNS: list[tuple[Pattern[str], str, str]] = [
     # —— Tier 1 PowerShell ————————————————————————————————————————————————————
     # 1. Remove-Item/ri with -Recurse/-r or -Force/-f flags
     (
@@ -256,7 +257,7 @@ _POWERSHELL_DESTRUCTIVE_PATTERNS: list[tuple[re.Pattern, str, str]] = [
 ]
 
 # Windows CMD destructive patterns
-_CMD_DESTRUCTIVE_PATTERNS: list[tuple[re.Pattern, str, str]] = [
+_CMD_DESTRUCTIVE_PATTERNS: list[tuple[Pattern[str], str, str]] = [
     # —— Tier 1 CMD ———————————————————————————————————————————————————————————
     # 1. rd /s /q - recursive silent delete
     (
