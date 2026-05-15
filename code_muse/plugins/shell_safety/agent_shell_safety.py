@@ -5,7 +5,7 @@ It's designed to be ultra-lightweight with a concise prompt (<200 tokens) and
 uses structured output for reliable parsing.
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from code_muse.agents.base_agent import BaseAgent
 
@@ -25,6 +25,8 @@ class ShellSafetyAgent(BaseAgent):
 
     The agent returns structured output with a risk level and brief reasoning.
     """
+
+    _agent_name: ClassVar[str] = "shell_safety_checker"
 
     @property
     def name(self) -> str:
@@ -52,8 +54,10 @@ class ShellSafetyAgent(BaseAgent):
 - none: Completely safe (ls, pwd, echo, cat readonly files)
 - low: Minimal risk (mkdir, touch, git status, read-only queries)
 - medium: Moderate risk (file edits, package installs, service restarts)
-- high: Significant risk (rm files, UPDATE/DELETE without WHERE, TRUNCATE, chmod dangerous permissions)
-- critical: Severe/destructive (rm -rf, DROP TABLE/DATABASE, dd, format, mkfs, bq delete dataset, unfiltered mass deletes)
+- high: Significant risk (rm files, UPDATE/DELETE without
+  WHERE, TRUNCATE, chmod dangerous permissions)
+- critical: Severe/destructive (rm -rf, DROP TABLE/DATABASE,
+  dd, format, mkfs, bq delete dataset, unfiltered mass deletes)
 
 **Evaluate:**
 - Scope (single file vs. entire system)

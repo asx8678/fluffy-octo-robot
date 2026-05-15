@@ -4,7 +4,6 @@ from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 
 import httpx
-
 from code_muse.plugins.synthetic_status import status_api
 from code_muse.plugins.synthetic_status.register_callbacks import (
     _custom_help,

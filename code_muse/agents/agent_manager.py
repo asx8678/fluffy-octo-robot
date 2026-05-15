@@ -233,22 +233,17 @@ def _discover_agents(message_group_id: str | None = None):
                     and issubclass(attr, BaseAgent)
                     and attr not in [BaseAgent, JSONAgent]
                 ):
-                    # Prefer class-level _agent_name to avoid instantiation
                     agent_class_name = getattr(attr, "_agent_name", None)
                     if agent_class_name:
                         _AGENT_REGISTRY[agent_class_name] = attr
                         continue
-
-                    # Fallback: create an instance to get the name
-                    try:
-                        agent_instance = attr()
-                        _AGENT_REGISTRY[agent_instance.name] = attr
-                    except Exception as e:
-                        emit_warning(
-                            f"Warning: Could not instantiate agent class {attr.__name__}: {e}",
-                            message_group=message_group_id,
-                        )
-                        continue
+                    # No _agent_name — developer error, warn and skip
+                    emit_warning(
+                        f"Agent class {attr.__name__} missing "
+                        "the _agent_name class variable. Skipping.",
+                        message_group=message_group_id,
+                    )
+                    continue
 
         except Exception as e:
             # Skip problematic modules
@@ -289,22 +284,17 @@ def _discover_agents(message_group_id: str | None = None):
                             and issubclass(attr, BaseAgent)
                             and attr not in [BaseAgent, JSONAgent]
                         ):
-                            # Prefer class-level _agent_name to avoid instantiation
                             agent_class_name = getattr(attr, "_agent_name", None)
                             if agent_class_name:
                                 _AGENT_REGISTRY[agent_class_name] = attr
                                 continue
-
-                            # Fallback: create an instance to get the name
-                            try:
-                                agent_instance = attr()
-                                _AGENT_REGISTRY[agent_instance.name] = attr
-                            except Exception as e:
-                                emit_warning(
-                                    f"Warning: Could not instantiate agent class {attr.__name__}: {e}",
-                                    message_group=message_group_id,
-                                )
-                                continue
+                            # No _agent_name — developer error, warn and skip
+                            emit_warning(
+                                f"Agent class {attr.__name__} missing "
+                                "the _agent_name class variable. Skipping.",
+                                message_group=message_group_id,
+                            )
+                            continue
 
                 except Exception as e:
                     emit_warning(
@@ -329,7 +319,8 @@ def _discover_agents(message_group_id: str | None = None):
         for agent_name, json_path in json_agents.items():
             if agent_name in _AGENT_REGISTRY:
                 emit_warning(
-                    f"JSON agent '{agent_name}' skipped: builtin Python agent with the same name takes precedence.",
+                    f"JSON agent '{agent_name}' skipped: builtin "
+                    "Python agent with the same name takes precedence.",
                     message_group=message_group_id,
                 )
                 continue

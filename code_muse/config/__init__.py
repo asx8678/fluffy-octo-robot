@@ -37,6 +37,7 @@ from code_muse.config.parser import (  # noqa: F401
     get_http2,
     get_max_consecutive_tool_errors,
     get_max_hook_retries,
+    get_message_limit,
     get_overall_run_timeout_seconds,
     get_owner_name,
     get_puppy_name,

@@ -265,7 +265,7 @@ def get_protected_token_count():
 
         # Apply constraints: minimum 1000, maximum 75% of context length
         return max(1000, min(configured_value, max_protected_tokens))
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         # If parsing fails, return a reasonable default that respects the 75% limit
         model_context_length = get_model_context_length()
         max_protected_tokens = int(model_context_length * 0.75)

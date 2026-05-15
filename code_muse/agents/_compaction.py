@@ -13,6 +13,7 @@ let the next ``history_processor`` invocation handle it.
 
 import dataclasses
 from collections.abc import Callable
+from contextlib import suppress
 from typing import Any
 
 from pydantic_ai.messages import (
@@ -154,44 +155,90 @@ def truncate(
     model_name: str | None = None,
     cache: CompactionCache | None = None,
 ) -> list[ModelMessage]:
-    """Drop middle messages, keeping system prompt, optional thinking,
-    and recent tail."""
-    import queue
+    """Drop middle messages, keeping system prompt + recent tail within budget.
 
+    Budget is the TOTAL token count of the returned list (system message
+    included). Tool_call/tool_return pairs are preserved by adjusting the
+    split point so we never sever a tool_call from its tool_return.
+    """
     if not messages:
         return messages
 
     _tok = cache.estimate_tokens if cache else estimate_tokens_for_message
 
     emit_info("Truncating message history to manage token usage")
-    result: list[ModelMessage] = [messages[0]]
 
-    # Preserve the 2nd message if it's an extended-thinking context.
-    skip_second = False
+    system_message = messages[0]
+    system_tokens = _tok(system_message, model_name)
+
+    # If even the system message is over budget, return just it (caller's
+    # responsibility — we can't do better here).
+    if system_tokens >= protected_tokens or len(messages) == 1:
+        return [system_message]
+
+    # Optional 2nd message: extended-thinking context.
+    extra_protected: list[ModelMessage] = []
+    extra_tokens = 0
+    skip_indices = {0}
     if len(messages) > 1:
         second_msg = messages[1]
         if any(isinstance(part, ThinkingPart) for part in second_msg.parts):
-            result.append(second_msg)
-            skip_second = True
+            second_tokens = _tok(second_msg, model_name)
+            if system_tokens + second_tokens < protected_tokens:
+                extra_protected.append(second_msg)
+                extra_tokens = second_tokens
+                skip_indices.add(1)
 
-    start_idx = 2 if skip_second else 1
-    messages_to_scan = messages[start_idx:]
-
-    num_tokens = 0
-    stack: queue.LifoQueue[ModelMessage] = queue.LifoQueue()
-    for msg in reversed(messages_to_scan):
-        msg_tokens = _tok(msg, model_name)
-        if num_tokens + msg_tokens > protected_tokens:
+    # Walk backwards from the tail, accumulating recent messages until we
+    # hit the remaining budget.
+    budget_remaining = protected_tokens - system_tokens - extra_tokens
+    recent: list[ModelMessage] = []
+    recent_tokens = 0
+    for i in range(len(messages) - 1, -1, -1):
+        if i in skip_indices:
+            continue
+        msg_tokens = _tok(messages[i], model_name)
+        if recent_tokens + msg_tokens > budget_remaining:
             break
-        num_tokens += msg_tokens
-        stack.put(msg)
+        recent_tokens += msg_tokens
+        recent.append(messages[i])
 
-    while not stack.empty():
-        result.append(stack.get())
+    # We collected in reverse order; reverse to chronological.
+    recent.reverse()
+
+    # Compute the split index from the original list and adjust to keep
+    # tool_call/tool_return pairs together (never sever a pair).
+    if recent:
+        # Find the index of the earliest message in `recent` within `messages`.
+        # We do this by identity since messages preserve identity through
+        # the algorithm.
+        first_recent_id = id(recent[0])
+        split_idx = next(
+            (i for i, m in enumerate(messages) if id(m) == first_recent_id),
+            len(messages) - len(recent),
+        )
+        adjusted_idx = _find_safe_split_index(messages, split_idx)
+        # If pair-safety pushed the split earlier, expand `recent` accordingly,
+        # but ONLY if it still fits within the budget. If not, accept the
+        # original (potentially-orphaned) split and rely on
+        # prune_interrupted_tool_calls to clean up downstream.
+        if adjusted_idx < split_idx:
+            extra = messages[adjusted_idx:split_idx]
+            extra_tok = sum(_tok(m, model_name) for m in extra)
+            if recent_tokens + extra_tok <= budget_remaining:
+                recent = list(extra) + recent
+                recent_tokens += extra_tok
+
+    result: list[ModelMessage] = [system_message] + extra_protected + recent
 
     # Safety: never return only the system prompt with no user messages.
+    # When this happens, the budget was too small to fit even one message;
+    # we still need *something* — pick the smallest recent message rather
+    # than the last (which may be massive).
     if len(result) == 1 and len(messages) > 1:
-        result.append(messages[-1])
+        candidates = [messages[i] for i in range(1, len(messages))]
+        smallest = min(candidates, key=lambda m: _tok(m, model_name))
+        result.append(smallest)
 
     return result
 
@@ -372,6 +419,12 @@ def compact(
         return result_messages, summarized_messages
 
     threshold = get_compaction_threshold()
+    # Dynamic threshold: lower for small-context models where the margin
+    # between "safe" and "overflow" is much tighter.
+    if model_max <= 32_000:
+        threshold = min(threshold, 0.70)
+    elif model_max <= 64_000:
+        threshold = min(threshold, 0.75)
     if proportion_used <= threshold:
         return messages, []
 
@@ -536,6 +589,65 @@ def make_history_processor(agent: Any) -> Callable[..., list[ModelMessage]]:
         # stripped or popped, the history is already clean from compact().
         if filtered_count > 0 or len(cleaned) != len(agent._message_history):
             cleaned = prune_interrupted_tool_calls(cleaned)
+
+        agent._message_history = cleaned
+
+        # PRE-SEND SIZE GATE: Final safety check — guarantees the request we
+        # send NEVER exceeds a safe fraction of the model context. Reserves
+        # room for the model's response (output tokens are counted by the
+        # provider against the same budget on most APIs).
+        #
+        # Target: input tokens + overhead ≤ 80% of model_max
+        # (leaves ~20% headroom for response generation + estimation drift)
+        model_max = agent._get_model_context_length()
+        overhead = agent._estimate_context_overhead()
+        cache_g = CompactionCache()
+        model_name_g: str | None = None
+        with suppress(Exception):
+            model_name_g = agent.get_model_name()
+
+        SAFE_FRACTION = 0.80
+        safe_input_tokens = max(1000, int(model_max * SAFE_FRACTION) - overhead)
+
+        # Loop: each pass cuts the budget more aggressively if still over.
+        # Most cases resolve in one pass; the loop is defense-in-depth for
+        # pathological cases (e.g. system prompt itself dominating budget).
+        for attempt in range(4):
+            current_tokens = cache_g.sum_tokens(cleaned, model_name_g)
+            total = current_tokens + overhead
+            if total <= int(model_max * SAFE_FRACTION):
+                break
+            if len(cleaned) <= 2:
+                # Already as small as possible — give up; downstream
+                # error handling (emergency compact + retry) will catch it.
+                emit_warning(
+                    f"⚠️  Pre-send gate: cannot shrink further "
+                    f"({total}/{model_max} tokens, {len(cleaned)} msgs)."
+                )
+                break
+
+            # Each retry halves the available budget.
+            shrink_factor = 0.5 ** (attempt + 1)
+            target_protected = max(
+                1000, int(safe_input_tokens * (0.5 + shrink_factor / 2))
+            )
+            cleaned = truncate(cleaned, target_protected, model_name_g, cache=cache_g)
+            cleaned = prune_interrupted_tool_calls(cleaned)
+            # Re-create cache because message identities may have changed.
+            cache_g = CompactionCache()
+            emit_warning(
+                f"⚠️  Pre-send gate (pass {attempt + 1}): "
+                f"{total}/{model_max} tokens too large; "
+                f"truncating to {target_protected} protected tokens."
+            )
+
+        # Safety: ensure we didn't truncate away all user messages
+        if len(cleaned) <= 1 and len(agent._message_history) > 1:
+            emit_warning(
+                "⚠️  Pre-send gate left only system prompt; "
+                "restoring original history to prevent empty input."
+            )
+            cleaned = agent._message_history
 
         agent._message_history = cleaned
 

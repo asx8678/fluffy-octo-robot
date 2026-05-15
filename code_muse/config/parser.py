@@ -435,7 +435,21 @@ def get_compaction_strategy() -> str:
     if val and val.lower() in ["summarization", "truncation"]:
         return val.lower()
     # Default to summarization
-    return "truncation"
+    return "summarization"
+
+
+def get_message_limit(default: int = 1000) -> int:
+    """Returns the user-configured message/request limit for the agent.
+
+    Controls how many steps/requests the agent can take per run.
+    Defaults to 1000 if unset or misconfigured.
+    Configurable by 'message_limit' key.
+    """
+    val = get_value("message_limit")
+    try:
+        return int(val) if val else default
+    except ValueError, TypeError:
+        return default
 
 
 def get_auto_approve() -> bool:

@@ -82,7 +82,7 @@ def _sanitize_for_encoding(text: str) -> str:
             "utf-8", errors="replace"
         )
         return cleaned
-    except (UnicodeEncodeError, UnicodeDecodeError):
+    except UnicodeEncodeError, UnicodeDecodeError:
         # Last resort: filter out all non-BMP and surrogate characters
         return "".join(
             char

@@ -4,11 +4,11 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import httpx
 import pytest
-
-from code_muse.claude_cache_client import ClaudeCacheAsyncClient
 from code_muse.plugins.claude_code_oauth.register_callbacks import (
     _reauthenticate_after_expired_oauth,
 )
+
+from code_muse.claude_cache_client import ClaudeCacheAsyncClient
 
 CLOUDFLARE_400_HTML = b"""
 <html>

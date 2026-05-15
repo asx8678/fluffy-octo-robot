@@ -66,27 +66,82 @@ from .commands import (  # Base; Agent control; User interaction responses; Unio
     SelectionResponse,
     UserInputResponse,
 )
+
+# Legacy classes still importable for backward compat with tests
 from .message_queue import (
     MessageQueue,
     MessageType,
     UIMessage,
-    emit_agent_reasoning,
-    emit_agent_response,
-    emit_command_output,
-    emit_divider,
-    emit_error,
-    emit_info,
-    emit_message,
-    emit_planned_next_steps,
-    emit_prompt,
-    emit_success,
-    emit_system_message,
-    emit_tool_output,
-    emit_warning,
-    get_buffered_startup_messages,
     get_global_queue,
-    provide_prompt_response,
 )
+
+# ---- Adapter functions: legacy emit_* API backed by MessageBus ----
+
+
+def get_buffered_startup_messages():
+    return []
+
+
+def emit_info(content, **metadata):
+    bus_emit_info(str(content))
+
+
+def emit_warning(content, **metadata):
+    bus_emit_warning(str(content))
+
+
+def emit_error(content, **metadata):
+    bus_emit_error(str(content))
+
+
+def emit_success(content, **metadata):
+    bus_emit_success(str(content))
+
+
+def emit_system_message(content, **metadata):
+    get_message_bus().emit_text(
+        MessageLevel.INFO, str(content), category=MessageCategory.SYSTEM
+    )
+
+
+def emit_divider(content="─" * 100, **metadata):
+    get_message_bus().emit(DividerMessage(content=str(content)))
+
+
+def emit_tool_output(content, tool_name=None, **metadata):
+    bus_emit_info(str(content))
+
+
+def emit_command_output(content, command=None, **metadata):
+    bus_emit_info(str(content))
+
+
+def emit_agent_reasoning(content, **metadata):
+    bus_emit_info(str(content))
+
+
+def emit_planned_next_steps(content, **metadata):
+    bus_emit_info(str(content))
+
+
+def emit_agent_response(content, **metadata):
+    from .messages import AgentResponseMessage
+
+    get_message_bus().emit(AgentResponseMessage(content=str(content)))
+
+
+def emit_prompt(prompt_text, timeout=None):
+    return str(prompt_text)
+
+
+def provide_prompt_response(prompt_id, response):
+    pass  # no-op
+
+
+def emit_message(message_type, content, **metadata):
+    """Generic message emitter — maps legacy MessageType to bus."""
+    get_message_bus().emit(TextMessage(level=MessageLevel.INFO, text=str(content)))
+
 
 # Message types and enums
 from .messages import (  # Enums, Base, Text, File ops, Diff, Shell, Agent, etc.
@@ -123,6 +178,8 @@ from .messages import (  # Enums, Base, Text, File ops, Diff, Shell, Agent, etc.
     UserInputRequest,
     VersionCheckMessage,
 )
+
+# Legacy: still importable for backward compat with tests
 from .queue_console import QueueConsole, get_queue_console
 from .renderers import InteractiveRenderer, SynchronousInteractiveRenderer
 

@@ -1,10 +1,6 @@
-import configparser
-import tempfile
-from pathlib import Path
 from unittest.mock import patch
 
 from code_muse.config import (
-    DEFAULT_SECTION,
     get_compaction_strategy,
 )
 from code_muse.config.parser import set_config_value

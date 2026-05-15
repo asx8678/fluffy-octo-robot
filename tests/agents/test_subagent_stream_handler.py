@@ -1,7 +1,7 @@
 """Tests for subagent_stream_handler module.
 
 Covers:
-- Token estimation (_estimate_tokens)
+- Token estimation (estimate_tokens)
 - Callback firing (_fire_callback)
 - Event stream handling (PartStartEvent, PartDeltaEvent, PartEndEvent)
 - Different part types (Thinking, Text, ToolCall)
@@ -23,8 +23,8 @@ from pydantic_ai.messages import (
     ToolCallPartDelta,
 )
 
+from code_muse.agents._history import estimate_tokens
 from code_muse.agents.subagent_stream_handler import (
-    _estimate_tokens,
     _fire_callback,
     _handle_event,
     subagent_stream_handler,
@@ -36,42 +36,36 @@ from code_muse.agents.subagent_stream_handler import (
 
 
 class TestEstimateTokens:
-    """Tests for the _estimate_tokens function."""
+    """Tests for the estimate_tokens function (now in _history)."""
 
-    def test_empty_string_returns_zero(self):
-        """Empty string should return 0 tokens."""
-        assert _estimate_tokens("") == 0
-
-    def test_none_like_empty_returns_zero(self):
-        """Falsy content should return 0 tokens."""
-        # Empty string is the only falsy case the function handles
-        assert _estimate_tokens("") == 0
+    def test_empty_string_returns_one(self):
+        """Empty string returns 1 token (max(1, ...) floor guard)."""
+        assert estimate_tokens("") == 1
 
     def test_short_content_returns_minimum_one(self):
-        """Very short content (< 4 chars) should return minimum 1 token."""
-        assert _estimate_tokens("a") == 1
-        assert _estimate_tokens("ab") == 1
-        assert _estimate_tokens("abc") == 1
+        """Very short content (< 4 chars) returns minimum 1 token."""
+        assert estimate_tokens("a") == 1
+        assert estimate_tokens("ab") == 1
+        assert estimate_tokens("abc") == 1
 
     def test_four_chars_returns_one_token(self):
-        """4 characters should return 1 token (4 chars = 1 token heuristic)."""
-        assert _estimate_tokens("abcd") == 1
+        """4 characters should return 1 token (4/2.5=1.6, floor=1)."""
+        assert estimate_tokens("abcd") == 1
 
     def test_longer_content_scales_correctly(self):
         """Longer content should scale at ~2.5 chars per token."""
         # 8 chars = 3 tokens
-        assert _estimate_tokens("abcdefgh") == 3
+        assert estimate_tokens("abcdefgh") == 3
         # 16 chars = 6 tokens
-        assert _estimate_tokens("a" * 16) == 6
+        assert estimate_tokens("a" * 16) == 6
         # 100 chars = 40 tokens
-        assert _estimate_tokens("x" * 100) == 40
+        assert estimate_tokens("x" * 100) == 40
 
     def test_realistic_text_estimation(self):
         """Test with realistic text content."""
         text = "Hello, this is a test message for token estimation."
-        # math.floor(len(text) / 2.5) = estimated tokens
         expected = math.floor(len(text) / 2.5)
-        assert _estimate_tokens(text) == expected
+        assert estimate_tokens(text) == expected
 
 
 # =============================================================================

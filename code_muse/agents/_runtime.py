@@ -15,36 +15,22 @@ preserved verbatim:
 """
 
 import asyncio
-import contextvars
 import dataclasses
 import signal
 import threading
 import time
 import uuid
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from contextlib import AsyncExitStack, suppress
-from dataclasses import dataclass, field
-from datetime import datetime
 from typing import Any
 
-import httpcore
-import httpx
 from pydantic_ai import (
     BinaryContent,
     DocumentUrl,
     ImageUrl,
-    UnexpectedModelBehavior,
+    UsageLimitExceeded,
+    UsageLimits,
 )
-
-try:  # pragma: no cover - pydantic-ai version dependent
-    from pydantic_ai.exceptions import ModelHTTPError
-except ImportError:
-    ModelHTTPError = None  # type: ignore[misc,assignment]
-
-try:  # pragma: no cover - optional dependency
-    from openai import APIError as OpenAIAPIError
-except ImportError:
-    OpenAIAPIError = None  # type: ignore[assignment]
 
 # Python 3.11+ builtin; graceful fallback for 3.10
 try:
@@ -53,12 +39,28 @@ except ImportError:  # pragma: no cover - 3.10 only
     BaseExceptionGroup = Exception  # type: ignore[misc,assignment]
 
 from code_muse.agents import _key_listeners
+from code_muse.agents import _run_signals
 from code_muse.agents._builder import build_pydantic_agent
 from code_muse.agents._diagnostics import emit_exception_diagnostics
 from code_muse.agents._non_streaming_render import (
     StreamingTextDetector,
     render_result_without_streaming,
     should_render_fallback,
+)
+from code_muse.agents._run_utils import (
+    RunOutcome,
+    RunStats,
+    _build_prompt_payload,
+    _collect_exceptions,
+    _extract_response_text,
+    _model_allows_streaming,
+    _sanitize_prompt,
+    _should_prepend_system_prompt,
+)
+from code_muse.agents._streaming_retry import streaming_retry
+from code_muse.agents._tool_circuit_breaker import (
+    _tool_error_tracker_ctx,
+    _ToolErrorTracker,
 )
 from code_muse.agents.event_stream_handler import event_stream_handler
 from code_muse.callbacks import (
@@ -69,339 +71,93 @@ from code_muse.callbacks import (
     on_agent_run_result,
     on_agent_run_start,
     on_should_skip_fallback_render,
-    register_callback,
 )
 from code_muse.config import (
     get_enable_streaming,
     get_max_consecutive_tool_errors,
     get_max_hook_retries,
+    get_message_limit,
     get_overall_run_timeout_seconds,
 )
 from code_muse.keymap import cancel_agent_uses_signal
-from code_muse.messaging import emit_error, emit_info, emit_warning
-from code_muse.model_factory import ModelFactory
+from code_muse.messaging import emit_info, emit_warning
 from code_muse.tools.agent_tools import _active_subagent_tasks_var
 from code_muse.tools.command_runner import is_awaiting_user_input
 
-# ---- Streaming retry helpers ------------------------------------------------
+# ---- Emergency compaction for context overflow -------------------------------
 
-# Every entry here is either an explicit provider "please retry" signal or an
-# SSE framing / transport artifact that reliably succeeds on the next attempt.
-# Keep this list substring-based and lower-case.
-_RETRYABLE_SNIPPETS = (
-    "streamed response ended without content",
-    "malformed streamed sse event",
-    "extra json data in sse payload",
-    "too many requests",
-    "rate limit",
-    "rate limited",
-    "overloaded",
-    "service unavailable",
-    "server had an error processing your request",
-    "retry your request",
-    "internal server error",
-)
 
-_RETRYABLE_EXCEPTIONS: tuple = (
-    httpx.RemoteProtocolError,
-    httpx.ReadTimeout,
-    httpcore.RemoteProtocolError,
+# Patterns that indicate the model couldn't process the request due to
+# context size. Checked case-insensitively against the full exception chain.
+_CONTEXT_OVERFLOW_PATTERNS = (
+    "context_length_exceeded",
+    "maximum context length",
+    "request too large",
+    "token limit",
+    "content_too_large",
+    "max_tokens_exceeded",
+    "prompt is too long",
+    "input is too long",
+    "exceeds the model's maximum",
+    "reduce the length",
+    "too many tokens",
 )
 
 
-def _matches_retryable_snippet(msg: str) -> bool:
-    """Return True if ``msg`` matches any known transient pattern.
-
-    Also accepts the generic ``stream ... ended`` wording variants so we don't
-    have to chase every phrasing tweak providers sneak in over time.
-    """
-    msg = msg.lower()
-    if any(s in msg for s in _RETRYABLE_SNIPPETS):
-        return True
-    return "stream" in msg and "ended" in msg
-
-
-def should_retry_streaming(exc: Exception) -> bool:
-    """Decide whether ``exc`` is a transient streaming hiccup worth retrying."""
-    if isinstance(exc, _RETRYABLE_EXCEPTIONS):
-        return True
-
-    msg = str(exc)
-    if isinstance(exc, UnexpectedModelBehavior):
-        return _matches_retryable_snippet(msg)
-
-    if OpenAIAPIError is not None and isinstance(exc, OpenAIAPIError):
-        if _matches_retryable_snippet(msg):
+def _is_context_overflow_error(exc: Exception) -> bool:
+    """Walk the exception chain checking for context overflow signals."""
+    current: BaseException | None = exc
+    while current is not None:
+        msg = str(current).lower()
+        if any(p in msg for p in _CONTEXT_OVERFLOW_PATTERNS):
             return True
-        body = getattr(exc, "body", None)
-        if isinstance(body, dict):
-            body_msg = str(body.get("message", ""))
-            body_type = str(body.get("type", "")).lower()
-            if _matches_retryable_snippet(body_msg):
-                return True
-            if "rate" in body_type and "limit" in body_type:
-                return True
-            if body_type in {"server_error", "internal_server_error", "api_error"}:
-                return _matches_retryable_snippet(body_msg)
-
-    # Retry on pydantic-ai ModelHTTPError rate limits (e.g. 429 from providers)
-    if ModelHTTPError is not None and isinstance(exc, ModelHTTPError):
-        status_code = getattr(exc, "status_code", None)
-        if status_code == 429:
-            return True
-        # Retry on 5xx server errors as well
-        if isinstance(status_code, int) and status_code >= 500:
-            return True
-        if _matches_retryable_snippet(msg):
-            return True
-
+        current = current.__cause__ or current.__context__
     return False
 
 
-def streaming_retry(
-    max_attempts: int = 3,
-    delays: Sequence[float] = (1, 2, 4),
-) -> Callable[[Callable[[], Any]], Callable[[], Any]]:
-    """Wrap a no-arg async callable with streaming-retry semantics."""
+def _emergency_compact(agent: Any) -> bool:
+    """Aggressively compact agent message history when context overflow is suspected.
 
-    def decorator(factory: Callable[[], Any]) -> Callable[[], Any]:
-        async def runner() -> Any:
-            last_exc: Exception | None = None
-            for attempt in range(max_attempts):
-                try:
-                    return await factory()
-                except Exception as exc:
-                    if not should_retry_streaming(exc):
-                        raise
-                    last_exc = exc
-                    if attempt < max_attempts - 1:
-                        delay = delays[attempt] if attempt < len(delays) else delays[-1]
-                        emit_warning(
-                            f"⚡ Streaming interrupted, auto-retrying in {delay}s... "
-                            f"(attempt {attempt + 1}/{max_attempts})"
-                        )
-                        await asyncio.sleep(delay)
-                    else:
-                        emit_error(f"❌ Streaming failed after {max_attempts} attempts")
-            assert last_exc is not None  # loop always sets this before exiting
-            raise last_exc
-
-        return runner
-
-    return decorator
-
-
-# ---- Tool error tracking (circuit breaker) --------------------------------
-
-
-class _ToolErrorTracker:
-    """Track consecutive tool errors per-tool-name as a per-agent-run circuit breaker.
-
-    Each tool has its own consecutive-error counter, so one flaky tool (e.g.
-    browser screenshot timeout) does not abort calls to other healthy tools.
-
-    A global max_total_tool_errors acts as a safety net to prevent unbounded
-    total errors across all tools.
+    Returns True if compaction reduced the history, False otherwise.
     """
+    from code_muse.agents._compaction import truncate
+    from code_muse.agents._history import CompactionCache, hash_message
 
-    def __init__(self, max_errors: int = 3, max_total_errors: int = 20):
-        self.max_errors = max_errors
-        self.max_total_errors = max_total_errors
-        self.consecutive_errors: dict[str, int] = {}
-        self.total_errors: int = 0
+    history = agent._message_history
+    if len(history) <= 2:
+        return False
 
-    def record_error(self, tool_name: str) -> bool:
-        """Increment error count for *tool_name*. Returns True if max exceeded."""
-        count = self.consecutive_errors.get(tool_name, 0) + 1
-        self.consecutive_errors[tool_name] = count
-        self.total_errors += 1
-        if self.total_errors >= self.max_total_errors:
-            return True
-        return count >= self.max_errors
-
-    def record_success(self, tool_name: str) -> None:
-        """Reset error count for *tool_name* on a successful tool call."""
-        self.consecutive_errors.pop(tool_name, None)
-
-
-_tool_error_tracker_ctx: contextvars.ContextVar[_ToolErrorTracker | None] = (
-    contextvars.ContextVar("_tool_error_tracker_ctx", default=None)
-)
-
-
-async def _track_pre_tool_call(
-    tool_name: str,
-    tool_args: dict,
-    context: Any = None,
-) -> dict | None:
-    """Block further tool calls once the consecutive-error cap is hit for *tool_name*."""
-    tracker = _tool_error_tracker_ctx.get()
-    if tracker is None:
-        return None
-    tool_errors = tracker.consecutive_errors.get(tool_name, 0)
-    if tool_errors >= tracker.max_errors:
-        return {
-            "blocked": True,
-            "reason": (
-                f"Too many consecutive errors ({tool_errors}) for tool "
-                f"'{tool_name}' — blocking further calls."
-            ),
-        }
-    if tracker.total_errors >= tracker.max_total_errors:
-        return {
-            "blocked": True,
-            "reason": (
-                f"Too many total tool errors ({tracker.total_errors}) — aborting run."
-            ),
-        }
-    return None
-
-
-async def _track_post_tool_call(
-    tool_name: str,
-    tool_args: dict,
-    result: Any,
-    duration_ms: float,
-    context: Any = None,
-) -> None:
-    """Count consecutive tool errors via a contextvar (per-run state)."""
-    tracker = _tool_error_tracker_ctx.get()
-    if tracker is None:
-        return None
-    if isinstance(result, dict) and "error" in result:
-        tracker.record_error(tool_name)
-    else:
-        tracker.record_success(tool_name)
-    return None
-
-
-# Register callbacks at module load time.
-register_callback("pre_tool_call", _track_pre_tool_call)
-register_callback("post_tool_call", _track_post_tool_call)
-
-
-# ---- Small utilities --------------------------------------------------------
-
-
-def _model_allows_streaming(model_name: str | None) -> bool:
-    """Check the model config for an explicit ``"streaming": false`` override.
-
-    Some providers (e.g. crof.ai for kimi models) have flaky SSE transports.
-    Setting ``"streaming": false`` in ``models.json`` disables streaming for
-    that model, falling back to a single-shot request like gac does.
-    """
-    if not model_name:
-        return True
-    try:
-        cfg = ModelFactory.load_config().get(model_name, {})
-        return cfg.get("streaming", True) is not False
-    except Exception:
-        return True
-
-
-def _sanitize_prompt(prompt: str) -> str:
-    """Strip lone UTF-16 surrogates (common on Windows copy-paste)."""
-    if not prompt:
-        return prompt
-    try:
-        return prompt.encode("utf-8", errors="surrogatepass").decode(
-            "utf-8", errors="replace"
-        )
-    except UnicodeEncodeError, UnicodeDecodeError:
-        return "".join(
-            ch if ord(ch) < 0xD800 or ord(ch) > 0xDFFF else "\ufffd" for ch in prompt
-        )
-
-
-def _build_prompt_payload(
-    prompt: str,
-    attachments: Sequence[BinaryContent | None],
-    link_attachments: Sequence[ImageUrl | DocumentUrl | None],
-) -> str | list[Any]:
-    """Merge prompt + binary/link attachments into the pydantic-ai payload shape."""
-    parts: list[Any] = []
-    if attachments:
-        parts.extend(attachments)
-    if link_attachments:
-        parts.extend(link_attachments)
-
-    if not parts:
-        return prompt
-
-    payload: list[Any] = []
-    if prompt:
-        payload.append(prompt)
-    payload.extend(parts)
-    return payload
-
-
-def _extract_response_text(result: Any) -> str:
-    """Best-effort extraction of human-readable text from a pydantic-ai result."""
-    if result is None:
-        return ""
-    if hasattr(result, "data"):
-        return str(result.data) if result.data else ""
-    if hasattr(result, "output"):
-        return str(result.output) if result.output else ""
-    return str(result)
-
-
-def _should_prepend_system_prompt(agent: Any, prompt: str) -> str:
-    """Prepend system prompt to user prompt on the first turn (claude-code etc)."""
-    from code_muse.agents._builder import assemble_full_system_prompt
-    from code_muse.model_utils import prepare_prompt_for_model
-
-    if agent._message_history:
-        return prompt
-
-    system_prompt = assemble_full_system_prompt(agent, agent.get_model_name())
-
-    prepared = prepare_prompt_for_model(
-        model_name=agent.get_model_name(),
-        system_prompt=system_prompt,
-        user_prompt=prompt,
-        prepend_system_to_user=True,
+    emit_warning(
+        "🚨 Emergency compaction: model returned empty response, "
+        "likely context overflow. Aggressively trimming history..."
     )
-    return prepared.user_prompt
 
+    # Use 25% of model context as protected tokens (much more aggressive
+    # than the normal 50k default) to force a significant reduction.
+    try:
+        model_ctx = agent._get_model_context_length()
+    except Exception:
+        model_ctx = 128000
+    emergency_protected = max(5000, model_ctx // 4)
 
-def _collect_exceptions(
-    group: BaseException, predicate: Callable[[BaseException], bool]
-) -> list[BaseException]:
-    """Flatten an ExceptionGroup tree, returning leaves matching ``predicate``."""
-    out: list[BaseException] = []
-    stack: list[BaseException] = [group]
-    while stack:
-        exc = stack.pop()
-        if isinstance(exc, BaseExceptionGroup):
-            stack.extend(exc.exceptions)
-        elif predicate(exc):
-            out.append(exc)
-    return out
+    cache = CompactionCache()
+    model_name: str | None = None
+    with suppress(Exception):
+        model_name = agent.get_model_name()
 
+    result = truncate(history, emergency_protected, model_name, cache=cache)
 
-@dataclass
-class RunOutcome:
-    """Structured result of a single agent run attempt."""
+    if len(result) < len(history):
+        # Track dropped messages
+        result_hashes = {hash_message(m) for m in result}
+        for m in history:
+            if hash_message(m) not in result_hashes:
+                agent._compacted_message_hashes.add(hash_message(m))
+        agent._message_history = result
+        emit_info(f"✂️  Emergency compaction: {len(history)} → {len(result)} messages")
+        return True
 
-    success: bool
-    result: Any = None
-    error: BaseException | None = None
-
-
-@dataclass
-class RunStats:
-    """Per-run metrics passed to on_agent_run_end metadata."""
-
-    step_count: int = 0
-    tool_calls_made: int = 0
-    total_input_tokens: int = 0
-    total_output_tokens: int = 0
-    duration_seconds: float = 0.0
-    consecutive_errors: int = 0
-    was_retried: bool = False
-    was_streamed: bool = False
-    start_time: datetime = field(default_factory=datetime.now)
+    return False
 
 
 # ---- The main entry point ---------------------------------------------------
@@ -484,9 +240,11 @@ async def run(
             stream_h: Any | None,
         ) -> Any:
             """Wrap pydantic_agent.run with an optional overall timeout."""
+            usage_limits = UsageLimits(request_limit=get_message_limit())
             coro = pydantic_agent.run(
                 prompt,
                 message_history=history,
+                usage_limits=usage_limits,
                 event_stream_handler=stream_h,
                 **kwargs,
             )
@@ -502,12 +260,24 @@ async def run(
             )
 
         async def _call_with_exception_recovery() -> Any:
-            """Run ``_call`` and let plugins request exception retries (capped)."""
+            """Run ``_call`` and let plugins request exception retries (capped).
+
+            Also performs emergency compaction when the model returns empty
+            responses (likely context overflow) — compacts history aggressively
+            and retries once before giving up.
+            """
             max_retries = get_max_hook_retries()
             for attempt in range(max_retries + 1):
                 try:
                     return await _call()
                 except Exception as exc:
+                    # Emergency compaction: if all streaming retries failed
+                    # due to context overflow, aggressively compact and retry.
+                    if _is_context_overflow_error(exc) and attempt == 0:
+                        compacted = _emergency_compact(agent)
+                        if compacted:
+                            continue
+
                     if attempt >= max_retries:
                         raise
                     hook_results = await on_agent_exception(
@@ -535,7 +305,15 @@ async def run(
         try:
             result = await _call_with_exception_recovery()
 
-            for _ in range(get_max_hook_retries()):
+            max_hook_retries = get_max_hook_retries()
+            hook_retries_used = 0
+            max_loop_iterations = 50  # safety cap
+
+            for _ in range(max_loop_iterations):
+                # 1) Check for queued steer injection (stub for now)
+                # 2) Check hook retries
+                if hook_retries_used >= max_hook_retries:
+                    break
                 hook_results = await on_agent_run_result(
                     result,
                     agent_name=agent.name,
@@ -549,6 +327,7 @@ async def run(
                     break
 
                 was_retried = True
+                hook_retries_used += 1
                 retry_prompt = retry_req.get("prompt", "Please continue.")
                 retry_delay = retry_req.get("delay", 1.0)
                 if hasattr(result, "all_messages"):
@@ -581,10 +360,8 @@ async def run(
                                 stats.tool_calls_made += 1
             usage = None
             if hasattr(result, "usage") and callable(result.usage):
-                try:
+                with suppress(Exception):
                     usage = result.usage
-                except Exception:
-                    pass
             elif hasattr(result, "usage"):
                 usage = result.usage
             if usage is not None:
@@ -603,12 +380,15 @@ async def run(
         if result is not None and should_render_fallback(
             detector, skip=skip_fallback_render
         ):
-            # TODO: PEP 734 async bridge — render_result_without_streaming uses sync time.sleep
+            # TODO: PEP 734 async bridge — render_result_without_streaming
+            # uses sync time.sleep
             await asyncio.to_thread(render_result_without_streaming, result)
 
         return result
 
     async def run_agent_task() -> RunOutcome:
+        from code_muse.agents._history import prune_interrupted_tool_calls
+        agent._message_history = prune_interrupted_tool_calls(agent._message_history)
         outcome: RunOutcome | None = None
         try:
             run_ctxs = on_agent_run_context(agent, pydantic_agent, group_id)
@@ -618,10 +398,18 @@ async def run(
                 result = await _do_run(prompt_payload)
                 outcome = RunOutcome(True, result=result)
 
+        except* UsageLimitExceeded:
+            emit_info(
+                "⚠️  The agent has reached its step limit. "
+                "Say 'please continue' to resume.",
+            )
+            outcome = RunOutcome(True, result=None)
         except* Exception as other:
             unexpected = _collect_exceptions(
                 other,
-                lambda e: not isinstance(e, (asyncio.CancelledError)),
+                lambda e: (
+                    not isinstance(e, (asyncio.CancelledError, UsageLimitExceeded))
+                ),
             )
             for exc in unexpected:
                 emit_exception_diagnostics(exc, group_id=group_id)
@@ -630,41 +418,21 @@ async def run(
             return RunOutcome(False)
         return outcome
 
-    try:
+    # Scrub any stale PauseController state from a previously-cancelled run
+    _run_signals.reset_pause_state_at_run_start()
+
+    with suppress(Exception):
         await on_agent_run_start(
             agent_name=agent.name,
             model_name=agent.get_model_name(),
             session_id=group_id,
         )
-    except Exception:
-        # Hook failures never block the agent.
-        pass
 
     agent_task = asyncio.create_task(run_agent_task())
 
     loop = asyncio.get_running_loop()
 
-    def schedule_agent_cancel() -> None:
-        from code_muse.tools.command_runner import _RUNNING_PROCESSES
-
-        if _RUNNING_PROCESSES:
-            emit_warning(
-                "Refusing to cancel Agent while a shell command is running — "
-                "press Ctrl+X to cancel the shell command."
-            )
-            return
-        if agent_task.done():
-            return
-        try:
-            active_tasks = _active_subagent_tasks_var.get()
-        except LookupError:
-            active_tasks = set()
-        if active_tasks:
-            emit_warning(f"Cancelling {len(active_tasks)} active subagent task(s)...")
-            for task in list(active_tasks):
-                if not task.done():
-                    loop.call_soon_threadsafe(task.cancel)
-        loop.call_soon_threadsafe(agent_task.cancel)
+    schedule_agent_cancel = _run_signals.make_schedule_cancel(agent_task, loop)
 
     def keyboard_interrupt_handler(_sig, _frame):
         # Let input() handle its own KeyboardInterrupt if we're mid-prompt.
@@ -726,6 +494,8 @@ async def run(
         run_error = e
         raise
     finally:
+        _run_signals.drain_pause_state_on_cancel()
+
         with suppress(Exception):
             await on_agent_run_end(
                 agent_name=agent.name,

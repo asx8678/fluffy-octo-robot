@@ -27,7 +27,8 @@ from code_muse.agents._history import (
     estimate_tokens_for_message,
     hash_message,
 )
-from code_muse.agents._runtime import run, should_retry_streaming
+from code_muse.agents._runtime import run
+from code_muse.agents._streaming_retry import should_retry_streaming
 from code_muse.config import (
     get_agent_pinned_model,
     get_global_model_name,

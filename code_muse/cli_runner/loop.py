@@ -404,9 +404,11 @@ async def interactive_mode(message_renderer, initial_command: str = None) -> Non
                     continue
                 await _render_and_autosave(result, current_agent, display_console)
             except Exception:
-                from code_muse.messaging.queue_console import get_queue_console
+                import traceback
 
-                get_queue_console().print_exception()
+                from code_muse.messaging import emit_error as _bus_emit_error
+
+                _bus_emit_error(traceback.format_exc())
                 await asyncio.to_thread(auto_save_session_if_enabled)
 
             current_agent = await _wiggum_loop(

@@ -151,13 +151,13 @@ def hash_message(message: Any) -> int:
 def estimate_tokens(text: str) -> int:
     """Character-based token estimator tuned for code-heavy content.
 
-    Uses ``len / 3.0`` as the base divisor (code has higher entropy than
-    prose, and the old ``/2.5`` heuristic systematically undercounted for
-    most models).  Per-model calibration multipliers applied downstream
-    by ``estimate_tokens_for_message`` adjust for models with even denser
+    Uses ``len / 2.5`` as the base divisor — a conservative estimate that
+    avoids undercounting which can lead to context overflow.  Per-model
+    calibration multipliers applied downstream by
+    ``estimate_tokens_for_message`` adjust for models with even denser
     tokenizers.
     """
-    return max(1, math.floor(len(text) / 3.0))
+    return max(1, math.floor(len(text) / 2.5))
 
 
 # Models whose tokenizer the char/2.5 heuristic systematically *under*counts.
@@ -166,6 +166,10 @@ def estimate_tokens(text: str) -> int:
 # vendor naming is a coin flip.
 _TOKEN_MULTIPLIER_RULES: tuple[tuple[tuple[str, ...], float], ...] = (
     (("opus-4-7", "4-7-opus"), 1.35),
+    (("claude-3-5-sonnet", "sonnet-3-5", "claude-3.5-sonnet"), 1.15),
+    (("gpt-4o", "gpt4o"), 1.10),
+    (("gemini",), 1.20),
+    (("mimo",), 1.15),
 )
 
 
@@ -352,7 +356,12 @@ def filter_huge_messages(
     model_name: str | None = None,
     cache: Any | None = None,  # CompactionCache when available
 ) -> list[ModelMessage]:
-    """Drop messages above the configured token budget, then prune orphans."""
+    """Drop messages above the configured token budget, then prune orphans.
+
+    Dropping huge tool_return messages can leave their corresponding
+    tool_call messages as orphans (or vice versa). We run
+    prune_interrupted_tool_calls afterwards to keep the history valid.
+    """
     from code_muse.config.parser import get_filter_huge_message_threshold
 
     threshold = get_filter_huge_message_threshold()
@@ -366,6 +375,8 @@ def filter_huge_messages(
         )
         < threshold
     ]
+    if len(filtered) != len(messages):
+        filtered = prune_interrupted_tool_calls(filtered)
     return filtered
 
 

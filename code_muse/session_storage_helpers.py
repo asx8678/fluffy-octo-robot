@@ -53,7 +53,7 @@ def _hash_session_data(data: dict[str, Any]) -> str | None:
     """Return a SHA-256 hash of serialised session data for dirty-flag comparison."""
     try:
         return hashlib.sha256(json.dumps(data, option=orjson.OPT_SORT_KEYS)).hexdigest()
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         return None
 
 
@@ -220,7 +220,7 @@ def _is_binary_pickle(data: bytes) -> bool:
     try:
         text = data.decode("utf-8")
         return not text.lstrip().startswith(("{", "["))
-    except UnicodeDecodeError, ValueError:
+    except (UnicodeDecodeError, ValueError):
         return True
 
 
