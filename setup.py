@@ -109,13 +109,3 @@ setup(
     cmdclass={"build_ext": BuildExt},
     zip_safe=False,  # C extensions cannot be run from zip
 )
-
-
-if __name__ == "__main__":
-    # Allow running `python setup.py build_ext --inplace` during development
-    setup(
-        ext_modules=get_extensions(),
-        packages=find_packages(include=["code_muse", "code_muse.*"]),
-        cmdclass={"build_ext": BuildExt},
-        zip_safe=False,
-    )
