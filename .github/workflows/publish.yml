@@ -15,6 +15,10 @@ jobs:
       version: ${{ steps.check.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Checkout the exact tag being released so the pyproject.toml version
+          # we read matches the release. (publish.yaml used to do this correctly.)
+          ref: ${{ github.event.release.tag_name }}
       - name: Check version match
         id: check
         shell: python
@@ -48,6 +52,12 @@ jobs:
     name: Build & publish to PyPI
     needs: [validate-version, test]
     runs-on: ubuntu-latest
+    # The "pypi" GitHub Environment must be configured with the Trusted
+    # Publisher (GitHub OIDC) for code-muse. This also gives a nice URL
+    # in the GitHub UI linking to the PyPI project page after publish.
+    environment:
+      name: pypi
+      url: https://pypi.org/project/code-muse/${{ needs.validate-version.outputs.version }}/
     permissions:
       id-token: write
     steps:
@@ -60,3 +70,16 @@ jobs:
         run: uv build
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # PEP 740 attestations (via Sigstore + Rekor) are on by default for
+          # Trusted Publishing. We explicitly disable them because the bundled
+          # /app/attestations.py (running on Python 3.13 inside the action's
+          # python:3.13-slim Docker image) performs a live POST to Rekor and
+          # has no retry logic. Transient "ChunkedEncodingError: Response ended
+          # prematurely" / ProtocolError failures (as seen in the traceback with
+          # "payloadHash": null in debug logs) are common from GitHub runners.
+          # Setting false makes releases reliable. Re-run the "Publish to PyPI"
+          # job manually if you ever want to force attestations on a specific
+          # release. The uv build step above uses Python 3.14; the publish
+          # container is independent.
+          attestations: false
