@@ -4,43 +4,68 @@ on:
   release:
     types: [published]
 
+# IMPORTANT: This workflow is ONLY triggered when you explicitly create a
+# GitHub Release (in the GitHub UI or via `gh release create`).
+# Simply doing `git tag vX.Y.Z && git push origin vX.Y.Z` does NOT publish.
+# This is the previous behavior you wanted — tagging alone does nothing.
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
 env:
   UV_NO_MANAGED_PYTHON: "1"
 
 jobs:
   validate-version:
-    name: Validate tag matches pyproject.toml
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.check.outputs.version }}
+      version: ${{ steps.package-version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v6
         with:
-          # Checkout the exact tag being released so the pyproject.toml version
-          # we read matches the release. (publish.yaml used to do this correctly.)
           ref: ${{ github.event.release.tag_name }}
-      - name: Check version match
-        id: check
-        shell: python
+      - name: Setup Python 3.14
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - name: Validate release tag matches package version
+        id: package-version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
+          python - <<'PY'
           import os
           import tomllib
           from pathlib import Path
-
           version = tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"]
           tag = os.environ["RELEASE_TAG"]
           normalized_tag = tag[1:] if tag.startswith("v") else tag
-
           if normalized_tag != version:
               raise SystemExit(
-                  f"Release tag {tag!r} does not match pyproject.toml version {version!r}. "
+                  f"Release tag {tag!r} does not match pyproject.toml version {version!r}."
                   f"Use tag v{version} or update pyproject.toml before publishing."
               )
-
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
               print(f"version={version}", file=output)
+          PY
+      - name: Check version is not already on PyPI
         env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          PACKAGE_VERSION: ${{ steps.package-version.outputs.version }}
+        run: |
+          status=$(curl -sS -o /dev/null -w '%{http_code}' https://pypi.org/pypi/code-muse/${PACKAGE_VERSION}/json)
+          if [ $status = 200 ]; then
+            echo "code-muse ${PACKAGE_VERSION} already exists on PyPI."
+            exit 1
+          fi
+          if [ $status != 404 ]; then
+            echo "Unexpected PyPI response while checking code-muse ${PACKAGE_VERSION}: HTTP ${status}"
+            exit 1
+          fi
 
   test:
     name: Pre-publish tests
@@ -48,38 +73,32 @@ jobs:
     uses: ./.github/workflows/ci.yml
     secrets: inherit
 
-  publish:
-    name: Build & publish to PyPI
-    needs: [validate-version, test]
+  build-publish:
     runs-on: ubuntu-latest
-    # The "pypi" GitHub Environment must be configured with the Trusted
-    # Publisher (GitHub OIDC) for code-muse. This also gives a nice URL
-    # in the GitHub UI linking to the PyPI project page after publish.
+    needs: [validate-version, test]
     environment:
       name: pypi
       url: https://pypi.org/project/code-muse/${{ needs.validate-version.outputs.version }}/
     permissions:
+      contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - name: Setup Python 3.14
+        uses: actions/setup-python@v6
         with:
           python-version: "3.14"
-      - name: Build
+      - name: Install uv
+        run: pip install uv
+      - name: Build package
         run: uv build
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          # PEP 740 attestations (via Sigstore + Rekor) are on by default for
-          # Trusted Publishing. We explicitly disable them because the bundled
-          # /app/attestations.py (running on Python 3.13 inside the action's
-          # python:3.13-slim Docker image) performs a live POST to Rekor and
-          # has no retry logic. Transient "ChunkedEncodingError: Response ended
-          # prematurely" / ProtocolError failures (as seen in the traceback with
-          # "payloadHash": null in debug logs) are common from GitHub runners.
-          # Setting false makes releases reliable. Re-run the "Publish to PyPI"
-          # job manually if you ever want to force attestations on a specific
-          # release. The uv build step above uses Python 3.14; the publish
-          # container is independent.
+          # Disable PEP 740 attestations to avoid the transient Rekor/Sigstore
+          # ChunkedEncodingError that was breaking publishes (the original issue).
+          # This matches the previous reliable behavior you had.
           attestations: false
