@@ -5,10 +5,19 @@ build tools into concise summaries.
 """
 
 import re
+from enum import IntEnum
 
 import orjson as json
 
 from code_muse.tools.command_runner import ShellCommandOutput
+
+
+class VerbosityLevel(IntEnum):
+    """Verbosity level for build output compression."""
+    NORMAL = 0
+    VERBOSE = 1
+    VERY_VERBOSE = 2
+    RAW = 4
 
 
 def compress_make(
@@ -388,6 +397,34 @@ def compress_build(
 
     # Generic fallback for any other build-ish command
     return None
+
+
+# ---------------------------------------------------------------------------
+# Local strategy registry
+# ---------------------------------------------------------------------------
+
+
+class _BuildStrategyRegistry:
+    """Simple local registry for build compression strategies."""
+    def __init__(self):
+        self._strategies: dict[str, tuple[int, callable]] = {}
+
+    def register(self, name: str, func: callable, priority: int = 0) -> None:
+        self._strategies[name] = (priority, func)
+
+    def get_strategy(self, name: str) -> callable | None:
+        entry = self._strategies.get(name)
+        if entry is not None:
+            return entry[1]
+        return None
+
+
+_registry = _BuildStrategyRegistry()
+
+
+def get_registry() -> _BuildStrategyRegistry:
+    """Return the local build strategy registry singleton."""
+    return _registry
 
 
 # ---------------------------------------------------------------------------

@@ -7,10 +7,9 @@ and /plugin help.
 import logging
 
 from code_muse.callbacks import register_callback
-from code_muse.plugins import (
-    _PLUGINS_LOADED,
+from code_muse.plugins import _PLUGINS_LOADED, get_user_plugins_dir
+from code_muse.plugins.plugin_trust.trust_store import (
     compute_plugin_hash,
-    get_user_plugins_dir,
     is_plugin_trusted,
     record_plugin_trust,
     revoke_plugin_trust,
