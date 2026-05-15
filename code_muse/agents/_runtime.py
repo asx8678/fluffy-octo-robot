@@ -32,12 +32,6 @@ from pydantic_ai import (
     UsageLimits,
 )
 
-# Python 3.11+ builtin; graceful fallback for 3.10
-try:
-    from builtins import BaseExceptionGroup  # type: ignore[attr-defined]
-except ImportError:  # pragma: no cover - 3.10 only
-    BaseExceptionGroup = Exception  # type: ignore[misc,assignment]
-
 from code_muse.agents import _key_listeners, _run_signals
 from code_muse.agents._builder import build_pydantic_agent
 from code_muse.agents._diagnostics import emit_exception_diagnostics
@@ -249,7 +243,8 @@ async def run(
             )
             timeout = get_overall_run_timeout_seconds()
             if timeout > 0:
-                return await asyncio.wait_for(coro, timeout=timeout)
+                async with asyncio.timeout(timeout):
+                    return await coro
             return await coro
 
         @streaming_retry()

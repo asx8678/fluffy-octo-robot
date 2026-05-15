@@ -11,18 +11,13 @@ what we *surface* in the terminal for the user. All ``getattr`` access is
 guarded; diagnostic emit must never itself raise.
 """
 
+from contextlib import suppress
 from typing import Any
 
 from rich.text import Text
 
 from code_muse.error_logging import log_error
 from code_muse.messaging import emit_info
-
-# Python 3.11+ builtin; graceful fallback for 3.10
-try:
-    from builtins import BaseExceptionGroup  # type: ignore[attr-defined]
-except ImportError:  # pragma: no cover - 3.10 only
-    BaseExceptionGroup = Exception  # type: ignore[misc,assignment]
 
 # Only emit deep diagnostics for shapes that actually benefit. The boring 80%
 # of errors get the cheap path (one-line emit + log-file pointer).
@@ -112,20 +107,16 @@ def emit_exception_diagnostics(exc: BaseException, group_id: str) -> None:
     Never raises. Worst-case failure is a slightly noisier terminal during an
     already-failed run.
     """
-    try:
+    with suppress(Exception):
         emit_info(f"Unexpected error: {exc}", group_id=group_id)
-    except Exception:  # pragma: no cover - emit should never fail
-        pass
 
     # File logging is independent of terminal output and stays on the cheap path.
-    try:
+    with suppress(Exception):
         log_error(
             exc,
             context=f"Agent run (group_id={group_id})",
             include_traceback=True,
         )
-    except Exception:  # pragma: no cover - logging failure must not cascade
-        pass
 
     try:
         if not _needs_deep_diagnostics(exc):

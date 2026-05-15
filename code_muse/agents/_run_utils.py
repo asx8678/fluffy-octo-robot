@@ -13,13 +13,6 @@ from pydantic_ai import BinaryContent, DocumentUrl, ImageUrl
 
 from code_muse.model_factory import ModelFactory
 
-# Python 3.11+ builtin; graceful fallback for 3.10
-try:
-    from builtins import BaseExceptionGroup  # type: ignore[attr-defined]
-except ImportError:  # pragma: no cover - 3.10 only
-    BaseExceptionGroup = Exception  # type: ignore[misc,assignment]
-
-
 # ---- Data classes -----------------------------------------------------------
 
 

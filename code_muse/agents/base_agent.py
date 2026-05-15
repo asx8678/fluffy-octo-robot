@@ -36,7 +36,6 @@ from code_muse.config import (
 )
 from code_muse.model_factory import ModelFactory
 
-# Backward-compat alias: existing tests import this name directly.
 should_retry_streaming_exception = should_retry_streaming
 
 __all__ = ["BaseAgent", "should_retry_streaming_exception"]
