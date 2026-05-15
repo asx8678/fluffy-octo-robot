@@ -1,6 +1,5 @@
 import importlib.metadata
 import logging
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -14,12 +13,8 @@ except Exception:
     __version__ = "0.0.0-dev"
 
 
-# Cython extension module support
-# Pre-built .so/.pyd files are included in wheel distributions.
-_PACKAGE_ROOT = Path(__file__).parent
-_pyx_files = list(_PACKAGE_ROOT.rglob("*.pyx"))
-PYX_MODULE_COUNT: int = len(_pyx_files)
-_CYTHON_AVAILABLE = bool(
-    any(_PACKAGE_ROOT.rglob("*.so")) or any(_PACKAGE_ROOT.rglob("*.pyd"))
-)
-CYTHON_ENABLED: bool = _CYTHON_AVAILABLE
+# Pure-Python build: no compiled extensions are shipped or required.
+# These constants are retained for backward compatibility with any code
+# that still inspects them.
+PYX_MODULE_COUNT: int = 0
+CYTHON_ENABLED: bool = False

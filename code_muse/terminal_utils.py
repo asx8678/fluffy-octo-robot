@@ -1,18 +1,23 @@
-# cython: language_level=3
 """Terminal utilities for cross-platform terminal state management.
 
-Handles Windows console mode resets and Unix terminal sanity restoration.
-Includes a Cython-optimised ANSI escape sequence stripper.
+Pure-Python implementation. Handles Windows console mode resets and
+Unix terminal sanity restoration, plus helpers for ANSI stripping and
+truecolor detection.
+
+This module replaces the previous Cython-compiled terminal_utils so that
+``code-muse`` can ship as a ``py3-none-any`` wheel (no C toolchain needed
+on install). The public API is unchanged.
 """
+
+from __future__ import annotations
 
 import os
 import platform
+import re
 import subprocess
 import sys
 from collections.abc import Callable
 from typing import TYPE_CHECKING
-
-from libc.stdlib cimport free, malloc
 
 if TYPE_CHECKING:
     from rich.console import Console
@@ -22,79 +27,49 @@ _original_ctrl_handler: Callable | None = None
 
 
 # ---------------------------------------------------------------------------
-# ANSI stripping (Cython-optimised byte scan)
+# ANSI stripping
 # ---------------------------------------------------------------------------
+
+# Matches an ESC '[' CSI sequence: parameter bytes (0x30-0x3F) and intermediate
+# bytes (0x20-0x2F), terminated by a final byte (0x40-0x7E). We only need to
+# strip the parts the previous Cython implementation stripped — CSI sequences.
+_CSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+
 
 def strip_ansi(input: str) -> str:
     """Remove ANSI CSI escape sequences and bare carriage-return frames.
 
     CSI sequences like ``\\x1b[0m``, ``\\x1b[32;1m``, and cursor movement
-    sequences are stripped.  Lines that use ``\\r`` for progress / spinner
+    sequences are stripped. Lines that use ``\\r`` for progress / spinner
     frames (not followed by a newline) are cleaned up by replacing the
     carriage return with a newline so each frame becomes its own line.
 
-    This implementation uses a typed single-pass byte scan for speed and
-    releases the GIL during the CPU-intensive loop for true parallelism.
+    Mirrors the previous Cython implementation's behavior:
+    - Strip terminated CSI sequences.
+    - Preserve unterminated CSI sequences (ESC '[' to end-of-input).
+    - Convert ``\\r\\n`` and bare ``\\r`` to ``\\n``.
     """
     if not input:
         return input
 
-    cdef bytes b = input.encode("utf-8")
-    cdef Py_ssize_t n = len(b)
-    cdef const unsigned char* c_data = b
-    cdef unsigned char* c_out = <unsigned char*>malloc(n)
-    if c_out is NULL:
-        raise MemoryError()
+    # Detect an unterminated CSI sequence so we can preserve its tail
+    # exactly like the Cython version did.
+    unterminated_tail = ""
+    last_esc = input.rfind("\x1b[")
+    if last_esc != -1:
+        tail = input[last_esc:]
+        # If the tail contains no final byte, it's unterminated.
+        if not re.search(r"[@-~]", tail[2:]):
+            unterminated_tail = tail
+            input = input[:last_esc]
 
-    cdef Py_ssize_t i = 0
-    cdef Py_ssize_t j = 0
-    cdef int in_csi = 0
-    cdef Py_ssize_t start_csi = 0
-    cdef unsigned char ch
-    cdef Py_ssize_t tail_len
-    cdef Py_ssize_t k
+    # Strip terminated CSI sequences.
+    cleaned = _CSI_RE.sub("", input)
 
-    with nogil:
-        while i < n:
-            ch = c_data[i]
-            if in_csi:
-                # CSI param bytes are 0x30-0x3F (;, digits, etc.)
-                # intermediate bytes 0x20-0x2F, final bytes 0x40-0x7E
-                # We simply wait for a final byte (0x40-0x7E).
-                if 0x40 <= ch <= 0x7E:
-                    in_csi = 0
-                i += 1
-                continue
-            if ch == 0x1B and i + 1 < n and c_data[i + 1] == 0x5B:  # ESC [
-                in_csi = 1
-                start_csi = i
-                i += 2
-                continue
-            if ch == 0x0D:  # \r
-                if i + 1 < n and c_data[i + 1] == 0x0A:  # \r\n
-                    c_out[j] = 0x0A
-                    j += 1
-                    i += 2
-                    continue
-                c_out[j] = 0x0A
-                j += 1
-                i += 1
-                continue
-            c_out[j] = ch
-            j += 1
-            i += 1
+    # Normalize carriage returns: \r\n -> \n, lone \r -> \n
+    cleaned = cleaned.replace("\r\n", "\n").replace("\r", "\n")
 
-    if in_csi:
-        # Unterminated CSI — preserve from ESC to end.
-        # c_data remains valid because ``b`` is still held on the Python side.
-        tail_len = n - start_csi
-        for k in range(tail_len):
-            c_out[j] = c_data[start_csi + k]
-            j += 1
-
-    cdef bytes result_bytes = c_out[:j]
-    free(c_out)
-    return result_bytes.decode("utf-8")
+    return cleaned + unterminated_tail
 
 
 # ---------------------------------------------------------------------------
@@ -429,7 +404,7 @@ def detect_truecolor_support() -> bool:
     return False
 
 
-def print_truecolor_warning(console: Console | None = None) -> None:
+def print_truecolor_warning(console: "Console | None" = None) -> None:
     """Print a big fat red warning if truecolor is not supported.
 
     Args:

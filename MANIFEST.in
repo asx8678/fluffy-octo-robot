@@ -9,7 +9,6 @@ graft code_muse
 include LICENSE
 include README.md
 include pyproject.toml
-include setup.py
 include uv.lock
 
 # Explicit data files (in case graft is too broad in some environments)

@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=77.0.0", "wheel", "cython>=3.1.0"]
+requires = ["setuptools>=77.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "code-muse"
-version = "0.1.54"
+version = "0.1.55"
 description = "Muse — eternal guide of creators in the arts and sciences. An elegant AI coding assistant."
 readme = "README.md"
 # Only 3.14+ is supported due to free-threaded Python features
@@ -66,7 +66,6 @@ ignore_no_config = true
 
 [tool.ruff]
 target-version = "py314"
-exclude = ["*.pyx"]
 
 [tool.ruff.lint]
 select = ["E", "F", "UP", "B", "SIM", "I"]
@@ -91,8 +90,6 @@ include-package-data = true
 code_muse = [
     "models.json",
     "models_dev_api.json",
-    "*.pyx",   # Cython sources (helps some build environments)
-    "*.pxd",
 ]
 
 [tool.mypy]
