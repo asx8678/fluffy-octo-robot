@@ -46,16 +46,10 @@ The subinterpreter backend is currently **opt-in** (see "Current Status" below).
 
 ```bash
 # Enable the fast subinterpreter path
-MUSE_USE_SUBINTERPRETERS=1 muse
+MUSE_USE_INTERPRETER_POOL=1 muse
 
 # Use a larger pool (default is 4)
-MUSE_USE_SUBINTERPRETERS=1 MUSE_SUBINTERPRETER_POOL_SIZE=8 muse
-```
-
-You can force the classic multiprocessing backend at any time with:
-
-```bash
-MUSE_DISABLE_SUBINTERPRETERS=1 muse
+MUSE_USE_INTERPRETER_POOL=1 MUSE_SUBINTERPRETER_POOL_SIZE=8 muse
 ```
 
 ---
@@ -143,8 +137,7 @@ The subinterpreter work gives Muse most of the desired parallelism benefits with
 
 | Variable                              | Effect                                      | Default |
 |---------------------------------------|---------------------------------------------|---------|
-| `MUSE_USE_SUBINTERPRETERS=1`          | Use PEP 734 subinterpreter backend          | Off     |
-| `MUSE_DISABLE_SUBINTERPRETERS=1`      | Force classic multiprocessing backend       | Off     |
+| `MUSE_USE_INTERPRETER_POOL=1`          | Use PEP 734 subinterpreter backend          | Off     |
 | `MUSE_SUBINTERPRETER_POOL_SIZE=N`     | Number of warm interpreters to keep         | `4`     |
 
 ---
