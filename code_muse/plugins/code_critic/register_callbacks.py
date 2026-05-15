@@ -1,4 +1,4 @@
-"""Register Code Critic callbacks.
+"""Register Universal Code Critic callbacks.
 
 Registers:
     - code-critic agent via register_agents hook
@@ -63,7 +63,7 @@ async def _on_agent_run_end(
             files_to_review = [files_to_review]
 
         for file_path in files_to_review:
-            emit_info(f"🔍 Code Critic reviewing: {file_path}")
+            emit_info(f"🔍 Universal Code Critic reviewing: {file_path}")
             verdict = await review_file(file_path, agent_name=agent_name)
             _emit_verdict(verdict, file_path, agent_name)
 
@@ -76,15 +76,15 @@ def _emit_verdict(verdict: dict, file_path: str, agent_name: str) -> None:
     suggestion = verdict.get("suggestion")
 
     if v == "approved":
-        emit_success(f"✅ Code Critic APPROVED {file_path}: {summary}")
+        emit_success(f"✅ Universal Code Critic APPROVED {file_path}: {summary}")
     elif v == "rejected":
-        emit_warning(f"❌ Code Critic REJECTED {file_path}: {summary}")
+        emit_warning(f"❌ Universal Code Critic REJECTED {file_path}: {summary}")
         for issue in issues:
             emit_warning(f"   • {issue}")
         if suggestion:
             emit_info(f"   💡 Suggestion: {suggestion}")
     else:
-        emit_info(f"⚠️  Code Critic flagged {file_path}: {summary}")
+        emit_info(f"⚠️  Universal Code Critic flagged {file_path}: {summary}")
         for issue in issues:
             emit_info(f"   • {issue}")
 
@@ -108,9 +108,9 @@ async def _on_custom_command(command: str, name: str):
         # Just switch to the critic agent
         success = set_current_agent("code-critic")
         if success:
-            emit_success("Switched to Code Critic 🧐 — ready to review!")
+            emit_success("Switched to Universal Code Critic 🧐 — ready to review!")
         else:
-            emit_info("Could not find Code Critic agent.")
+            emit_info("Could not find Universal Code Critic agent.")
         return True
 
     # /critic review <path>
@@ -122,7 +122,7 @@ async def _on_custom_command(command: str, name: str):
 
         from code_muse.plugins.code_critic.reviewer import review_file
 
-        emit_info(f"🔍 Code Critic reviewing: {review_path}")
+        emit_info(f"🔍 Universal Code Critic reviewing: {review_path}")
         verdict = await review_file(review_path, agent_name="manual")
         _emit_verdict(verdict, review_path, "manual")
         return True
@@ -134,8 +134,8 @@ async def _on_custom_command(command: str, name: str):
 def _on_custom_command_help():
     """Register help entries for the /critic command."""
     return [
-        ("critic", "Switch to Code Critic agent for code review"),
-        ("critic review <path>", "Review a specific file with Code Critic"),
+        ("critic", "Switch to Universal Code Critic agent for code review"),
+        ("critic review <path>", "Review a specific file with Universal Code Critic"),
     ]
 
 
@@ -145,8 +145,8 @@ def _on_custom_command_help():
 
 
 def _on_startup():
-    """Log that Code Critic is loaded."""
-    logger.debug("Code Critic plugin loaded — ready to review code.")
+    """Log that Universal Code Critic is loaded."""
+    logger.debug("Universal Code Critic plugin loaded — ready to review code.")
 
 
 # ---------------------------------------------------------------------------
@@ -159,4 +159,4 @@ register_callback("custom_command", _on_custom_command)
 register_callback("custom_command_help", _on_custom_command_help)
 register_callback("startup", _on_startup)
 
-logger.debug("Code Critic plugin callbacks registered")
+logger.debug("Universal Code Critic plugin callbacks registered")

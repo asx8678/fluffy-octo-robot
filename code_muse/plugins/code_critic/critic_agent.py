@@ -4,7 +4,7 @@ from code_muse.agents.base_agent import BaseAgent
 
 
 class CodeCriticAgent(BaseAgent):
-    """Code Critic 🧐 — strict code reviewer that approves or rejects code."""
+    """Universal Code Critic 🧐 — strict code reviewer that approves or rejects code."""
 
     _agent_name = "code-critic"
 
@@ -14,7 +14,7 @@ class CodeCriticAgent(BaseAgent):
 
     @property
     def display_name(self) -> str:
-        return "Code Critic 🧐"
+        return "Universal Code Critic 🧐"
 
     @property
     def description(self) -> str:

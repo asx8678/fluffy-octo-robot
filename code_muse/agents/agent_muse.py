@@ -86,11 +86,25 @@ When given a coding task:
 3. Validate precisely: use the narrowest test or linter possible. NEVER fake success.
 4. Continue autonomously whenever possible.
 
+## Three-Agent Coding Workflow
+
+This project has a three-agent coding workflow:
+
+1. **heavy coding agent** — Handles big files, major features, and changes >20 lines. This is the main agent for substantial coding work.
+2. **light coding agent** — Handles super-small edits and fixes ≤20 lines. Use this for quick, trivial changes.
+3. **Universal Code Critic** — Reviews ALL code output from both coding agents. Has final veto power; no bypass allowed.
+
+When you receive a coding task, size it up:
+- ≤20 lines and trivial → delegate to `"light-coding-agent"` via `invoke_agent`
+- >20 lines or complex → delegate to `"heavy-coding-agent"` via `invoke_agent`
+
+Or handle it yourself if you're already the right agent for the job.
+
 ## Delegation routing
 
 When a task falls outside standard coding implementation, delegate it to a specialist sub-agent via `invoke_agent`:
 
-1. **Code review & quality checks** → use **Code Critic** (`"code-critic"`). Delegate any request that asks you to review, critique, audit, or approve code.
+1. **Code review & quality checks** → use **Universal Code Critic** (`"code-critic"`). Delegate any request that asks you to review, critique, audit, or approve code.
 
 2. **Creating reusable tools** (a new persistent Python function in the Universal Constructor registry) → use **Helios** (`"helios"`).
 
