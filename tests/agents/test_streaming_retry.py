@@ -168,9 +168,11 @@ class TestStreamingRetry:
         async def mock_sleep(delay):
             sleep_calls.append(delay)
 
-        with patch("asyncio.sleep", side_effect=mock_sleep):
-            with pytest.raises(httpx.RemoteProtocolError):
-                await _run_with_streaming_retry(factory)
+        with (
+            patch("asyncio.sleep", side_effect=mock_sleep),
+            pytest.raises(httpx.RemoteProtocolError),
+        ):
+            await _run_with_streaming_retry(factory)
 
         assert sleep_calls == [1, 2]
 
@@ -179,9 +181,11 @@ class TestStreamingRetry:
         error = httpx.RemoteProtocolError("persistent failure")
         factory = AsyncMock(side_effect=error)
 
-        with patch("asyncio.sleep", new_callable=AsyncMock):
-            with pytest.raises(httpx.RemoteProtocolError, match="persistent failure"):
-                await _run_with_streaming_retry(factory)
+        with (
+            patch("asyncio.sleep", new_callable=AsyncMock),
+            pytest.raises(httpx.RemoteProtocolError, match="persistent failure"),
+        ):
+            await _run_with_streaming_retry(factory)
 
         assert factory.await_count == MAX_STREAMING_RETRIES
 
@@ -276,10 +280,65 @@ class TestModelAllowsStreaming:
         # "streaming": false in models.json forces non-streaming requests.
         mock_config = {"crof-kimi-k2.5-lightning": {"streaming": False}}
         with patch(
-            "code_muse.agents._runtime.ModelFactory.load_config",
+            "code_muse.agents._run_utils.ModelFactory.load_config",
             return_value=mock_config,
         ):
             assert _model_allows_streaming("crof-kimi-k2.5-lightning") is False
+
+    def test_crof_provider_auto_disables_streaming(self):
+        """Models with provider 'crof' default to non-streaming."""
+        from unittest.mock import patch
+
+        from code_muse.agents._runtime import _model_allows_streaming
+
+        mock_config = {
+            "nahcrof-kimi-k2.5-lightning": {
+                "provider": "crof",
+                "model": "kimi-k2.5-lightning",
+                "base_url": "https://api.crof.ai/v1",
+            }
+        }
+        with patch(
+            "code_muse.agents._run_utils.ModelFactory.load_config",
+            return_value=mock_config,
+        ):
+            assert _model_allows_streaming("nahcrof-kimi-k2.5-lightning") is False
+
+    def test_name_containing_crof_auto_disables_streaming(self):
+        """Model names containing 'crof' (e.g. nahcrof-*) auto-disable streaming."""
+        from unittest.mock import patch
+
+        from code_muse.agents._runtime import _model_allows_streaming
+
+        mock_config = {
+            "nahcrof-mimo-v2.5-pro-precision": {
+                "provider": "crof",
+                "model": "mimo-v2.5-pro-precision",
+            }
+        }
+        with patch(
+            "code_muse.agents._run_utils.ModelFactory.load_config",
+            return_value=mock_config,
+        ):
+            assert _model_allows_streaming("nahcrof-mimo-v2.5-pro-precision") is False
+
+    def test_explicit_streaming_true_overrides_crof_default(self):
+        """User can force streaming on for a crof model with explicit true."""
+        from unittest.mock import patch
+
+        from code_muse.agents._runtime import _model_allows_streaming
+
+        mock_config = {
+            "nahcrof-kimi-k2.5-lightning": {
+                "provider": "crof",
+                "streaming": True,
+            }
+        }
+        with patch(
+            "code_muse.agents._run_utils.ModelFactory.load_config",
+            return_value=mock_config,
+        ):
+            assert _model_allows_streaming("nahcrof-kimi-k2.5-lightning") is True
 
     def test_other_model_allows_streaming(self):
         from code_muse.agents._runtime import _model_allows_streaming
@@ -292,7 +351,7 @@ class TestNonStreamingHandlerClear:
     """Verify _event_stream_handler is nuked on agent wrapper objects."""
 
     def test_clearing_handler_makes_property_return_none(self):
-        """Simulate event_stream_handler returning None after _event_stream_handler is cleared."""
+        """Simulate event_stream_handler returning None after handler is cleared."""
 
         class FakeAgent:
             """Minimal stand-in for agent wrapper with the same property logic."""

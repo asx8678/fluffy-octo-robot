@@ -44,17 +44,29 @@ class RunStats:
 
 
 def _model_allows_streaming(model_name: str | None) -> bool:
-    """Check the model config for an explicit ``"streaming": false`` override.
+    """Check the model config for an explicit ``"streaming"`` override.
 
-    Some providers (e.g. crof.ai for kimi models) have flaky SSE transports.
-    Setting ``"streaming": false`` in ``models.json`` disables streaming for
-    that model, falling back to a single-shot request like gac does.
+    Some providers (e.g. crof.ai / nahcrof for kimi models) have flaky SSE
+    transports. These models default to non-streaming (single-shot request)
+    unless the user explicitly sets ``"streaming": true``.
     """
     if not model_name:
         return True
     try:
         cfg = ModelFactory.load_config().get(model_name, {})
-        return cfg.get("streaming", True) is not False
+
+        # Explicit user override always wins (both true and false)
+        if "streaming" in cfg:
+            return cfg["streaming"] is not False
+
+        # Auto-disable streaming for known flaky SSE providers.
+        # Covers:
+        #   - provider: "crof" (or "crof.ai")
+        #   - any model name containing "crof" (nahcrof-*, crof-*, etc.)
+        provider = str(cfg.get("provider") or "").lower()
+        name_lower = model_name.lower()
+
+        return not (provider in {"crof", "crof.ai"} or "crof" in name_lower)
     except Exception:
         return True
 
