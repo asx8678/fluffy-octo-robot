@@ -66,6 +66,7 @@ from code_muse.callbacks import (
     on_should_skip_fallback_render,
 )
 from code_muse.config import (
+    compute_effective_history_budget,
     get_enable_streaming,
     get_max_consecutive_tool_errors,
     get_max_critic_retries,
@@ -125,18 +126,24 @@ def _emergency_compact(agent: Any) -> bool:
         "likely context overflow. Aggressively trimming history..."
     )
 
-    # Use 25% of model context as protected tokens (much more aggressive
-    # than the normal 50k default) to force a significant reduction.
+    # Use the adaptive budget but take a more aggressive slice (~55% of the
+    # effective history budget) to force a significant reduction on overflow.
+    # This replaces the old crude `model_ctx // 4`.
     try:
         model_ctx = agent._get_model_context_length()
     except Exception:
         model_ctx = 128000
-    emergency_protected = max(5000, model_ctx // 4)
 
     cache = CompactionCache()
     model_name: str | None = None
     with suppress(Exception):
         model_name = agent.get_model_name()
+
+    try:
+        effective = compute_effective_history_budget(model_ctx, 0, model_name)
+        emergency_protected = max(5000, int(effective * 0.55))
+    except Exception:
+        emergency_protected = max(5000, model_ctx // 4)
 
     result = truncate(history, emergency_protected, model_name, cache=cache)
 

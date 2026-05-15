@@ -209,8 +209,8 @@ def make_model_settings(
 
     Args:
         model_name: The name of the model to create settings for.
-        max_tokens: Optional max tokens limit. If None, automatically calculated
-            as: max(2048, min(15% of context_length, 65536))
+        max_tokens: Optional max tokens limit. If None, prefers the model's declared
+            max_output/max_output_tokens (when present), else conservative 12% of context.
 
     Returns:
         Appropriate ModelSettings subclass instance for the model.
@@ -228,7 +228,7 @@ def make_model_settings(
     # Calculate max_tokens if not explicitly provided
     model_config: dict[str, Any] = {}
     if max_tokens is None:
-        # Load model config to get context length
+        # Load model config to get context length + preferred max_output
         try:
             models_config = ModelFactory.load_config()
             model_config = models_config.get(model_name, {})
@@ -236,8 +236,20 @@ def make_model_settings(
         except Exception:
             # Fallback if config loading fails (e.g., in CI environments)
             context_length = 128000
-        # min 2048, 15% of context, max 65536
-        max_tokens = max(2048, min(int(0.15 * context_length), 65536))
+            model_config = {}
+
+        # Respect per-model max_output / max_output_tokens when declared
+        # (Claude 1M often supports 64k-128k output, many 200k+ models too).
+        declared_max_out = (
+            model_config.get("max_output") or model_config.get("max_output_tokens") or 0
+        )
+        if declared_max_out > 0:
+            max_tokens = max(
+                2048, min(int(declared_max_out), int(0.12 * context_length), 65536)
+            )
+        else:
+            # Conservative default: 12% of context (was 15%), still capped at 65k
+            max_tokens = max(2048, min(int(0.12 * context_length), 65536))
     elif not model_config:
         try:
             model_config = ModelFactory.load_config().get(model_name, {})
@@ -544,7 +556,7 @@ class ModelFactory:
             (pathlib.Path(COPILOT_MODELS_FILE), "Copilot models", False),
         ]
 
-        for source_path, label, use_filtered in extra_sources:
+        for source_path, label, _use_filtered in extra_sources:
             if not source_path.exists():
                 continue
             try:

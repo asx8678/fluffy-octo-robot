@@ -12,6 +12,7 @@ from code_muse.config.models import (  # noqa: F401
     _default_vision_model_from_models_json,
     _validate_model_exists,
     clear_model_cache,
+    compute_effective_history_budget,
     get_global_model_name,
     get_model_context_length,
     get_protected_token_count,

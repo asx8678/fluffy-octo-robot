@@ -1,6 +1,7 @@
 """Config: model selection, validation, and caching."""
 
 import configparser
+from contextlib import suppress
 
 import code_muse.config.parser as _parser
 import code_muse.config.paths as paths
@@ -246,27 +247,100 @@ def get_model_context_length() -> int:
         return 128000
 
 
+def compute_effective_history_budget(
+    model_max: int, overhead: int = 0, model_name: str | None = None
+) -> int:
+    """
+    Model-class-aware effective token budget for (system prompt + message history).
+
+    Implements the adaptive limits from the 2026-05 performance audit:
+    - >= 1M context: 88% for history (after reserves)
+    - 100k–1M: 74%
+    - 32k–100k: 68%
+    - < 32k: 55% (aggressive)
+
+    Output reservation prefers the model's declared max_output / max_output_tokens
+    (from models_dev, Bedrock, custom models, etc.). Falls back to a safe 8% of ctx
+    (capped 4k–64k).
+
+    Always reserves a safety buffer (2k or 2%) for estimation drift + response.
+
+    This is the single source of truth for protected_tokens, compaction thresholds,
+    pre-send gates, and emergency compaction. Plugins (e.g. token_accuracy) can
+    influence via model metadata returned from load_models_config.
+
+    Args:
+        model_max: The model's context window in tokens.
+        overhead: Estimated tokens for system prompt + tool schemas.
+        model_name: Optional model name for per-model max_output lookup.
+
+    Returns:
+        The token budget available for history content before compaction triggers.
+    """
+    if model_max <= 0:
+        model_max = 128000
+
+    if model_max >= 1_000_000:
+        hist_frac = 0.88
+    elif model_max >= 100_000:
+        hist_frac = 0.74
+    elif model_max >= 32_000:
+        hist_frac = 0.68
+    else:
+        hist_frac = 0.55
+
+    # Prefer per-model declared max output (respects 1M Claude 64k–128k output, etc.)
+    out_max = 0
+    try:
+        from code_muse.model_factory import ModelFactory
+
+        cfg = ModelFactory.load_config().get(
+            model_name or get_global_model_name() or "", {}
+        )
+        out_max = cfg.get("max_output") or cfg.get("max_output_tokens") or 0
+    except Exception:
+        out_max = 0
+
+    if out_max <= 0:
+        out_max = max(4096, min(65536, int(model_max * 0.08)))
+
+    safety = max(2048, int(model_max * 0.02))
+    budget = int(model_max * hist_frac) - overhead - out_max - safety
+    return max(4096, budget)
+
+
 def get_protected_token_count():
     """
     Returns the user-configured protected token count for message history compaction.
     This is the number of tokens in recent messages that won't be summarized.
     Defaults to 50000 if unset or misconfigured.
     Configurable by 'protected_token_count' key.
-    Enforces that protected tokens don't exceed 75% of model context length.
+
+    Now respects the adaptive compute_effective_history_budget (from the 2026-05
+    performance audit) so 1M models get much larger protected tails (~85-88%)
+    while 32k models are aggressively capped.
     """
     val = _parser.get_value("protected_token_count")
     try:
-        # Get the model context length to enforce the 75% limit
         model_context_length = get_model_context_length()
-        max_protected_tokens = int(model_context_length * 0.75)
+        model_name = None
+        with suppress(Exception):
+            model_name = get_global_model_name()
 
-        # Parse the configured value
+        # New adaptive budget is the authoritative cap for protected zone
+        effective_budget = compute_effective_history_budget(
+            model_context_length, overhead=0, model_name=model_name
+        )
+        # Leave headroom inside the budget for overhead + a few turns
+        adaptive_max = max(4096, int(effective_budget * 0.92))
+
+        # Legacy 75% cap (kept for safety / very small models)
+        legacy_max = int(model_context_length * 0.75)
+
+        max_protected_tokens = min(adaptive_max, legacy_max)
+
         configured_value = int(val) if val else 50000
-
-        # Apply constraints: minimum 1000, maximum 75% of context length
         return max(1000, min(configured_value, max_protected_tokens))
-    except ValueError, TypeError:
-        # If parsing fails, return a reasonable default that respects the 75% limit
+    except ValueError, TypeError, Exception:
         model_context_length = get_model_context_length()
-        max_protected_tokens = int(model_context_length * 0.75)
-        return min(50000, max_protected_tokens)
+        return min(50000, int(model_context_length * 0.55))
