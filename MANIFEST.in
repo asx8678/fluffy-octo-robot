@@ -1,0 +1,47 @@
+# MANIFEST.in — controls what goes into the source distribution (sdist)
+# This is critical for Cython projects because the wheel is often built
+# from the sdist in CI (GitHub Actions, PyPI, etc.).
+
+include LICENSE
+include README.md
+include CONTRIBUTING.md
+include pyproject.toml
+include setup.py
+include uv.lock
+
+# === Cython extension sources (THE FIX FOR THE CURRENT BUILD FAILURE) ===
+# Without these, cythonize() fails with:
+#   ValueError: 'code_muse/terminal_utils.pyx' doesn't match any files
+recursive-include code_muse *.pyx
+
+# Include pre-generated C files if they ever get committed (defensive)
+recursive-include code_muse *.c
+
+# Data files that must be shipped
+include code_muse/models.json
+include code_muse/models_dev_api.json
+
+# === Good hygiene exclusions ===
+prune .git
+prune .github
+prune .venv
+prune build
+prune dist
+prune *.egg-info
+prune .cache
+prune .mypy_cache
+prune .ruff_cache
+
+global-exclude *.py[cod]
+global-exclude __pycache__
+global-exclude *.so
+global-exclude *.pyd
+global-exclude *.dll
+global-exclude *.dylib
+global-exclude *.egg
+global-exclude .DS_Store
+global-exclude *.swp
+global-exclude *~
+global-exclude .coverage
+global-exclude .coverage.*
+global-exclude htmlcov
