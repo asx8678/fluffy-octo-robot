@@ -246,7 +246,7 @@ def _apply_pinned_model(agent_name: str, model_choice: str) -> None:
 
             # Save the updated configuration
             with open(agent_file_path, "w", encoding="utf-8") as f:
-                f.write(json.dumps(agent_config, option=orjson.OPT_INDENT_2).decode())
+                f.write(json.dumps(agent_config, option=json.OPT_INDENT_2).decode())
         else:
             # Handle built-in Python agent - use config functions
             if model_choice == "(unpin)":

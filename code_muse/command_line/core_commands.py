@@ -561,7 +561,7 @@ def handle_remove_model_command(command: str) -> bool:
     extra_models_path.parent.mkdir(parents=True, exist_ok=True)
     temp_path = extra_models_path.with_suffix(".tmp")
     with open(temp_path, "w", encoding="utf-8") as f:
-        f.write(json.dumps(extra_models, option=orjson.OPT_INDENT_4).decode())
+        f.write(json.dumps(extra_models, option=json.OPT_INDENT_4).decode())
     temp_path.replace(extra_models_path)
 
     clear_model_cache()

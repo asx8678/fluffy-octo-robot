@@ -53,15 +53,7 @@ async def main():
     if args.ultra_compact:
         pass
     elif args.verbose:
-        pass
-
-        # --verbose count: 1→VERBOSE, 2→VERY_VERBOSE, 3+→RAW
-        level_map = {
-            1: VerbosityLevel.VERBOSE,
-            2: VerbosityLevel.VERY_VERBOSE,
-        }
-        level = level_map.get(args.verbose, VerbosityLevel.RAW)
-        set_verbosity(level)
+        pass  # TODO: wire verbosity level (see issue dxe)
 
     from code_muse.messaging import (
         RichConsoleRenderer,

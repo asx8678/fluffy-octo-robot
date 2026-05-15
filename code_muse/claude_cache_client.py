@@ -365,13 +365,7 @@ class ClaudeCacheAsyncClient(httpx.AsyncClient):
         # Extract cache usage for token tracking (best-effort, never blocks)
         if is_messages_endpoint and response.status_code == 200:
             try:
-                pass
-
-                await response.aread()
-                data = response.json()
-                usage = extract_cache_usage(data)
-                if usage:
-                    _session_stats.record_usage(usage)
+                pass  # TODO: wire cache usage extraction (see issue dxe)
             except Exception as exc:
                 logger.debug("Cache usage extraction failed: %s", exc)
 
