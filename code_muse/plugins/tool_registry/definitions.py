@@ -103,9 +103,7 @@ def _derive_idempotent(name: str, read_only: bool) -> bool:
         return True
     if name == "grep":
         return True
-    if name.startswith("list_"):
-        return True
-    return False
+    return bool(name.startswith("list_"))
 
 
 def _derive_requires_confirmation(name: str) -> bool:

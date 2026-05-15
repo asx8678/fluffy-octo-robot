@@ -28,6 +28,7 @@ from pydantic_ai import (
     BinaryContent,
     DocumentUrl,
     ImageUrl,
+    UnexpectedModelBehavior,
     UsageLimitExceeded,
     UsageLimits,
 )
@@ -266,6 +267,9 @@ async def run(
             Also performs emergency compaction when the model returns empty
             responses (likely context overflow) — compacts history aggressively
             and retries once before giving up.
+
+            Also falls back to non-streaming mode when streaming repeatedly
+            fails with an empty-stream error.
             """
             max_retries = get_max_hook_retries()
             for attempt in range(max_retries + 1):
@@ -278,6 +282,35 @@ async def run(
                         compacted = _emergency_compact(agent)
                         if compacted:
                             continue
+
+                    # Non-streaming fallback: if streaming keeps failing
+                    # (empty stream), fall back to non-streaming mode
+                    # for this turn before giving up entirely.
+                    if (
+                        isinstance(exc, UnexpectedModelBehavior)
+                        and "ended without content" in str(exc).lower()
+                        and use_streaming
+                    ):
+                        emit_warning(
+                            f"🔄 Streaming failed — retrying without streaming "
+                            f"(model: {agent.get_model_name()})"
+                        )
+                        # Temporarily disable streaming on the pydantic agent.
+                        # The finally block will restore the handler because
+                        # handler_was_modified is set.
+                        pydantic_agent._event_stream_handler = None
+                        nonlocal handler_was_modified
+                        handler_was_modified = True
+                        try:
+                            result = await _run_agent(
+                                prompt_to_use, agent._message_history, None
+                            )
+                            stats.was_streamed = False
+                            return result
+                        except Exception as ns_exc:
+                            # Non-streaming also failed; fall through to
+                            # normal exception handling with the new exception.
+                            exc = ns_exc
 
                     if attempt >= max_retries:
                         raise

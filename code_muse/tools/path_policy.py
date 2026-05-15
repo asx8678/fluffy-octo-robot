@@ -10,6 +10,7 @@ All file tools should call ``check_path_allowed()`` before opening/spawning
 operations. Denials never include full file content.
 """
 
+import contextlib
 from collections.abc import Sequence
 from enum import Enum, auto
 from pathlib import Path
@@ -144,11 +145,9 @@ def classify_path(file_path: Path) -> dict[str, bool]:
         # If the path was expanded but resolve took us outside workspace,
         # and the absolute path itself also looks outside, mark traversal.
         if not inside_workspace:
-            try:
-                abs_no_resolve.relative_to(workspace)
-            except ValueError:
+            with contextlib.suppress(ValueError):
                 # Both resolved and absolute are outside workspace
-                pass
+                abs_no_resolve.relative_to(workspace)
     except Exception:
         pass
 

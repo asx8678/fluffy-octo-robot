@@ -7,11 +7,9 @@ unique module names to prevent stdlib/project shadowing.
 """
 
 import concurrent.futures
-import contextlib
 import importlib
 import importlib.util
 import logging
-import os
 import re
 import sys
 from pathlib import Path

@@ -11,6 +11,7 @@ Usage:
     >>> manager.unregister_agent("session-123")
 """
 
+import contextlib
 import threading
 import time
 from dataclasses import dataclass, field
@@ -301,10 +302,8 @@ class SubAgentConsoleManager:
 
         # Stop Live display
         if self._live is not None:
-            try:
+            with contextlib.suppress(Exception):
                 self._live.stop()
-            except Exception:
-                pass  # Ignore errors during cleanup
             self._live = None
 
     def _update_loop(self) -> None:

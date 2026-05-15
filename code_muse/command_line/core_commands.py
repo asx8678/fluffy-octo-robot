@@ -4,6 +4,7 @@ This module contains @register_command decorated handlers that are automatically
 discovered by the command registry system.
 """
 
+import contextlib
 import os
 from pathlib import Path
 
@@ -219,11 +220,9 @@ def handle_exit_command(command: str) -> bool:
     """Exit the interactive session."""
     from code_muse.messaging import emit_success
 
-    try:
-        emit_success("Goodbye!")
-    except Exception:
+    with contextlib.suppress(Exception):
         # Handle emit errors gracefully
-        pass
+        emit_success("Goodbye!")
     # Signal to the main app that we want to exit
     # The actual exit handling is done in main.py
     return True

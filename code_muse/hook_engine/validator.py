@@ -105,9 +105,8 @@ def _validate_hook(
         )
 
     timeout = hook.get("timeout")
-    if timeout is not None:
-        if not isinstance(timeout, (int, float)) or timeout < 100:
-            errors.append(f"{prefix} 'timeout' must be >= 100ms, got: {timeout}")
+    if timeout is not None and (not isinstance(timeout, (int, float)) or timeout < 100):
+        errors.append(f"{prefix} 'timeout' must be >= 100ms, got: {timeout}")
 
     return errors
 

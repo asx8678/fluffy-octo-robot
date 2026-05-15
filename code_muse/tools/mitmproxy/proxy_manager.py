@@ -1,5 +1,6 @@
 """Manage mitmdump subprocess for traffic capture."""
 
+import importlib.util
 import logging
 import os
 import shlex
@@ -59,12 +60,8 @@ class MitmProxyManager:
             return f"{python} -m mitmproxy.tools.main mitmdump"
 
         # 3. pip location — mitmdump is usually on PATH, but check module invocation
-        try:
-            import mitmproxy
-
+        if importlib.util.find_spec("mitmproxy") is not None:
             return f"{sys.executable} -m mitmproxy.tools.main mitmdump"
-        except ImportError:
-            pass
 
         return None
 

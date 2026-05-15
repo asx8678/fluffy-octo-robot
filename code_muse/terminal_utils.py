@@ -11,6 +11,7 @@ on install). The public API is unchanged.
 
 from __future__ import annotations
 
+import contextlib
 import os
 import platform
 import re
@@ -196,10 +197,8 @@ def reset_unix_terminal() -> None:
     if platform.system() == "Windows":
         return
 
-    try:
+    with contextlib.suppress(subprocess.CalledProcessError, FileNotFoundError):
         subprocess.run(["reset"], check=True, capture_output=True)
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        pass  # Silently fail if reset command isn't available
 
 
 def reset_terminal() -> None:
@@ -404,7 +403,7 @@ def detect_truecolor_support() -> bool:
     return False
 
 
-def print_truecolor_warning(console: "Console | None" = None) -> None:
+def print_truecolor_warning(console: Console | None = None) -> None:
     """Print a big fat red warning if truecolor is not supported.
 
     Args:

@@ -105,17 +105,17 @@ class GeminiCodeAssistModel(Model):
         url = f"{self.api_base_url}/{self.api_version}:streamGenerateContent?alt=sse"
         headers = self._get_headers()
 
-        async with httpx.AsyncClient(timeout=180) as client:
-            async with client.stream(
-                "POST", url, json=request_body, headers=headers
-            ) as response:
-                if response.status_code != 200:
-                    error_text = await response.aread()
-                    raise RuntimeError(
-                        f"Code Assist API error {response.status_code}: {error_text.decode()}"
-                    )
+        async with (
+            httpx.AsyncClient(timeout=180) as client,
+            client.stream("POST", url, json=request_body, headers=headers) as response,
+        ):
+            if response.status_code != 200:
+                error_text = await response.aread()
+                raise RuntimeError(
+                    f"Code Assist API error {response.status_code}: {error_text.decode()}"
+                )
 
-                yield StreamedResponse(response, self._model_name)
+            yield StreamedResponse(response, self._model_name)
 
     def _get_headers(self) -> dict[str, str]:
         """Get HTTP headers for the request."""

@@ -2,19 +2,17 @@
 
 import hashlib
 import logging
-from pathlib import Path
-
-logger = logging.getLogger(__name__)
-
-# XDG state directory for private trust storage
 import os
 from datetime import UTC
+from pathlib import Path
 
 from code_muse.secret_storage import (
     atomic_write_private_json,
     ensure_private_dir,
     warn_or_fix_private_file_mode,
 )
+
+logger = logging.getLogger(__name__)
 
 _TRUST_DIR = (
     Path(

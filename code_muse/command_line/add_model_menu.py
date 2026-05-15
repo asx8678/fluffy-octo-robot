@@ -1180,10 +1180,9 @@ class AddModelMenu:
         def _(event):
             if self.view_mode == "providers":
                 self._enter_provider()
-            elif self.view_mode == "models":
+            elif self.view_mode == "models" and self._try_add_current_model():
                 # Enter adds the model when viewing models
-                if self._try_add_current_model():
-                    event.app.exit()
+                event.app.exit()
 
         @kb.add("escape")
         def _(event):
@@ -1276,13 +1275,14 @@ class AddModelMenu:
             )
 
             # Prompt for any missing credentials
-            if self._prompt_for_credentials(self.pending_provider):
+            if self._prompt_for_credentials(
+                self.pending_provider
+            ) and self._add_model_to_extra_config(
+                self.pending_model, self.pending_provider
+            ):
                 # Now add the model to config
-                if self._add_model_to_extra_config(
-                    self.pending_model, self.pending_provider
-                ):
-                    self.result = "added"
-                    return True
+                self.result = "added"
+                return True
             return False
 
         # Handle pending credential flow after TUI exits
@@ -1310,13 +1310,14 @@ class AddModelMenu:
                     return False
 
             # Prompt for any missing credentials
-            if self._prompt_for_credentials(self.pending_provider):
+            if self._prompt_for_credentials(
+                self.pending_provider
+            ) and self._add_model_to_extra_config(
+                self.pending_model, self.pending_provider
+            ):
                 # Now add the model to config
-                if self._add_model_to_extra_config(
-                    self.pending_model, self.pending_provider
-                ):
-                    self.result = "added"
-                    return True
+                self.result = "added"
+                return True
             return False
 
         return self.result == "added"

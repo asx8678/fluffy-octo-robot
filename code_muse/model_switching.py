@@ -1,5 +1,7 @@
 """Shared helpers for switching models and reloading agents safely."""
 
+import contextlib
+
 from code_muse.config import set_model_name
 
 
@@ -35,11 +37,9 @@ def set_model_and_reload_agent(
 
         # JSON agents may need to refresh their config before reload
         if hasattr(current_agent, "refresh_config"):
-            try:
-                current_agent.refresh_config()
-            except Exception:
+            with contextlib.suppress(Exception):
                 # Non-fatal, continue to reload
-                ...
+                current_agent.refresh_config()
 
         if warn_on_pinned_mismatch:
             effective_model = _get_effective_agent_model(current_agent)

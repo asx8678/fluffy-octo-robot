@@ -155,9 +155,12 @@ class SkillsInstallMenu:
     def _get_current_skill(self) -> SkillCatalogEntry | None:
         """Get the currently highlighted skill entry."""
 
-        if self.view_mode == "skills" and self.current_skills:
-            if 0 <= self.selected_skill_idx < len(self.current_skills):
-                return self.current_skills[self.selected_skill_idx]
+        if (
+            self.view_mode == "skills"
+            and self.current_skills
+            and 0 <= self.selected_skill_idx < len(self.current_skills)
+        ):
+            return self.current_skills[self.selected_skill_idx]
         return None
 
     def _render_navigation_hints(self, lines: list) -> None:

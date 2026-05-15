@@ -4,6 +4,8 @@ Shared spinner implementation for CLI mode.
 This module provides consistent spinner animations across different UI modes.
 """
 
+import contextlib
+
 from rich.spinner import SPINNERS
 
 from .console_spinner import ConsoleSpinner
@@ -39,11 +41,8 @@ def pause_all_spinners():
     if is_subagent():
         return  # Sub-agents don't control the main spinner
     for spinner in _active_spinners:
-        try:
+        with contextlib.suppress(Exception):
             spinner.pause()
-        except Exception:
-            # Ignore errors if a spinner can't be paused
-            pass
 
 
 def resume_all_spinners():
@@ -58,11 +57,8 @@ def resume_all_spinners():
     if is_subagent():
         return  # Sub-agents don't control the main spinner
     for spinner in _active_spinners:
-        try:
+        with contextlib.suppress(Exception):
             spinner.resume()
-        except Exception:
-            # Ignore errors if a spinner can't be resumed
-            pass
 
 
 def update_spinner_context(info: str) -> None:

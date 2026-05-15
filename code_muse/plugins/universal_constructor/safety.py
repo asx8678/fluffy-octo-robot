@@ -446,9 +446,12 @@ def _is_dangerous_open_call(node: ast.Call) -> bool:
         if isinstance(mode_arg, ast.Constant) and isinstance(mode_arg.value, str):
             return mode_arg.value in _DANGEROUS_OPEN_MODES
     for kw in node.keywords:
-        if kw.arg == "mode":
-            if isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
-                return kw.value.value in _DANGEROUS_OPEN_MODES
+        if (
+            kw.arg == "mode"
+            and isinstance(kw.value, ast.Constant)
+            and isinstance(kw.value.value, str)
+        ):
+            return kw.value.value in _DANGEROUS_OPEN_MODES
     return False
 
 

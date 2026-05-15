@@ -285,9 +285,12 @@ def _is_dangerous_open_call(node: ast.Call) -> bool:
 
     # Check keyword arguments
     for kw in node.keywords:
-        if kw.arg == "mode":
-            if isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
-                return kw.value.value in DANGEROUS_OPEN_MODES
+        if (
+            kw.arg == "mode"
+            and isinstance(kw.value, ast.Constant)
+            and isinstance(kw.value.value, str)
+        ):
+            return kw.value.value in DANGEROUS_OPEN_MODES
 
     # If no mode specified, open() defaults to "r" which is safe
     return False
@@ -351,15 +354,17 @@ def _extract_tool_meta(code: str) -> dict[str, Any | None]:
     for node in ast.walk(tree):
         if isinstance(node, ast.Assign):
             for target in node.targets:
-                if isinstance(target, ast.Name) and target.id == "TOOL_META":
-                    # Try to evaluate the dict literal
-                    if isinstance(node.value, ast.Dict):
-                        try:
-                            # Safely evaluate the dict using ast.literal_eval
-                            meta_str = ast.unparse(node.value)
-                            return ast.literal_eval(meta_str)
-                        except ValueError, SyntaxError:
-                            return None
+                if (
+                    isinstance(target, ast.Name)
+                    and target.id == "TOOL_META"
+                    and isinstance(node.value, ast.Dict)
+                ):
+                    try:
+                        # Safely evaluate the dict using ast.literal_eval
+                        meta_str = ast.unparse(node.value)
+                        return ast.literal_eval(meta_str)
+                    except ValueError, SyntaxError:
+                        return None
     return None
 
 

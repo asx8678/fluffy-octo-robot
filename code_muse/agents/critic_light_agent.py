@@ -42,8 +42,6 @@ class LightCodingAgent(BaseAgent):
 # The autonomy base prompt is imported from .prompts (single source of truth).
 
 
-
-
 # ---------------------------------------------------------------------------
 # Light coding overlay — micro-edit / fix mode.
 # ---------------------------------------------------------------------------

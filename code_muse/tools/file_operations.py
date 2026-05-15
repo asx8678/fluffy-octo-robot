@@ -179,12 +179,16 @@ def _list_files(
 
     # Smart home directory detection - auto-limit recursion for performance
     # But allow recursion in tests (when context=None) or when explicitly requested
-    if context is not None and is_likely_home_directory(str(directory)) and recursive:
-        if not is_project_directory(str(directory)):
-            output_lines.append(
-                "Warning: Detected home directory - limiting to non-recursive listing for performance"
-            )
-            recursive = False
+    if (
+        context is not None
+        and is_likely_home_directory(str(directory))
+        and recursive
+        and not is_project_directory(str(directory))
+    ):
+        output_lines.append(
+            "Warning: Detected home directory - limiting to non-recursive listing for performance"
+        )
+        recursive = False
 
     # Create a temporary ignore file with our ignore patterns
     ignore_file = None

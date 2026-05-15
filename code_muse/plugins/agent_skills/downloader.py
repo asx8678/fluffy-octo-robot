@@ -61,14 +61,16 @@ def _download_to_file(url: str, dest: Path) -> bool:
     try:
         dest.parent.mkdir(parents=True, exist_ok=True)
 
-        with httpx.Client(timeout=30, headers=headers, follow_redirects=True) as client:
-            with client.stream("GET", url) as response:
-                response.raise_for_status()
+        with (
+            httpx.Client(timeout=30, headers=headers, follow_redirects=True) as client,
+            client.stream("GET", url) as response,
+        ):
+            response.raise_for_status()
 
-                with dest.open("wb") as f:
-                    for chunk in response.iter_bytes():
-                        if chunk:
-                            f.write(chunk)
+            with dest.open("wb") as f:
+                for chunk in response.iter_bytes():
+                    if chunk:
+                        f.write(chunk)
 
         logger.info(f"Downloaded skill zip to {dest}")
         return True
