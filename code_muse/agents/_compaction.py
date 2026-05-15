@@ -548,7 +548,7 @@ def make_history_processor(agent: Any) -> Callable[..., list[ModelMessage]]:
         on_message_history_processor_start(
             agent_name=getattr(agent, "name", None),
             session_id=getattr(agent, "session_id", None),
-            message_history=list(history),
+            message_history=history,
             incoming_messages=list(messages),
         )
 

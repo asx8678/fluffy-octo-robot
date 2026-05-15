@@ -24,6 +24,7 @@ from code_muse.session_storage_helpers import (  # noqa: F401
     _try_load_pkl,
     _unsafe_pickle_loads_for_explicit_legacy_migration_only,
     _unwrap_messages,
+    _unwrap_messages_with_context,
     _wrap_messages,
     build_session_paths,
     ensure_directory,
@@ -38,12 +39,13 @@ def save_session(
     timestamp: str,
     token_estimator: TokenEstimator,
     auto_saved: bool = False,
+    task_context: dict | None = None,
 ) -> SessionMetadata:
     ensure_directory(base_dir)
     paths = build_session_paths(base_dir, session_name)
     json_path = _canonical_json_path(base_dir, session_name)
 
-    session_data = _wrap_messages(history)
+    session_data = _wrap_messages(history, task_context=task_context)
 
     # Compute token count once (used in both dirty-hit and write paths)
     total_tokens = sum(token_estimator(message) for message in history)

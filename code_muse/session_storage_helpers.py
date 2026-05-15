@@ -170,17 +170,24 @@ def _extract_pickle_payload(raw: bytes) -> bytes:
     return raw
 
 
-def _wrap_messages(messages: Any) -> dict[str, Any]:
+def _wrap_messages(
+    messages: Any,
+    *,
+    task_context: dict | None = None,
+) -> dict[str, Any]:
     # Attempt pydantic-ai serialisation; fall back to raw for plain data.
     try:
         dumped = ModelMessagesTypeAdapter.dump_python(messages, mode="json")
     except Exception:
         dumped = messages
-    return {
+    result: dict[str, Any] = {
         "schema": _SCHEMA_VERSION,
         "format": _FORMAT,
         "messages": dumped,
     }
+    if task_context is not None:
+        result["task_context"] = task_context
+    return result
 
 
 def _unwrap_messages(data: Any) -> Any:
@@ -212,6 +219,23 @@ def _unwrap_messages(data: Any) -> Any:
         return ModelMessagesTypeAdapter.validate_python(raw_messages)
     except Exception:
         return raw_messages
+
+
+def _unwrap_messages_with_context(data: Any) -> tuple[Any, dict | None]:
+    """Unwrap serialised session data, returning (messages, task_context).
+
+    Like ``_unwrap_messages`` but also extracts the optional ``task_context``
+    dict.  ``task_context`` is ``None`` for sessions saved without task
+    awareness (backward compat).
+    """
+    if not isinstance(data, dict):
+        return data, None
+
+    messages = _unwrap_messages(data)
+    task_context = data.get("task_context")
+    if task_context is not None and not isinstance(task_context, dict):
+        task_context = None
+    return messages, task_context
 
 
 def _is_binary_pickle(data: bytes) -> bool:
