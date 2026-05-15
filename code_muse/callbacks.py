@@ -287,7 +287,7 @@ def get_callbacks(phase: PhaseType) -> list[CallbackFunc]:
     """
     cached = _sorted_cache.get(phase)
     if cached is not None:
-        return cached
+        return list(cached)
 
     callbacks = _callbacks.get(phase, [])
     if not callbacks:
@@ -298,7 +298,7 @@ def get_callbacks(phase: PhaseType) -> list[CallbackFunc]:
     sorted_callbacks = sorted(callbacks, key=lambda item: item[0], reverse=True)
     result = [func for _priority, func in sorted_callbacks]
     _sorted_cache[phase] = result
-    return result
+    return list(result)
 
 
 def count_callbacks(phase: PhaseType | None = None) -> int:
