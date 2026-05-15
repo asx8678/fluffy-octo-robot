@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "code-muse"
-version = "0.1.55"
+version = "0.1.56"
 description = "Muse — eternal guide of creators in the arts and sciences. An elegant AI coding assistant."
 readme = "README.md"
 # Only 3.14+ is supported due to free-threaded Python features
@@ -24,6 +24,7 @@ dependencies = [
     "mitmproxy>=11.0.0",
     "pyfiglet>=1.0.4",
     "rapidfuzz>=3.14.5",
+    "msgspec>=0.20.0",
     "openai>=2.36.0",
     "ripgrep>=14.1.0",
     "playwright>=1.59.0",
