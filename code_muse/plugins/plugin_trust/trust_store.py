@@ -8,18 +8,24 @@ logger = logging.getLogger(__name__)
 
 # XDG state directory for private trust storage
 import os
+from datetime import UTC
+
 from code_muse.secret_storage import (
     atomic_write_private_json,
     ensure_private_dir,
     warn_or_fix_private_file_mode,
 )
 
-_TRUST_DIR = Path(
-    os.environ.get(
-        "XDG_STATE_HOME",
-        Path.home() / ".local" / "state",
+_TRUST_DIR = (
+    Path(
+        os.environ.get(
+            "XDG_STATE_HOME",
+            Path.home() / ".local" / "state",
+        )
     )
-) / "muse" / "plugin_trust"
+    / "muse"
+    / "plugin_trust"
+)
 
 _TRUST_FILE = _TRUST_DIR / "plugin_trust.json"
 
@@ -48,26 +54,26 @@ def _save_trust_db(db: dict[str, dict]) -> None:
 
 def compute_plugin_hash(plugin_dir: Path) -> str:
     """Compute a SHA-256 hash of the plugin's entry point files.
-    
+
     Hashes register_callbacks.py (or __init__.py) along with any .py files
     in the plugin directory for deterministic trust verification.
     """
     hasher = hashlib.sha256()
-    
+
     # Find the entry point file
     callbacks_file = plugin_dir / "register_callbacks.py"
     init_file = plugin_dir / "__init__.py"
-    
+
     entry_point = callbacks_file if callbacks_file.exists() else init_file
-    
+
     if entry_point.exists():
         hasher.update(entry_point.read_bytes())
-    
+
     # Hash all .py files in the plugin directory for content verification
     for py_file in sorted(plugin_dir.rglob("*.py")):
         if py_file.is_file():
             hasher.update(py_file.read_bytes())
-    
+
     return hasher.hexdigest()
 
 
@@ -85,14 +91,14 @@ def is_plugin_trusted(plugin_name: str, content_hash: str) -> bool:
 
 def record_plugin_trust(plugin_name: str, content_hash: str, path: str) -> None:
     """Explicitly mark a user plugin as trusted."""
-    from datetime import datetime, timezone
-    
+    from datetime import datetime
+
     db = _load_trust_db()
     db[plugin_name] = {
         "hash": content_hash,
         "path": path,
         "trusted": True,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
     _save_trust_db(db)
     logger.info("Plugin trusted: %s (hash=%s...)", plugin_name, content_hash[:12])

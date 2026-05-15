@@ -14,6 +14,7 @@ from code_muse.tools.command_runner import ShellCommandOutput
 
 class VerbosityLevel(IntEnum):
     """Verbosity level for build output compression."""
+
     NORMAL = 0
     VERBOSE = 1
     VERY_VERBOSE = 2
@@ -406,6 +407,7 @@ def compress_build(
 
 class _BuildStrategyRegistry:
     """Simple local registry for build compression strategies."""
+
     def __init__(self):
         self._strategies: dict[str, tuple[int, callable]] = {}
 

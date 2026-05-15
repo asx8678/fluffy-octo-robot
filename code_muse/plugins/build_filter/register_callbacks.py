@@ -13,7 +13,10 @@ from code_muse.callbacks import register_callback
 from code_muse.messaging import emit_info
 
 # Import strategies so they self-register with the strategy registry
-from code_muse.plugins.build_filter.strategies.build import VerbosityLevel, get_registry  # noqa: F401
+from code_muse.plugins.build_filter.strategies.build import (  # noqa: F401
+    VerbosityLevel,
+    get_registry,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +27,7 @@ def get_verbosity() -> VerbosityLevel:
     Currently returns NORMAL by default. Will be wired to CLI --verbose flags.
     """
     return VerbosityLevel.NORMAL
+
 
 # ---------------------------------------------------------------------------
 # Build command classifier

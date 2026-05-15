@@ -9,13 +9,14 @@ Extracted from ``_runtime.py`` to keep that module focused.
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
-from code_muse.messaging import emit_info, emit_warning
+from code_muse.messaging import emit_warning
 
 
 def make_schedule_cancel(
-    agent_task: "asyncio.Task[Any]",
+    agent_task: asyncio.Task[Any],
     loop: asyncio.AbstractEventLoop,
 ) -> Callable[[], None]:
     """Build the ``schedule_agent_cancel`` callback for the key listener."""

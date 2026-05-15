@@ -38,8 +38,7 @@ try:
 except ImportError:  # pragma: no cover - 3.10 only
     BaseExceptionGroup = Exception  # type: ignore[misc,assignment]
 
-from code_muse.agents import _key_listeners
-from code_muse.agents import _run_signals
+from code_muse.agents import _key_listeners, _run_signals
 from code_muse.agents._builder import build_pydantic_agent
 from code_muse.agents._diagnostics import emit_exception_diagnostics
 from code_muse.agents._non_streaming_render import (
@@ -81,7 +80,6 @@ from code_muse.config import (
 )
 from code_muse.keymap import cancel_agent_uses_signal
 from code_muse.messaging import emit_info, emit_warning
-from code_muse.tools.agent_tools import _active_subagent_tasks_var
 from code_muse.tools.command_runner import is_awaiting_user_input
 
 # ---- Emergency compaction for context overflow -------------------------------
@@ -388,6 +386,7 @@ async def run(
 
     async def run_agent_task() -> RunOutcome:
         from code_muse.agents._history import prune_interrupted_tool_calls
+
         agent._message_history = prune_interrupted_tool_calls(agent._message_history)
         outcome: RunOutcome | None = None
         try:

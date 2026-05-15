@@ -203,7 +203,7 @@ class ClaudeCacheAsyncClient(httpx.AsyncClient):
         """
         try:
             data = json.loads(body.decode("utf-8"))
-        except (json.JSONDecodeError, UnicodeDecodeError):
+        except json.JSONDecodeError, UnicodeDecodeError:
             return None
 
         if not isinstance(data, dict):
@@ -471,7 +471,7 @@ class ClaudeCacheAsyncClient(httpx.AsyncClient):
 
                                 date = parsedate_to_datetime(retry_after)
                                 wait_time = max(0, date.timestamp() - time.time())
-                            except (ValueError, TypeError, OverflowError):
+                            except ValueError, TypeError, OverflowError:
                                 pass
 
                 # Cap wait time between 0.5s and 60s
@@ -523,7 +523,7 @@ class ClaudeCacheAsyncClient(httpx.AsyncClient):
             content = request.content
             if content:
                 return content
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             pass
 
         # Fallback to private attr if necessary
