@@ -417,7 +417,7 @@ wheels = [
 
 [[package]]
 name = "code-muse"
-version = "0.1.58"
+version = "0.1.59"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
