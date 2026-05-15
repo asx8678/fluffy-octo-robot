@@ -134,8 +134,9 @@ def get_config_keys():
     default_keys.append("enable_pack_agents")
     # Add universal constructor control key
     default_keys.append("enable_universal_constructor")
-    # Add hook retry limit key
+    # Add hook retry limit keys
     default_keys.append("max_hook_retries")
+    default_keys.append("max_critic_retries")
     # Add safety/cost control keys
     default_keys.append("max_consecutive_tool_errors")
     default_keys.append("overall_run_timeout")
@@ -525,17 +526,37 @@ def get_max_hook_retries() -> int:
     """Return the maximum number of plugin hook retries after an agent run.
 
     When a plugin hook returns ``{"retry": True, ...}`` the agent re-runs.
-    This caps how many times that can happen to prevent runaway loops.
-    Defaults to 3.
+    This caps how many times that can happen for **non-critic** hooks to
+    prevent runaway loops.  Critic-driven retries have a separate budget
+    controlled by ``get_max_critic_retries()``.
+    Defaults to 10.
     """
     val = get_value("max_hook_retries")
     if val is None:
-        return 3
+        return 10
     try:
         n = int(val)
         return max(1, n)  # At least 1 to avoid nonsensical values
     except ValueError, TypeError:
-        return 3
+        return 10
+
+
+def get_max_critic_retries() -> int:
+    """Return the maximum number of critic-driven retries after an agent run.
+
+    Critic retries (``{"retry": True, ..., "source": "critic"}``) are tracked
+    separately from regular hook retries so the critic can have a larger
+    iteration budget without starving other hooks.
+    Defaults to 10.
+    """
+    val = get_value("max_critic_retries")
+    if val is None:
+        return 10
+    try:
+        n = int(val)
+        return max(1, n)
+    except ValueError, TypeError:
+        return 10
 
 
 def get_enable_streaming() -> bool:

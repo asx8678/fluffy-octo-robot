@@ -31,6 +31,7 @@ from pathlib import Path
 from typing import Any
 
 from code_muse.config.paths import DATA_DIR
+from code_muse.plugins.task_context._text_utils import _extract_text
 from code_muse.plugins.task_context.config import get_task_max_archive_contexts
 
 logger = logging.getLogger(__name__)
@@ -295,32 +296,6 @@ def _estimate_archive_tokens(messages: list[Any]) -> int:
         text = _extract_text(msg)
         total += max(1, len(text) // 3)
     return total
-
-
-def _extract_text(message: Any) -> str:
-    """Extract plain text content from various message formats."""
-    if isinstance(message, str):
-        return message
-    if isinstance(message, dict):
-        for key in ("content", "text", "message", "parts", "user_message"):
-            val = message.get(key)
-            if isinstance(val, str):
-                return val
-        return ""
-    try:
-        parts = getattr(message, "parts", []) or []
-        texts: list[str] = []
-        for part in parts:
-            content = getattr(part, "content", None)
-            if isinstance(content, str):
-                texts.append(content)
-            elif isinstance(content, list):
-                for item in content:
-                    if isinstance(item, str):
-                        texts.append(item)
-        return " ".join(texts)
-    except Exception:
-        return str(message) if message else ""
 
 
 def _get_task_creation_time(task_id: str) -> str:

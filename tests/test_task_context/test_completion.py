@@ -8,6 +8,7 @@ from code_muse.plugins.task_context.completion import (
     _extract_outcome,
     detect_completion,
 )
+from code_muse.plugins.task_context.models import TaskContext
 
 # ---------------------------------------------------------------------------
 # Explicit user completion signals (high confidence)
@@ -268,13 +269,8 @@ class TestInactivityTimeout:
         return_value=600,
     )
     def test_no_timeout_when_recent(self, _mock_timeout):
-        # Use a mock since TaskContext doesn't have last_accessed.
-        # Use naive datetime to match datetime.now() behavior in the
-        # function (which gets tz-stamped with replace(tzinfo=UTC)).
-        task = MagicMock()
-        task.last_accessed = datetime.now()
-        task.created_at = datetime.now()
-        task.task_id = "test"
+        # Real TaskContext now has last_accessed
+        task = TaskContext(last_accessed=datetime.now())
         sig = _check_inactivity_timeout(task, MagicMock())
         assert sig.detected is False
 
@@ -283,10 +279,7 @@ class TestInactivityTimeout:
         return_value=0,
     )
     def test_disabled_timeout(self, _mock_timeout):
-        task = MagicMock()
-        task.last_accessed = None
-        task.created_at = datetime(2020, 1, 1, tzinfo=UTC)
-        task.task_id = "test"
+        task = TaskContext(created_at=datetime(2020, 1, 1, tzinfo=UTC))
         sig = _check_inactivity_timeout(task, MagicMock())
         assert sig.detected is False
 
@@ -296,10 +289,10 @@ class TestInactivityTimeout:
     )
     def test_timeout_fires(self, _mock_timeout):
         old_time = datetime.now(UTC) - timedelta(hours=1)
-        task = MagicMock()
-        task.last_accessed = None
-        task.created_at = old_time
-        task.task_id = "test"
+        task = TaskContext(
+            last_accessed=old_time,
+            created_at=old_time,
+        )
         sig = _check_inactivity_timeout(task, MagicMock())
         assert sig.detected is True
         assert sig.signal_source == "inactivity_timeout"

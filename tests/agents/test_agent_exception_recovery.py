@@ -168,8 +168,12 @@ async def test_agent_exception_retry_then_success_honors_delay(
 
 
 async def test_agent_exception_retry_then_failure_does_not_loop(
+    monkeypatch: pytest.MonkeyPatch,
     diagnostics: list[BaseException],
 ) -> None:
+    # Patch max_hook_retries so the test doesn't depend on the global default.
+    monkeypatch.setattr(_runtime, "get_max_hook_retries", lambda: 1)
+
     first = RuntimeError("recoverable")
     second = RuntimeError("still broken")
     seen: list[Exception] = []

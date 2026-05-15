@@ -17,6 +17,7 @@ import logging
 from typing import Any
 
 from code_muse.messaging import emit_info, emit_success
+from code_muse.plugins.task_context._text_utils import _extract_text
 from code_muse.plugins.task_context.archival import archive_messages_for_task
 from code_muse.plugins.task_context.config import (
     get_task_prune_aggressiveness,
@@ -383,29 +384,3 @@ def _estimate_tokens_for_indices(
             text = _extract_text(messages[idx])
             total += max(1, len(text) // 3)
     return total
-
-
-def _extract_text(message: Any) -> str:
-    """Extract plain text content from various message formats."""
-    if isinstance(message, str):
-        return message
-    if isinstance(message, dict):
-        for key in ("content", "text", "message", "parts", "user_message"):
-            val = message.get(key)
-            if isinstance(val, str):
-                return val
-        return ""
-    try:
-        parts = getattr(message, "parts", []) or []
-        texts: list[str] = []
-        for part in parts:
-            content = getattr(part, "content", None)
-            if isinstance(content, str):
-                texts.append(content)
-            elif isinstance(content, list):
-                for item in content:
-                    if isinstance(item, str):
-                        texts.append(item)
-        return " ".join(texts)
-    except Exception:
-        return str(message) if message else ""

@@ -123,6 +123,7 @@ class TestTaskContext:
         assert ctx.label == ""
         assert ctx.status is TaskStatus.ACTIVE
         assert ctx.completed_at is None
+        assert isinstance(ctx.last_accessed, datetime)
         assert ctx.auto_detected is False
         assert ctx.message_count == 0
         assert ctx.token_count == 0

@@ -16,6 +16,7 @@ from collections import Counter
 from typing import Any
 
 from code_muse.messaging import emit_info
+from code_muse.plugins.task_context._text_utils import _extract_text
 from code_muse.plugins.task_context.config import get_task_auto_detect
 from code_muse.plugins.task_context.models import TaskShiftSignal
 
@@ -334,37 +335,6 @@ def detect_task_shift(
     return TaskShiftSignal(detected=False, confidence=0.0)
 
 
-def _extract_text(message: Any) -> str:
-    """Extract plain text content from various message formats.
-
-    Handles pydantic-ai ModelMessage, dict messages, and plain strings.
-    """
-    if isinstance(message, str):
-        return message
-    if isinstance(message, dict):
-        # Try common dict formats
-        for key in ("content", "text", "message", "parts", "user_message"):
-            val = message.get(key)
-            if isinstance(val, str):
-                return val
-        return ""
-    # pydantic-ai ModelMessage
-    try:
-        parts = getattr(message, "parts", []) or []
-        texts: list[str] = []
-        for part in parts:
-            content = getattr(part, "content", None)
-            if isinstance(content, str):
-                texts.append(content)
-            elif isinstance(content, list):
-                for item in content:
-                    if isinstance(item, str):
-                        texts.append(item)
-        return " ".join(texts)
-    except Exception:
-        return str(message) if message else ""
-
-
 def _extract_label(text: str) -> str | None:
     """Try to extract a task label from the message text.
 
@@ -408,7 +378,7 @@ def _looks_like_continuation(text: str, recent_texts: list[str]) -> bool:
 
 def reset_detector() -> None:
     """Reset the detector state (for testing or session reset)."""
-    global _vectorizer_fitted, _previous_message_vectors  # noqa: PLW0603
-    _vectorizer = _TfIdfVectorizer()  # noqa: F841
+    global _vectorizer, _vectorizer_fitted, _previous_message_vectors  # noqa: PLW0603
+    _vectorizer = _TfIdfVectorizer()
     _vectorizer_fitted = False
     _previous_message_vectors = []

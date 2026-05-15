@@ -89,6 +89,10 @@ class TaskContext(BaseModel):
         default=None,
         description="When this task was marked complete",
     )
+    last_accessed: datetime = Field(
+        default_factory=lambda: datetime.now(),
+        description="When this task was last actively referenced",
+    )
     auto_detected: bool = Field(
         default=False,
         description="Whether this task was auto-detected vs user-created",

@@ -1,7 +1,8 @@
 """Register Universal Critic plugin callbacks.
 
 Registers:
-    - agent_run_end hook for auto-review loop
+    - agent_run_result hook for review with retry (primary mechanism)
+    - agent_run_end hook for info-only logging
     - /critic command for manual Universal Code Critic review
     - Help entries
 """
@@ -34,6 +35,17 @@ def _register_agents():
 # ---------------------------------------------------------------------------
 
 
+async def _on_agent_run_result(
+    result,
+    agent_name: str,
+    model_name: str,
+) -> dict | None:
+    """Delegate to the orchestrator's review-on-result for retry-driven review."""
+    from code_muse.plugins.universal_critic.orchestrator import review_on_result
+
+    return await review_on_result(result, agent_name, model_name)
+
+
 async def _on_agent_run_end(
     agent_name: str,
     model_name: str,
@@ -43,7 +55,7 @@ async def _on_agent_run_end(
     response_text: str | None = None,
     metadata: dict | None = None,
 ) -> None:
-    """Delegate to the orchestrator's auto-review after any agent run."""
+    """Delegate to the orchestrator's info-only logging after any agent run."""
     from code_muse.plugins.universal_critic.orchestrator import auto_review_after_run
 
     await auto_review_after_run(
@@ -180,6 +192,7 @@ def _on_startup():
 # ---------------------------------------------------------------------------
 
 register_callback("register_agents", _register_agents)
+register_callback("agent_run_result", _on_agent_run_result)
 register_callback("agent_run_end", _on_agent_run_end)
 register_callback("custom_command", _on_custom_command)
 register_callback("custom_command_help", _on_custom_command_help)

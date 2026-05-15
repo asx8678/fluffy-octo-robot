@@ -24,7 +24,6 @@ from code_muse.session_storage_helpers import (  # noqa: F401
     _try_load_pkl,
     _unsafe_pickle_loads_for_explicit_legacy_migration_only,
     _unwrap_messages,
-    _unwrap_messages_with_context,
     _wrap_messages,
     build_session_paths,
     ensure_directory,

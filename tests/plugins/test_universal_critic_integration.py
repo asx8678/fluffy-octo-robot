@@ -1,5 +1,10 @@
 """Tests for Universal Critic integration (orchestrator + callbacks)."""
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+from pydantic_ai.messages import ModelResponse, ToolCallPart
+
 from code_muse.plugins.universal_critic.models import (
     AgentOutput,
     ReviewResult,
@@ -7,8 +12,10 @@ from code_muse.plugins.universal_critic.models import (
 )
 from code_muse.plugins.universal_critic.orchestrator import (
     MAX_REVIEW_ITERATIONS,
-    _extract_file_paths,
-    _parse_response_for_review,
+    _build_escalation_prompt,
+    _build_rewrite_prompt,
+    _extract_changed_files,
+    _extract_file_path_from_tool_call,
     get_display_name,
 )
 
@@ -37,71 +44,167 @@ class TestGetDisplayName:
 
 
 # ---------------------------------------------------------------------------
-# _extract_file_paths
+# _extract_changed_files
 # ---------------------------------------------------------------------------
 
 
-class TestExtractFilePaths:
-    """Tests for _extract_file_paths."""
+class TestExtractChangedFiles:
+    """Tests for _extract_changed_files."""
 
-    def test_src_main_py(self):
-        result = _extract_file_paths("Updated src/main.py with new logic")
-        assert "src/main.py" in result
+    def test_no_all_messages(self):
+        """Objects without all_messages() return empty list."""
+        result = MagicMock(spec=[])  # no all_messages attribute
+        assert _extract_changed_files(result) == []
 
-    def test_nested_plugin_path(self):
-        result = _extract_file_paths("Edited code_muse/plugins/foo.py")
-        assert "code_muse/plugins/foo.py" in result
+    def test_extract_replace_in_file(self):
+        """Extract file path from a replace_in_file tool call."""
+        part = ToolCallPart(
+            tool_name="replace_in_file",
+            args={"file_path": "src/main.py", "replacements": []},
+        )
+        msg = ModelResponse(parts=[part])
+        result = MagicMock()
+        result.all_messages.return_value = [msg]
+        assert _extract_changed_files(result) == ["src/main.py"]
 
-    def test_readme_md(self):
-        result = _extract_file_paths("See README.md for details")
-        assert "README.md" in result
+    def test_extract_create_file(self):
+        """Extract file path from a create_file tool call."""
+        part = ToolCallPart(
+            tool_name="create_file",
+            args={"file_path": "new_module.py", "content": "pass"},
+        )
+        msg = ModelResponse(parts=[part])
+        result = MagicMock()
+        result.all_messages.return_value = [msg]
+        assert _extract_changed_files(result) == ["new_module.py"]
 
-    def test_js_path(self):
-        result = _extract_file_paths("Modified foo/bar/baz.js")
-        assert "foo/bar/baz.js" in result
+    def test_deduplicate_paths(self):
+        """Same file path from multiple tool calls is deduplicated."""
+        part1 = ToolCallPart(
+            tool_name="create_file",
+            args={"file_path": "foo.py", "content": "v1"},
+        )
+        part2 = ToolCallPart(
+            tool_name="replace_in_file",
+            args={"file_path": "foo.py", "replacements": []},
+        )
+        msg = ModelResponse(parts=[part1, part2])
+        result = MagicMock()
+        result.all_messages.return_value = [msg]
+        assert _extract_changed_files(result) == ["foo.py"]
 
-    def test_no_file_paths(self):
-        result = _extract_file_paths("This has no file paths at all")
-        assert result == []
+    def test_ignore_non_file_tools(self):
+        """Tool calls for non-file tools are ignored."""
+        part = ToolCallPart(
+            tool_name="agent_run_shell_command",
+            args={"command": "ls"},
+        )
+        msg = ModelResponse(parts=[part])
+        result = MagicMock()
+        result.all_messages.return_value = [msg]
+        assert _extract_changed_files(result) == []
+
+    def test_multiple_files(self):
+        """Multiple different files are all extracted."""
+        parts = [
+            ToolCallPart(
+                tool_name="create_file",
+                args={"file_path": "a.py", "content": "a"},
+            ),
+            ToolCallPart(
+                tool_name="create_file",
+                args={"file_path": "b.py", "content": "b"},
+            ),
+        ]
+        msg = ModelResponse(parts=parts)
+        result = MagicMock()
+        result.all_messages.return_value = [msg]
+        assert _extract_changed_files(result) == ["a.py", "b.py"]
 
 
 # ---------------------------------------------------------------------------
-# _parse_response_for_review
+# _extract_file_path_from_tool_call
 # ---------------------------------------------------------------------------
 
 
-class TestParseResponseForReview:
-    """Tests for _parse_response_for_review."""
+class TestExtractFilePathFromToolCall:
+    """Tests for _extract_file_path_from_tool_call."""
 
-    def test_code_block_with_file_annotation(self):
-        text = "```python file.py\nprint('hello')\n```"
-        items = _parse_response_for_review(text)
-        assert len(items) == 1
-        assert items[0]["file_path"] == "file.py"
-        assert "print('hello')" in items[0]["code_snippet"]
+    def test_dict_args_file_path(self):
+        part = ToolCallPart(
+            tool_name="replace_in_file",
+            args={"file_path": "src/main.py"},
+        )
+        assert _extract_file_path_from_tool_call(part) == "src/main.py"
 
-    def test_no_code_blocks_falls_back_to_paths(self):
-        text = "Updated utils.py and main.py"
-        items = _parse_response_for_review(text)
-        assert len(items) >= 1
+    def test_dict_args_path(self):
+        part = ToolCallPart(
+            tool_name="create_file",
+            args={"path": "other.py"},
+        )
+        assert _extract_file_path_from_tool_call(part) == "other.py"
 
-    def test_empty_text(self):
-        items = _parse_response_for_review("")
-        assert items == []
+    def test_json_string_args(self):
+        part = ToolCallPart(
+            tool_name="replace_in_file",
+            args='{"file_path": "from_json.py"}',
+        )
+        assert _extract_file_path_from_tool_call(part) == "from_json.py"
 
-    def test_malformed_code_block(self):
-        text = "```python\n"
-        items = _parse_response_for_review(text)
-        # Should not crash — may return empty or partial
-        assert isinstance(items, list)
+    def test_no_file_path_key(self):
+        part = ToolCallPart(
+            tool_name="agent_run_shell_command",
+            args={"command": "ls"},
+        )
+        assert _extract_file_path_from_tool_call(part) is None
 
-    def test_multiple_code_blocks(self):
-        text = "```python a.py\nx=1\n```\n```python b.py\ny=2\n```"
-        items = _parse_response_for_review(text)
-        assert len(items) == 2
-        paths = [i["file_path"] for i in items]
-        assert "a.py" in paths
-        assert "b.py" in paths
+
+# ---------------------------------------------------------------------------
+# _build_rewrite_prompt / _build_escalation_prompt
+# ---------------------------------------------------------------------------
+
+
+class TestBuildRewritePrompt:
+    """Tests for _build_rewrite_prompt."""
+
+    def test_basic_rejection(self):
+        result = ReviewResult(
+            verdict="rejected",
+            summary="Missing error handling",
+            issues=["no try/except", "bare except"],
+            suggestion="Add specific exception handling",
+        )
+        prompt = _build_rewrite_prompt(result, "utils.py", 1)
+        assert "utils.py" in prompt
+        assert "Missing error handling" in prompt
+        assert "no try/except" in prompt
+        assert "Add specific exception handling" in prompt
+
+    def test_no_suggestion(self):
+        result = ReviewResult(
+            verdict="rejected",
+            summary="Bad code",
+            issues=["ugly"],
+        )
+        prompt = _build_rewrite_prompt(result, "bad.py", 1)
+        assert "bad.py" in prompt
+        assert "Suggestion" not in prompt
+
+
+class TestBuildEscalationPrompt:
+    """Tests for _build_escalation_prompt."""
+
+    def test_escalation_content(self):
+        result = ReviewResult(
+            verdict="rejected",
+            summary="Still bad",
+            issues=["wrong approach"],
+        )
+        prompt = _build_escalation_prompt(result, "stuck.py", 9)
+        assert "CRITICAL" in prompt
+        assert "stuck.py" in prompt
+        assert "9 times" in prompt
+        assert "rethink" in prompt.lower()
 
 
 # ---------------------------------------------------------------------------
@@ -112,8 +215,132 @@ class TestParseResponseForReview:
 class TestMaxReviewIterations:
     """Tests for MAX_REVIEW_ITERATIONS constant."""
 
-    def test_value_is_three(self):
-        assert MAX_REVIEW_ITERATIONS == 3
+    def test_value_is_ten(self):
+        assert MAX_REVIEW_ITERATIONS == 10
+
+
+# ---------------------------------------------------------------------------
+# review_on_result — integration-level tests
+# ---------------------------------------------------------------------------
+
+
+class TestReviewOnResult:
+    """Tests for the review_on_result hook handler."""
+
+    @pytest.mark.asyncio
+    async def test_skip_code_critic_agent(self):
+        """The critic's own runs should not be reviewed."""
+        from code_muse.plugins.universal_critic.orchestrator import (
+            review_on_result,
+        )
+
+        result = await review_on_result(MagicMock(), "code-critic", "model-x")
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_no_changed_files_returns_none(self):
+        """If no file-writing tool calls, return None (no review)."""
+        from code_muse.plugins.universal_critic.orchestrator import (
+            _ITERATION_TRACKER,
+            review_on_result,
+        )
+
+        # Clean tracker state
+        _ITERATION_TRACKER.pop("test-agent", None)
+
+        result_obj = MagicMock()
+        result_obj.all_messages.return_value = []
+        result = await review_on_result(result_obj, "test-agent", "model-x")
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_rejection_returns_retry_dict(self):
+        """On rejection, returns a retry dict with source=critic."""
+        from code_muse.plugins.universal_critic.orchestrator import (
+            _ITERATION_TRACKER,
+            review_on_result,
+        )
+
+        # Clean tracker state
+        _ITERATION_TRACKER.pop("test-agent", None)
+
+        # Build a mock result with a file-writing tool call
+        part = ToolCallPart(
+            tool_name="create_file",
+            args={"file_path": "/tmp/test_review.py", "content": "bad code"},
+        )
+        msg = ModelResponse(parts=[part])
+        result_obj = MagicMock()
+        result_obj.all_messages.return_value = [msg]
+
+        # Patch: file exists on disk, review returns rejected
+        mock_review = ReviewResult(
+            verdict="rejected",
+            summary="Bad code",
+            issues=["no tests"],
+            suggestion="Add tests",
+        )
+
+        with (
+            patch(
+                "code_muse.plugins.universal_critic.orchestrator._read_file_content",
+                return_value="bad code",
+            ),
+            patch(
+                "code_muse.plugins.universal_critic.orchestrator.run_review",
+                new_callable=AsyncMock,
+                return_value=mock_review,
+            ),
+        ):
+            result = await review_on_result(result_obj, "test-agent", "model-x")
+
+        assert result is not None
+        assert result["retry"] is True
+        assert result["source"] == "critic"
+        assert "prompt" in result
+        assert result["delay"] == 0.5
+
+        # Cleanup
+        _ITERATION_TRACKER.pop("test-agent", None)
+
+    @pytest.mark.asyncio
+    async def test_approval_returns_none(self):
+        """On approval, returns None (no retry needed)."""
+        from code_muse.plugins.universal_critic.orchestrator import (
+            _ITERATION_TRACKER,
+            review_on_result,
+        )
+
+        _ITERATION_TRACKER.pop("test-agent", None)
+
+        part = ToolCallPart(
+            tool_name="create_file",
+            args={"file_path": "/tmp/good_code.py", "content": "good"},
+        )
+        msg = ModelResponse(parts=[part])
+        result_obj = MagicMock()
+        result_obj.all_messages.return_value = [msg]
+
+        mock_review = ReviewResult(
+            verdict="approved",
+            summary="LGTM",
+        )
+
+        with (
+            patch(
+                "code_muse.plugins.universal_critic.orchestrator._read_file_content",
+                return_value="good code",
+            ),
+            patch(
+                "code_muse.plugins.universal_critic.orchestrator.run_review",
+                new_callable=AsyncMock,
+                return_value=mock_review,
+            ),
+        ):
+            result = await review_on_result(result_obj, "test-agent", "model-x")
+
+        assert result is None
+        assert "test-agent" not in _ITERATION_TRACKER
 
 
 # ---------------------------------------------------------------------------

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "code-muse"
-version = "0.1.46"
+version = "0.1.47"
 description = "Muse — eternal guide of creators in the arts and sciences. An elegant AI coding assistant."
 readme = "README.md"
 # Only 3.14+ is supported due to free-threaded Python features

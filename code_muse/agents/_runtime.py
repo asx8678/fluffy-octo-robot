@@ -74,6 +74,7 @@ from code_muse.callbacks import (
 from code_muse.config import (
     get_enable_streaming,
     get_max_consecutive_tool_errors,
+    get_max_critic_retries,
     get_max_hook_retries,
     get_message_limit,
     get_overall_run_timeout_seconds,
@@ -304,13 +305,20 @@ async def run(
             result = await _call_with_exception_recovery()
 
             max_hook_retries = get_max_hook_retries()
+            max_critic_retries = get_max_critic_retries()
             hook_retries_used = 0
+            critic_retries_used = 0
             max_loop_iterations = 50  # safety cap
 
             for _ in range(max_loop_iterations):
                 # 1) Check for queued steer injection (stub for now)
-                # 2) Check hook retries
-                if hook_retries_used >= max_hook_retries:
+                # 2) Check hook retries — critic retries tracked separately
+                # Pre-check: if both budgets exhausted, stop
+                both_exhausted = (
+                    hook_retries_used >= max_hook_retries
+                    and critic_retries_used >= max_critic_retries
+                )
+                if both_exhausted:
                     break
                 hook_results = await on_agent_run_result(
                     result,
@@ -324,8 +332,17 @@ async def run(
                 if not retry_req:
                     break
 
+                is_critic = retry_req.get("source") == "critic"
+                if is_critic:
+                    if critic_retries_used >= max_critic_retries:
+                        break
+                    critic_retries_used += 1
+                else:
+                    if hook_retries_used >= max_hook_retries:
+                        break
+                    hook_retries_used += 1
+
                 was_retried = True
-                hook_retries_used += 1
                 retry_prompt = retry_req.get("prompt", "Please continue.")
                 retry_delay = retry_req.get("delay", 1.0)
                 if hasattr(result, "all_messages"):
