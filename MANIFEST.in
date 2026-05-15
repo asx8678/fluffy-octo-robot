@@ -1,27 +1,22 @@
-# MANIFEST.in — controls what goes into the source distribution (sdist)
-# This is critical for Cython projects because the wheel is often built
-# from the sdist in CI (GitHub Actions, PyPI, etc.).
+# MANIFEST.in for code-muse
+# Controls files included in the source distribution (sdist).
+# Critical because CI builds wheels from the sdist (not the git checkout).
 
+# Include the entire code_muse package tree (all .py, .pyx, data files, etc.)
+graft code_muse
+
+# Root project files required for building and packaging
 include LICENSE
 include README.md
-include CONTRIBUTING.md
 include pyproject.toml
 include setup.py
 include uv.lock
 
-# === Cython extension sources (THE FIX FOR THE CURRENT BUILD FAILURE) ===
-# Without these, cythonize() fails with:
-#   ValueError: 'code_muse/terminal_utils.pyx' doesn't match any files
-recursive-include code_muse *.pyx
-
-# Include pre-generated C files if they ever get committed (defensive)
-recursive-include code_muse *.c
-
-# Data files that must be shipped
+# Explicit data files (in case graft is too broad in some environments)
 include code_muse/models.json
 include code_muse/models_dev_api.json
 
-# === Good hygiene exclusions ===
+# === Exclusions for clean sdists ===
 prune .git
 prune .github
 prune .venv
@@ -32,13 +27,16 @@ prune .cache
 prune .mypy_cache
 prune .ruff_cache
 
-global-exclude *.py[cod]
+# Bytecode and compiled artifacts (never ship these in sdist)
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.pyd
 global-exclude __pycache__
 global-exclude *.so
-global-exclude *.pyd
 global-exclude *.dll
 global-exclude *.dylib
-global-exclude *.egg
+
+# Other junk
 global-exclude .DS_Store
 global-exclude *.swp
 global-exclude *~
