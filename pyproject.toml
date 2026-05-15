@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "code-muse"
-version = "0.1.51"
+version = "0.1.52"
 description = "Muse — eternal guide of creators in the arts and sciences. An elegant AI coding assistant."
 readme = "README.md"
 # Only 3.14+ is supported due to free-threaded Python features
@@ -80,8 +80,11 @@ select = ["E", "F", "UP", "B", "SIM", "I"]
 "code_muse/tools/chrome_cdp/*.py" = ["E501"]
 "code_muse/agents/agent_muse.py" = ["E501"]
 
+[tool.setuptools.packages.find]
+include = ["code_muse", "code_muse.*"]
+namespaces = false
+
 [tool.setuptools]
-packages = ["code_muse"]
 include-package-data = true
 
 [tool.setuptools.package-data]
