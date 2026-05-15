@@ -220,6 +220,55 @@ class TestMaxReviewIterations:
 
 
 # ---------------------------------------------------------------------------
+# Truncation detection (new fast-path guards)
+# These tests are deliberately self-contained (no cross-test imports).
+# ---------------------------------------------------------------------------
+
+from code_muse.plugins.code_critic.reviewer import _detect_code_truncation  # noqa: E402
+
+
+class TestDetectCodeTruncation:
+    """Self-contained tests for the fast truncation / syntax guards."""
+
+    def test_python_truncated_via_ast(self):
+        bad_py = "def foo():\n    x = 1\n    monkeypatch."
+        is_bad, reason = _detect_code_truncation(bad_py, "test_foo.py")
+        assert is_bad is True
+        assert "SyntaxError" in (reason or "") or "truncated" in (reason or "").lower()
+
+    def test_python_valid_passes(self):
+        good_py = "def add(a, b):\n    return a + b\n\nprint(add(1, 2))"
+        is_bad, _ = _detect_code_truncation(good_py, "good.py")
+        assert is_bad is False
+
+    def test_js_truncated_ending(self):
+        bad_js = "const handler = (req, res) => {\n    res.json({ ok: true"
+        is_bad, reason = _detect_code_truncation(bad_js, "api.ts")
+        assert is_bad is True
+        assert (
+            "incomplete token" in (reason or "").lower()
+            or "bracket" in (reason or "").lower()
+        )
+
+    def test_go_truncated_declaration(self):
+        bad_go = (
+            "func handleRequest(w http.ResponseWriter, r *http.Request) {\n"
+            "    fmt.Println"
+        )
+        is_bad, reason = _detect_code_truncation(bad_go, "server.go")
+        assert is_bad is True
+
+    def test_complete_rust_passes(self):
+        good_rs = 'fn main() {\n    println!("hello");\n}'
+        is_bad, _ = _detect_code_truncation(good_rs, "main.rs")
+        assert is_bad is False
+
+    def test_empty_file_detected(self):
+        is_bad, _ = _detect_code_truncation("", "empty.py")
+        assert is_bad is True
+
+
+# ---------------------------------------------------------------------------
 # review_on_result — integration-level tests
 # ---------------------------------------------------------------------------
 

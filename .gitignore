@@ -57,3 +57,13 @@ code_puppy/bundled_skills/
 # Generated data artifacts
 coverage.json
 pre_refactor_hashes.txt
+
+# Cython build artifacts (never commit generated .c, .so, .pyd, or html annotations)
+*.so
+*.pyd
+*.c
+cython_debug/
+*.html
+build/
+dist/
+*.egg-info/

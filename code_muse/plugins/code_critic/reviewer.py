@@ -1,6 +1,8 @@
 """Core review orchestration for Code Critic."""
 
+import ast
 import logging
+from pathlib import Path
 from typing import Any
 
 import orjson as json
@@ -11,6 +13,95 @@ from code_muse.plugins.code_critic.critic_prompt import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _detect_code_truncation(code: str, file_path: str) -> tuple[bool, str | None]:
+    """
+    Fast, cheap detection of obviously truncated code output.
+
+    Returns (is_truncated, reason).
+    Python uses exact ast.parse (caller should prefer that).
+    Other languages use structural heuristics.
+    """
+    if not code or not code.strip():
+        return True, "File is empty or contains only whitespace."
+
+    stripped = code.rstrip("\n\r \t")
+    ext = Path(file_path).suffix.lower()
+    last_line = stripped.splitlines()[-1].strip() if stripped.splitlines() else ""
+
+    # Obvious "open" endings that almost always mean truncation
+    open_endings = (
+        "{",
+        "[",
+        "(",
+        ":",
+        ",",
+        "&&",
+        "||",
+        "and ",
+        "or ",
+        "+",
+        "-",
+        "=",
+        "->",
+        "=>",
+    )
+    if any(stripped.endswith(end) for end in open_endings):
+        return True, f"Code ends abruptly with incomplete token: `{last_line[-40:]}`"
+
+    # Declaration starters that are truncated when last. Only on short lines
+    # lacking body/closers (avoids noise on compact valid one-liners).
+    if len(last_line) < 90 and not any(c in last_line for c in "{}();:"):
+        starters = (
+            "function ",
+            "const ",
+            "let ",
+            "var ",
+            "class ",
+            "interface ",
+            "type ",
+            "import ",
+            "from ",
+            "export ",
+            "def ",
+            "fn ",
+            "pub ",
+            "async ",
+            "await ",
+            "if ",
+            "for ",
+            "while ",
+            "switch ",
+            "match ",
+            "enum ",
+            "struct ",
+            "impl ",
+            "trait ",
+            "mod ",
+            "package ",
+        )
+        if any(last_line.startswith(s) for s in starters):
+            return True, f"Last line looks like a truncated declaration: `{last_line}`"
+
+    # Rough bracket balance check (helps with JS/TS/Go/Rust/etc.)
+    opens = stripped.count("{") + stripped.count("[") + stripped.count("(")
+    closes = stripped.count("}") + stripped.count("]") + stripped.count(")")
+    if opens > closes + 3:
+        return True, (
+            f"Too many opening brackets ({opens}) vs closing ({closes}) — "
+            "likely truncated."
+        )
+
+    # Python is expected to be caught by exact ast.parse before this function.
+    # We still do a weak check for non-.py files that happen to be Python.
+    if ext in {".py", ".pyi"}:
+        try:
+            ast.parse(code)
+        except SyntaxError as e:
+            return True, f"Python syntax error: {e.msg} (line {e.lineno})"
+
+    return False, None
 
 
 def _extract_json(text: str) -> dict | None:
@@ -65,7 +156,45 @@ async def review_code(
     """Run a code review using the configured LLM.
 
     Returns dict with verdict, summary, issues, suggestion.
+
+    Includes a fast local syntax check for Python files that short-circuits
+    before any LLM call when the input is obviously truncated or invalid.
+    This catches the most common generation failure mode cheaply.
     """
+    # Fast-path syntax validation for Python (stdlib ast, zero cost, very reliable).
+    if file_path.endswith((".py", ".pyi")):
+        try:
+            ast.parse(code_snippet)
+        except SyntaxError as e:
+            return {
+                "verdict": "rejected",
+                "summary": "Python code is syntactically truncated or invalid",
+                "issues": [
+                    f"SyntaxError: {e.msg} (line {e.lineno})",
+                    "The file ends mid-statement or is missing closing constructs.",
+                    "The model output was cut off before the file was complete.",
+                ],
+                "suggestion": (
+                    "Rewrite the ENTIRE file in one response. "
+                    "Output complete Python that parses with ast.parse()."
+                ),
+            }
+
+    # Multi-language truncation heuristic for JS/TS, Go, Rust, etc.
+    is_trunc, reason = _detect_code_truncation(code_snippet, file_path)
+    if is_trunc:
+        return {
+            "verdict": "rejected",
+            "summary": "Code appears syntactically truncated or incomplete",
+            "issues": [
+                reason or "Output ends in an incomplete statement or declaration."
+            ],
+            "suggestion": (
+                "Rewrite the ENTIRE file in one response. "
+                "Output the complete, valid source for the whole file."
+            ),
+        }
+
     try:
         from pydantic_ai import Agent as PydanticAgent
 

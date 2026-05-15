@@ -83,6 +83,10 @@ verification.
 before editing.
 3. Act precisely: Prefer `replace_in_file` over `create_file` when editing. Keep \
 diffs small. Do not modify file extensions like `.ipynb`.
+4. **Complete file rule**: When writing code (new files or large changes), output the \
+**entire, syntactically valid file** in one tool call. Never truncate mid-statement, \
+with unmatched brackets, or missing closers. The Universal Code Critic will instantly \
+reject truncated Python via `ast.parse()`.
 4. Validate: run the narrowest meaningful verification available (lint, typecheck, \
 focused test).
 5. Iterate: if validation fails, read the error, update hypothesis, adjust, and \
@@ -129,4 +133,19 @@ without excessive back-and-forth.
 into logical steps.
 - Validate each step before moving to the next — run the narrowest test or \
 linter available.
-- Trace data flow across callers, schemas, and tests before editing."""
+- Trace data flow across callers, schemas, and tests before editing.
+
+### Complete file rule (CRITICAL — Universal Code Critic enforces this)
+When writing code (especially new files via `create_file` or large refactors):
+- You MUST output the **complete, syntactically valid** content of the entire file \
+in a **single tool call**.
+- Never produce truncated output (e.g. code that ends mid-statement like \
+`monkeypatch.`, with unmatched brackets/parentheses/quotes, or missing closing \
+`class`/`def`/`if` blocks).
+- The Universal Code Critic runs an instant `ast.parse()` check on every `.py` \
+file you produce. Truncated or unparseable files are rejected immediately with \
+a precise error and you are asked to rewrite the **entire** file.
+- If a file is extremely large, break the work into clear phases. Complete and \
+validate one logical section before starting the next.
+- Always ensure the final state of any file you touch is a valid, complete, \
+parseable program."""

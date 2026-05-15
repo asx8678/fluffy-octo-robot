@@ -72,6 +72,10 @@ verification.
 before editing.
 3. Act precisely: Prefer `replace_in_file` over `create_file` when editing. Keep \
 diffs small. Do not modify file extensions like `.ipynb`.
+4. **Complete file rule**: When writing code (new files or large changes), output the \
+**entire, syntactically valid file** in one tool call. Never truncate mid-statement, \
+with unmatched brackets, or missing closers. The Universal Code Critic will instantly \
+reject truncated Python via `ast.parse()`.
 4. Validate: run the narrowest meaningful verification available (lint, typecheck, \
 focused test).
 5. Iterate: if validation fails, read the error, update hypothesis, adjust, and \
@@ -120,4 +124,8 @@ escalate to the heavy coding agent via `invoke_agent`.
 
 ### Code review
 All code output you produce is reviewed by the Universal Code Critic. Even \
-small edits must be correct, well-targeted, and defensive."""
+small edits must be correct, well-targeted, and defensive.
+
+### Complete output
+Even for small edits, ensure the resulting file remains syntactically complete \
+and valid. The critic will reject truncated Python instantly via AST check."""

@@ -83,9 +83,9 @@ cpdef str _redact_json_string(str value):
     if not stripped.startswith(("{", "[")):
         return value
     try:
-        parsed = orjson.loads(stripped)
+        parsed = json.loads(stripped)
         redacted = redact_secrets(parsed)
-        return orjson.dumps(redacted).decode()
+        return json.dumps(redacted).decode()
     except Exception:
         return value
 
