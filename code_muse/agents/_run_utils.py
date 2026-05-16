@@ -11,8 +11,6 @@ from typing import Any
 
 from pydantic_ai import BinaryContent, DocumentUrl, ImageUrl
 
-from code_muse.model_factory import ModelFactory
-
 # ---- Data classes -----------------------------------------------------------
 
 
@@ -53,6 +51,8 @@ def _model_allows_streaming(model_name: str | None) -> bool:
     if not model_name:
         return True
     try:
+        from code_muse.model_factory import ModelFactory
+
         cfg = ModelFactory.load_config().get(model_name, {})
 
         # Explicit user override always wins (both true and false)

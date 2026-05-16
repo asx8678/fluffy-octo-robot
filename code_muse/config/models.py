@@ -227,15 +227,19 @@ def set_model_name(model: str):
     clear_model_cache()
 
 
-def get_model_context_length() -> int:
+def get_model_context_length(model_name: str | None = None) -> int:
     """
-    Get the context length for the currently configured model from models.json
+    Get the context length for a model from models.json.
+
+    Args:
+        model_name: Optional model name. If None, uses the global model.
     """
     try:
         from code_muse.model_factory import ModelFactory
 
         model_configs = ModelFactory.load_config()
-        model_name = get_global_model_name()
+        if model_name is None:
+            model_name = get_global_model_name()
 
         # Get context length from model config
         model_config = model_configs.get(model_name, {})

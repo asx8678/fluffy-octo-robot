@@ -546,6 +546,7 @@ def register_invoke_agent(agent):
                             prompt,
                             message_history=message_history,
                             event_stream_handler=stream_handler,
+                            usage_limits=None,
                         )
                     )
                     try:

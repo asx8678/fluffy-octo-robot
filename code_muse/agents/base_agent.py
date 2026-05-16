@@ -34,7 +34,6 @@ from code_muse.config import (
     get_global_model_name,
     get_protected_token_count,
 )
-from code_muse.model_factory import ModelFactory
 
 should_retry_streaming_exception = should_retry_streaming
 
@@ -130,9 +129,9 @@ class BaseAgent(ABC):
     def _get_model_context_length(self) -> int:
         """Context window for the agent's effective model (fallback: 128k)."""
         try:
-            configs = ModelFactory.load_config()
-            cfg = configs.get(self.get_model_name(), {})
-            return int(cfg.get("context_length", 128000))
+            from code_muse.config.models import get_model_context_length
+
+            return get_model_context_length(model_name=self.get_model_name())
         except Exception:
             return 128000
 

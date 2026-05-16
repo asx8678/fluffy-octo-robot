@@ -19,7 +19,6 @@ from code_muse.config import (
     get_global_model_name,
 )
 from code_muse.messaging import emit_error, emit_info, emit_warning
-from code_muse.model_factory import ModelFactory, make_model_settings
 
 _AGENT_RULE_FILES = ("AGENTS.md", "AGENT.md", "agents.md", "agent.md")
 _MUSE_DIR = ".muse"
@@ -114,6 +113,8 @@ def load_model_with_fallback(
     Falls back in order: the globally configured model, then any other
     configured model. Raises ``ValueError`` only if nothing loads.
     """
+    from code_muse.model_factory import ModelFactory
+
     try:
         return ModelFactory.get_model(
             requested_model_name, models_config
@@ -237,6 +238,8 @@ def build_pydantic_agent(
         _system_prompt_cache.pop(k, None)
     agent._context_overhead_cache = None
     message_group = message_group or str(uuid.uuid4())
+
+    from code_muse.model_factory import ModelFactory, make_model_settings
 
     models_config = ModelFactory.load_config()
     model, resolved_model_name = load_model_with_fallback(

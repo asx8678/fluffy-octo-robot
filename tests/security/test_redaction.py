@@ -5,13 +5,12 @@ import stat
 from pathlib import Path
 from unittest.mock import patch
 
-from code_muse.security.redaction import redact_secrets
-
 from code_muse.secret_storage import (
     atomic_write_private_json,
     ensure_private_dir,
     warn_or_fix_private_file_mode,
 )
+from code_muse.security.redaction import redact_secrets
 
 
 class TestRedactSecrets:

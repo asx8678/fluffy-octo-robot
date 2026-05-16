@@ -27,6 +27,7 @@ from pydantic_ai.messages import (
 
 from code_muse.agents._history import (
     CompactionCache,
+    _classify_tool_part,
     estimate_tokens_for_message,
     filter_huge_messages,
     has_pending_tool_calls,
@@ -44,7 +45,6 @@ from code_muse.config import (
 )
 from code_muse.messaging import emit_error, emit_info, emit_warning
 from code_muse.messaging.spinner import SpinnerBase, update_spinner_context
-from code_muse.summarization_agent import SummarizationError, run_summarization_sync
 
 _SUMMARIZATION_INSTRUCTIONS = (
     "The input will be a log of Agentic AI steps that have been taken"
@@ -73,7 +73,7 @@ def _find_safe_split_index(messages: list[ModelMessage], initial_split_idx: int)
     protected_tool_return_ids: set[str] = set()
     for msg in messages[initial_split_idx:]:
         for part in getattr(msg, "parts", []) or []:
-            if getattr(part, "part_kind", None) == "tool-return":
+            if _classify_tool_part(part) == "return":
                 tcid = getattr(part, "tool_call_id", None)
                 if tcid:
                     protected_tool_return_ids.add(tcid)
@@ -87,7 +87,7 @@ def _find_safe_split_index(messages: list[ModelMessage], initial_split_idx: int)
         msg = messages[i]
         has_match = False
         for part in getattr(msg, "parts", []) or []:
-            if getattr(part, "part_kind", None) == "tool-call":
+            if _classify_tool_part(part) == "call":
                 tcid = getattr(part, "tool_call_id", None)
                 if tcid and tcid in protected_tool_return_ids:
                     has_match = True
@@ -273,6 +273,8 @@ def _run_summarization_core(
     if not messages_to_summarize:
         return messages, []
 
+    from code_muse.summarization_agent import run_summarization_sync
+
     new_messages = run_summarization_sync(
         _SUMMARIZATION_INSTRUCTIONS, message_history=messages_to_summarize
     )
@@ -293,6 +295,8 @@ def _log_summarization_failure(error: Exception, fallback_note: str = "") -> Non
     """Single source of truth for summarization-failure user messaging."""
     error_type = type(error).__name__
     emit_error(f"Compaction failed: [{error_type}] {error}")
+    from code_muse.summarization_agent import SummarizationError
+
     if isinstance(error, SummarizationError) and error.original_error:
         underlying = type(error.original_error).__name__
         suffix = f" {fallback_note}" if fallback_note else ""
