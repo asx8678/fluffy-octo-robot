@@ -403,60 +403,68 @@ FILE_IGNORE_PATTERNS = [
 IGNORE_PATTERNS = DIR_IGNORE_PATTERNS + FILE_IGNORE_PATTERNS
 
 
-def should_ignore_path(path: str) -> bool:
-    """Return True if *path* matches any pattern in IGNORE_PATTERNS."""
-    # Convert path to Path object for better pattern matching
-    path_obj = Path(path)
+# Try to use the compiled Cython implementation for hot-path performance;
+# fall back to a pure-Python reimplementation if Cython extensions are absent.
+try:
+    from code_muse.tools._ignore_matcher import (
+        should_ignore_path as _compiled_should_ignore_path,
+        should_ignore_dir_path as _compiled_should_ignore_dir_path,
+    )
 
-    for pattern in IGNORE_PATTERNS:
-        # Try pathlib's match method which handles ** patterns properly
-        try:
-            if path_obj.match(pattern):
-                return True
-        except ValueError:
-            # If pathlib can't handle the pattern, fall back to fnmatch
-            if fnmatch.fnmatch(path, pattern):
-                return True
+    def should_ignore_path(path: str) -> bool:
+        """Return True if *path* matches any pattern in IGNORE_PATTERNS."""
+        return _compiled_should_ignore_path(path)
 
-        # Additional check: if pattern contains **, try matching against
-        # different parts of the path to handle edge cases
-        if "**" in pattern:
-            # Convert pattern to handle different path representations
-            simplified_pattern = pattern.replace("**/", "").replace("/**", "")
+    def should_ignore_dir_path(path: str) -> bool:
+        """Return True if path matches any directory ignore pattern (directories only)."""
+        return _compiled_should_ignore_dir_path(path)
 
-            # Check if any part of the path matches the simplified pattern
-            path_parts = path_obj.parts
-            for i in range(len(path_parts)):
-                subpath = Path(*path_parts[i:])
-                if fnmatch.fnmatch(str(subpath), simplified_pattern):
+except ImportError:
+
+    def should_ignore_path(path: str) -> bool:
+        """Return True if *path* matches any pattern in IGNORE_PATTERNS."""
+        path_obj = Path(path)
+
+        for pattern in IGNORE_PATTERNS:
+            try:
+                if path_obj.match(pattern):
                     return True
-                # Also check individual parts
-                if fnmatch.fnmatch(path_parts[i], simplified_pattern):
+            except ValueError:
+                if fnmatch.fnmatch(path, pattern):
                     return True
 
-    return False
+            if "**" in pattern:
+                simplified_pattern = pattern.replace("**/", "").replace("/**", "")
+                path_parts = path_obj.parts
+                for i in range(len(path_parts)):
+                    subpath = Path(*path_parts[i:])
+                    if fnmatch.fnmatch(str(subpath), simplified_pattern):
+                        return True
+                    if fnmatch.fnmatch(path_parts[i], simplified_pattern):
+                        return True
 
+        return False
 
-def should_ignore_dir_path(path: str) -> bool:
-    """Return True if path matches any directory ignore pattern (directories only)."""
-    path_obj = Path(path)
-    for pattern in DIR_IGNORE_PATTERNS:
-        try:
-            if path_obj.match(pattern):
-                return True
-        except ValueError:
-            if fnmatch.fnmatch(path, pattern):
-                return True
-        if "**" in pattern:
-            simplified = pattern.replace("**/", "").replace("/**", "")
-            parts = path_obj.parts
-            for i in range(len(parts)):
-                subpath = Path(*parts[i:])
-                if fnmatch.fnmatch(str(subpath), simplified):
+    def should_ignore_dir_path(path: str) -> bool:
+        """Return True if path matches any directory ignore pattern."""
+        path_obj = Path(path)
+        for pattern in DIR_IGNORE_PATTERNS:
+            try:
+                if path_obj.match(pattern):
                     return True
-                if fnmatch.fnmatch(parts[i], simplified):
+            except ValueError:
+                if fnmatch.fnmatch(path, pattern):
                     return True
-    return False
+            if "**" in pattern:
+                simplified = pattern.replace("**/", "").replace("/**", "")
+                parts = path_obj.parts
+                for i in range(len(parts)):
+                    subpath = Path(*parts[i:])
+                    if fnmatch.fnmatch(str(subpath), simplified):
+                        return True
+                    if fnmatch.fnmatch(parts[i], simplified):
+                        return True
+        return False
 
 
 # ============================================================================
