@@ -143,9 +143,9 @@ def reset_global_state() -> None:
         pass
 
     try:
+        from code_muse.plugins.debate import register_callbacks as dr
         from code_muse.plugins.debate import state as ds
         from code_muse.plugins.debate import telemetry as dt
-        from code_muse.plugins.debate import register_callbacks as dr
 
         ds._review_history.clear()
         dt._review_timestamps.clear()

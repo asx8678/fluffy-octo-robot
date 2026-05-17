@@ -65,19 +65,20 @@ def should_suppress_browser() -> bool:
 # Patterns live in _patterns.py so both this module and the Cython-compiled
 # _ignore_matcher can import them without creating circular dependencies.
 # -------------------
-from code_muse.tools._patterns import (  # noqa: F401 — re-exported for backward compat
+from code_muse.tools._patterns import (  # noqa: E402,F401 — re-exported for backward compat
     DIR_IGNORE_PATTERNS,
     FILE_IGNORE_PATTERNS,
     IGNORE_PATTERNS,
 )
 
-
 # Try to use the compiled Cython implementation for hot-path performance;
 # fall back to a pure-Python reimplementation if Cython extensions are absent.
 try:
     from code_muse.tools._ignore_matcher import (
-        should_ignore_path as _compiled_should_ignore_path,
         should_ignore_dir_path as _compiled_should_ignore_dir_path,
+    )
+    from code_muse.tools._ignore_matcher import (
+        should_ignore_path as _compiled_should_ignore_path,
     )
 
     def should_ignore_path(path: str) -> bool:
@@ -85,7 +86,7 @@ try:
         return _compiled_should_ignore_path(path)
 
     def should_ignore_dir_path(path: str) -> bool:
-        """Return True if path matches any directory ignore pattern (directories only)."""
+        """Return True if *path* matches any dir ignore pattern."""
         return _compiled_should_ignore_dir_path(path)
 
 except ImportError:

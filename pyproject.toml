@@ -68,6 +68,7 @@ ignore_no_config = true
 
 [tool.ruff]
 target-version = "py314"
+extend-exclude = ["*.pyx"]
 
 [tool.ruff.lint]
 select = ["E", "F", "UP", "B", "SIM", "I"]
