@@ -174,15 +174,9 @@ class SummaryValidationResult:
     constraints."""
 
     is_valid: bool
-    preserved_facts_found: list[str] = dataclasses.field(
-        default_factory=list
-    )
-    preserved_facts_missing: list[str] = dataclasses.field(
-        default_factory=list
-    )
-    key_values_matched: dict[str, str] = dataclasses.field(
-        default_factory=dict
-    )
+    preserved_facts_found: list[str] = dataclasses.field(default_factory=list)
+    preserved_facts_missing: list[str] = dataclasses.field(default_factory=list)
+    key_values_matched: dict[str, str] = dataclasses.field(default_factory=dict)
     issues: list[str] = dataclasses.field(default_factory=list)
     retry_needed: bool = False
 
@@ -237,9 +231,7 @@ def _check_key_values_preserved(
         if _RE_NUMBER_VALUE.search(value):
             nums_in_summary = _RE_NUMBER_VALUE.findall(summary_text)
             nums_in_value = _RE_NUMBER_VALUE.findall(value)
-            if nums_in_value and any(
-                n in nums_in_summary for n in nums_in_value
-            ):
+            if nums_in_value and any(n in nums_in_summary for n in nums_in_value):
                 matched.append(value)
                 continue
 
@@ -285,10 +277,7 @@ def _validate_summary_fidelity(messages: list) -> SummaryValidationResult:
                 found_facts.append(fact.content)
             else:
                 missing_facts.append(fact.content)
-                issues.append(
-                    f"Protected fact not found verbatim:"
-                    f" {fact.content[:60]}"
-                )
+                issues.append(f"Protected fact not found verbatim: {fact.content[:60]}")
     except Exception:
         # Protected facts manager not available — skip
         pass
@@ -320,9 +309,7 @@ def _validate_summary_fidelity(messages: list) -> SummaryValidationResult:
             m = re.match(r"\s*-\s+(\w[\w\s]*?):\s+(.+)", line.strip())
             if m:
                 key_values.append(m.group(2).strip())
-                key_values_matched[m.group(1).strip()] = (
-                    m.group(2).strip()
-                )
+                key_values_matched[m.group(1).strip()] = m.group(2).strip()
 
     # Verify key values appear in the SUMMARY section
     summary_section = re.search(
@@ -330,18 +317,12 @@ def _validate_summary_fidelity(messages: list) -> SummaryValidationResult:
         summary_text,
         re.DOTALL,
     )
-    summary_body = (
-        summary_section.group(1) if summary_section else summary_text
-    )
+    summary_body = summary_section.group(1) if summary_section else summary_text
 
     if key_values:
-        _matched, missing = _check_key_values_preserved(
-            summary_body, key_values
-        )
+        _matched, missing = _check_key_values_preserved(summary_body, key_values)
         for v in missing:
-            issues.append(
-                f"Key value not found in summary body: {v[:60]}"
-            )
+            issues.append(f"Key value not found in summary body: {v[:60]}")
 
     is_valid = len(missing_facts) == 0 and len(issues) == 0
     retry_needed = len(missing_facts) > 0
@@ -366,8 +347,7 @@ def run_summarization_sync(prompt: str, message_history: list) -> list:
         agent = get_summarization_agent()
     except Exception as e:
         raise SummarizationError(
-            f"Failed to initialize summarization agent:"
-            f" {type(e).__name__}: {e}",
+            f"Failed to initialize summarization agent: {type(e).__name__}: {e}",
             original_error=e,
         ) from e
 
@@ -402,8 +382,7 @@ def run_summarization_sync(prompt: str, message_history: list) -> list:
                 " You MUST reproduce them verbatim:\n"
                 + "\n".join(fact_lines)
                 + "\n\nFAILURE TO PRESERVE THESE FACTS"
-                " WILL CAUSE DATA LOSS.\n"
-                + "After writing your summary,"
+                " WILL CAUSE DATA LOSS.\n" + "After writing your summary,"
                 " double-check every preserved fact"
                 " is included EXACTLY.\n"
             )
@@ -436,8 +415,7 @@ def run_summarization_sync(prompt: str, message_history: list) -> list:
         result = pool.submit(_run_in_thread).result()
         new_msgs = result.new_messages()
         logger.info(
-            "Summarization LLM call complete:"
-            " input=%d msgs, output=%d msgs",
+            "Summarization LLM call complete: input=%d msgs, output=%d msgs",
             len(message_history),
             len(new_msgs),
         )
@@ -462,8 +440,7 @@ def run_summarization_sync(prompt: str, message_history: list) -> list:
         error_type = type(e).__name__
         error_msg = str(e) if str(e) else "(no details available)"
         raise SummarizationError(
-            f"LLM call failed during summarization:"
-            f" [{error_type}] {error_msg}",
+            f"LLM call failed during summarization: [{error_type}] {error_msg}",
             original_error=e,
         ) from e
 
@@ -480,7 +457,7 @@ def _get_summarization_instructions() -> str:
         "(exact values, no paraphrasing):\n"
         "1. **Names** — Keep all user and project names exactly "
         'as stated (e.g. "Amina", not "the user")\n'
-        '2. **Dates and deadlines** — Keep exact dates '
+        "2. **Dates and deadlines** — Keep exact dates "
         '(e.g. "June 3", not "early June")\n'
         "3. **Budgets and monetary amounts** — Keep exact numbers "
         'and currency (e.g. "4500 MAD", not "about 4500 dirhams")\n'

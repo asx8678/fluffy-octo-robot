@@ -227,6 +227,27 @@ def _split_quoted_strings(text: str) -> list[tuple[bool, str]]:
 # ---------------------------------------------------------------------------
 
 
+def is_protected_fact_content(text: str) -> bool:
+    """Check if text appears to be protected fact content
+    that should never be compressed.
+
+    These markers are injected by the summarization and compaction system to
+    preserve user-anchored facts (names, dates, budgets). Compressing them
+    risks stripping the very values we're trying to preserve.
+    """
+    markers = [
+        "## PROTECTED FACTS",
+        "## Protected User Facts",
+        "PRESERVED FACTS:",
+        "KEY VALUES:",
+        "[name]",
+        "[deadline]",
+        "[budget]",
+        "[project]",
+    ]
+    return any(m in text for m in markers)
+
+
 def compress_semantic(text: str, aggressive: bool = False) -> str:
     """Apply semantic compression to *text*.
 
@@ -244,6 +265,10 @@ def compress_semantic(text: str, aggressive: bool = False) -> str:
         The compressed text with code blocks preserved.
     """
     if not text or not text.strip():
+        return text
+
+    # Never compress protected fact blocks
+    if is_protected_fact_content(text):
         return text
 
     # Split into code and non-code segments

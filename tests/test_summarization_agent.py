@@ -157,7 +157,7 @@ class TestSummarizationAgent:
             assert "token usage" in instructions.lower()
             assert "tool calls" in instructions.lower()
             assert "system message" in instructions.lower()
-            assert "essential content" in instructions.lower()
+            assert "factual details" in instructions.lower()
 
     def test_get_summarization_agent_force_reload(self, mock_model, mock_models_config):
         """Test get_summarization_agent with force reload."""
@@ -605,7 +605,7 @@ class TestSummarizationAgentEdgeCases:
             # Check for all required instruction components
             required_phrases = [
                 "summarization expert",
-                "preserve important context",
+                "factual details",
                 "concise but informative",
                 "technical details",
                 "tool calls",
