@@ -122,15 +122,151 @@ async def _on_agent_run_end(
     response_text: str | None = None,
     metadata: dict | None = None,
 ) -> None:
-    """Detect task completion signals after an agent run."""
+    """Detect task completion signals after an agent run.
+
+    When experience retrieval is enabled, also creates an experience
+    capsule from the completed task.
+    """
     if not success:
         return
     from code_muse.plugins.task_context.completion import detect_completion
+    from code_muse.plugins.task_context.config import (
+        get_experience_retrieval_enabled,
+    )
 
     manager = _get_task_manager()
     signal = detect_completion(manager, response_text or "")
     if signal.detected and signal.confidence > 0.6:
         manager.complete_current_task(outcome=signal.outcome_summary)
+
+        # Capture experience capsule if enabled
+        if get_experience_retrieval_enabled():
+            _capture_experience(manager, signal)
+
+
+# ---------------------------------------------------------------------------
+# /task slash command family
+# ---------------------------------------------------------------------------
+
+
+def _capture_experience(manager: Any, signal: Any) -> None:
+    """Create an experience capsule from a completed task."""
+    try:
+        from code_muse.plugins.task_context.experience_store import (
+            create_capsule_from_task,
+        )
+
+        active = manager.get_active_task()
+        if not active:
+            return
+
+        create_capsule_from_task(
+            task_id=active.task_id,
+            task_label=active.label,
+            outcome_summary=signal.outcome_summary or active.outcome_summary,
+            summary=signal.outcome_summary or "",
+            token_estimate=active.token_count,
+            source_archive_path="",
+            metadata={"auto_captured": True},
+        )
+        logger.debug(
+            "Captured experience capsule for task '%s'",
+            active.label or active.task_id[:8],
+        )
+    except Exception as exc:
+        logger.warning("Failed to capture experience capsule: %s", exc)
+
+
+# ---------------------------------------------------------------------------
+# Experience injection into message history
+# ---------------------------------------------------------------------------
+
+# Track injected queries per session to avoid duplicate injections
+_injected_queries: set[int] = set()
+
+
+def _on_message_history_processor_start_with_experience(
+    agent_name: str,
+    session_id: str | None,
+    message_history: list[Any],
+    incoming_messages: list[Any],
+) -> None:
+    """Inject relevant experience capsules into incoming messages if enabled.
+
+    Precedes the existing pruning logic. When experience retrieval is
+    enabled, extracts the user's query from incoming messages, searches
+    for similar past capsules, and prepends a compact context note.
+    """
+    from code_muse.plugins.task_context.config import (
+        get_experience_max_results,
+        get_experience_retrieval_enabled,
+    )
+
+    if not get_experience_retrieval_enabled():
+        return
+
+    if not incoming_messages:
+        return
+
+    # Extract query text from incoming messages
+    query_text = _extract_query_from_messages(incoming_messages)
+    if not query_text:
+        return
+
+    # Deduplicate injection per query
+    query_hash = hash(query_text)
+    if query_hash in _injected_queries:
+        return
+    _injected_queries.add(query_hash)
+
+    # Search for similar capsules
+    from code_muse.plugins.task_context.experience_store import search_experience
+
+    results = search_experience(
+        query=query_text,
+        top_k=get_experience_max_results(),
+        min_similarity=0.4,  # Higher threshold for auto-injection
+    )
+
+    if not results:
+        return
+
+    # Build compact injection message
+    injection_lines = ["Relevant past experience capsules:"]
+    for capsule, _similarity in results:
+        injection_lines.append(
+            f"- [{capsule.capsule_id[:8]}] "
+            f"{capsule.task_label}: {capsule.outcome_summary[:150]}"
+        )
+    injection_text = "\n".join(injection_lines)
+
+    # Try to inject as a pydantic-ai UserPromptPart
+    try:
+        from pydantic_ai.messages import ModelRequest, UserPromptPart
+
+        experience_msg = ModelRequest(parts=[UserPromptPart(content=injection_text)])
+        incoming_messages.insert(0, experience_msg)
+    except ImportError:
+        # Fallback: prepend as a simple dict
+        incoming_messages.insert(0, {"role": "user", "content": injection_text})
+
+    logger.debug(
+        "Injected %d experience capsule(s) for query '%s'",
+        len(results),
+        query_text[:50],
+    )
+
+
+def _extract_query_from_messages(messages: list[Any]) -> str:
+    """Extract the user's query text from incoming messages."""
+    from code_muse.plugins.task_context._text_utils import _extract_text
+
+    parts: list[str] = []
+    for msg in messages:
+        text = _extract_text(msg)
+        if text and len(text) > 5:  # Skip very short messages
+            parts.append(text)
+    return " ".join(parts)[:500]  # Truncate for perf
 
 
 # ---------------------------------------------------------------------------
@@ -269,9 +405,24 @@ def _handle_task_command(command: str, name: str) -> bool | str | None:
     return True
 
 
+def _handle_experience_command(command: str, name: str) -> bool | str | None:
+    """Handle ``/experience`` subcommands via custom_command hook."""
+    if name != "experience":
+        return None
+    from code_muse.plugins.task_context.experience_commands import (
+        handle_experience_command,
+    )
+
+    return handle_experience_command(command)
+
+
 def _on_help() -> list[tuple[str, str]]:
-    """Return help entries for /task."""
-    return [
+    """Return help entries for /task and /experience."""
+    from code_muse.plugins.task_context.experience_commands import (
+        get_experience_help,
+    )
+
+    task_help = [
         ("task new [label]", "Start a new task with optional label"),
         ("task complete [outcome]", "Mark current task as done"),
         ("task status", "Show active task + completed task stats"),
@@ -282,6 +433,7 @@ def _on_help() -> list[tuple[str, str]]:
         ("task config", "Show task pruning configuration"),
         ("task on|off", "Enable/disable task-aware pruning"),
     ]
+    return task_help + get_experience_help()
 
 
 # ---------------------------------------------------------------------------
@@ -290,12 +442,16 @@ def _on_help() -> list[tuple[str, str]]:
 
 
 def _get_task_prompt() -> str | None:
-    """Return task-awareness instructions for the system prompt."""
-    from code_muse.plugins.task_context.config import get_task_prune_enabled
+    """Return task-awareness + experience instructions for the system prompt."""
+    from code_muse.plugins.task_context.config import (
+        get_experience_retrieval_enabled,
+        get_task_prune_enabled,
+    )
 
-    if not get_task_prune_enabled():
-        return None
-    return """\
+    parts: list[str] = []
+
+    if get_task_prune_enabled():
+        parts.append("""\
 ## Task-Aware Context Management
 
 The system automatically tracks conversation tasks to keep context focused.
@@ -307,7 +463,24 @@ You can manage tasks explicitly:
 - Use `/task complete <outcome>` when you finish a task
 - The system auto-detects task switches and completion when possible
 
-This keeps your context clean and relevant to the current task."""
+This keeps your context clean and relevant to the current task.""")
+
+    if get_experience_retrieval_enabled():
+        parts.append("""\
+## Semantic Experience Store
+
+The system has a memory of past solved problems ("experience capsules").
+When you start a new task, similar past solutions may appear as
+"Relevant past experience capsules" in your context. Use these as
+starting points to avoid re-solving previously solved problems.
+
+Manage experiences:
+- `/experience status` — show store configuration & stats
+- `/experience search <query>` — search past experiences
+- `/experience backfill` — create capsules from existing archives
+- `/experience forget <id>` — remove a capsule""")
+
+    return "\n\n".join(parts) if parts else None
 
 
 # ---------------------------------------------------------------------------
@@ -322,6 +495,10 @@ def register_all_callbacks() -> None:
     """
     register_callback("startup", _on_startup)
     register_callback(
+        "message_history_processor_start",
+        _on_message_history_processor_start_with_experience,
+    )
+    register_callback(
         "message_history_processor_start", _on_message_history_processor_start
     )
     register_callback(
@@ -329,6 +506,7 @@ def register_all_callbacks() -> None:
     )
     register_callback("agent_run_end", _on_agent_run_end)
     register_callback("custom_command", _handle_task_command)
+    register_callback("custom_command", _handle_experience_command)
     register_callback("custom_command_help", _on_help)
     register_callback("load_prompt", _get_task_prompt)
 

@@ -19,6 +19,12 @@ _KEY_MAX_ARCHIVE = "task_max_archive_contexts"
 _KEY_PRUNE_AGGRESSIVENESS = "task_prune_aggressiveness"
 _KEY_EMBEDDING_ENABLED = "task_embedding_enabled"
 
+# Experience store config keys
+_KEY_EXP_ENABLED = "experience_retrieval_enabled"
+_KEY_EXP_GLOBAL = "experience_global_enabled"
+_KEY_EXP_MAX_RESULTS = "experience_max_results"
+_KEY_EXP_MAX_CAPSULES = "experience_max_capsules"
+
 _TRUTHY = ("true", "1", "yes", "on")
 
 
@@ -41,7 +47,7 @@ def get_task_prune_threshold() -> float:
     try:
         threshold = float(val) if val else 0.85
         return max(0.5, min(0.95, threshold))
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return 0.85
 
 
@@ -57,7 +63,7 @@ def get_task_auto_complete_timeout() -> int:
     try:
         timeout = int(val) if val else 600
         return max(30, min(3600, timeout))
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return 600
 
 
@@ -86,7 +92,7 @@ def get_task_max_archive_contexts() -> int:
     try:
         n = int(val) if val else 20
         return max(1, min(500, n))
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return 20
 
 
@@ -130,6 +136,88 @@ def get_task_embedding_enabled() -> bool:
 def set_task_embedding_enabled(enabled: bool) -> None:
     set_config_value(_KEY_EMBEDDING_ENABLED, "true" if enabled else "false")
     logger.info("Task embedding scoring %s", "enabled" if enabled else "disabled")
+
+
+# ---------------------------------------------------------------------------
+# Experience store config
+# ---------------------------------------------------------------------------
+
+
+def get_experience_retrieval_enabled() -> bool:
+    """Whether experience retrieval is active. Default: False (fully opt-in)."""
+    val = get_value(_KEY_EXP_ENABLED)
+    if val is None:
+        return False
+    return str(val).strip().lower() in _TRUTHY
+
+
+def set_experience_retrieval_enabled(enabled: bool) -> None:
+    set_config_value(_KEY_EXP_ENABLED, "true" if enabled else "false")
+    logger.info("Experience retrieval %s", "enabled" if enabled else "disabled")
+
+
+def get_experience_global_enabled() -> bool:
+    """Whether cross-repo global experience store is enabled. Default: False."""
+    val = get_value(_KEY_EXP_GLOBAL)
+    if val is None:
+        return False
+    return str(val).strip().lower() in _TRUTHY
+
+
+def set_experience_global_enabled(enabled: bool) -> None:
+    set_config_value(_KEY_EXP_GLOBAL, "true" if enabled else "false")
+    logger.info("Global experience store %s", "enabled" if enabled else "disabled")
+
+
+def get_experience_max_results() -> int:
+    """Maximum capsules returned per search. Default: 3."""
+    val = get_value(_KEY_EXP_MAX_RESULTS)
+    try:
+        n = int(val) if val else 3
+        return max(1, min(10, n))
+    except ValueError, TypeError:
+        return 3
+
+
+def set_experience_max_results(count: int) -> None:
+    clamped = max(1, min(10, count))
+    set_config_value(_KEY_EXP_MAX_RESULTS, str(clamped))
+    logger.info("Experience max results set to %d", clamped)
+
+
+def get_experience_max_capsules() -> int:
+    """Maximum capsules retained in store. Default: 100."""
+    val = get_value(_KEY_EXP_MAX_CAPSULES)
+    try:
+        n = int(val) if val else 100
+        return max(10, min(5000, n))
+    except ValueError, TypeError:
+        return 100
+
+
+def set_experience_max_capsules(count: int) -> None:
+    clamped = max(10, min(5000, count))
+    set_config_value(_KEY_EXP_MAX_CAPSULES, str(clamped))
+    logger.info("Experience max capsules set to %d", clamped)
+
+
+def get_experience_config_summary() -> str:
+    """Return a human-readable summary of experience config values."""
+    from code_muse.plugins.task_context.experience_store import (
+        get_capsule_count,
+        get_store_path,
+    )
+
+    lines = [
+        "Experience Store Configuration:",
+        f"  Retrieval enabled: {get_experience_retrieval_enabled()}",
+        f"  Global (cross-repo): {get_experience_global_enabled()}",
+        f"  Max results per search: {get_experience_max_results()}",
+        f"  Max capsules in store: {get_experience_max_capsules()}",
+        f"  Store path: {get_store_path()}",
+        f"  Capsule count: {get_capsule_count()}",
+    ]
+    return "\n".join(lines)
 
 
 def get_task_config_summary() -> str:
