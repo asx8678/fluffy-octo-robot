@@ -5,6 +5,7 @@ This allows tools to use the same Rich console interface while having
 their output captured and routed through our message queue system.
 """
 
+import sys
 import traceback
 from typing import Any
 
@@ -223,7 +224,7 @@ class QueueConsole:
 
         # Create a new, isolated console instance specifically for input
         # This bypasses any spinner or queue system interference
-        input_console = Console(file=__import__("sys").stderr, force_terminal=True)
+        input_console = Console(file=sys.stderr, force_terminal=True)
 
         # Clear any spinner artifacts and position cursor properly
         if prompt:

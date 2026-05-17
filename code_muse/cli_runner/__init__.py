@@ -3,16 +3,16 @@
 Contains the main application logic, interactive mode, and entry point.
 """
 
-# Apply pydantic-ai patches BEFORE any pydantic-ai imports
-from code_muse.pydantic_patches import apply_all_patches
-
-apply_all_patches()
-
 import asyncio
 import contextlib
 import os
 import sys
 import traceback
+
+# Apply pydantic-ai patches BEFORE any pydantic-ai imports
+from code_muse.pydantic_patches import apply_all_patches
+
+apply_all_patches()
 
 from rich.console import Console
 

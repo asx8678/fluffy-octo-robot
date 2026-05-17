@@ -66,7 +66,7 @@ class TrafficCapture:
         out_dir = Path(self.output).parent
         if out_dir:
             os.makedirs(out_dir, exist_ok=True)
-        with open(self.output, "w") as f:
+        with open(self.output, "w", encoding="utf-8") as f:
             f.write(
                 json.dumps(
                     {

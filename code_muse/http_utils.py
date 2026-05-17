@@ -201,7 +201,8 @@ class RetryingAsyncClient(httpx.AsyncClient):
         if last_exception:
             raise last_exception
 
-        return last_response
+        # Should never reach here — either we got a response or raised
+        raise RuntimeError("No response received after retries")
 
 
 def get_cert_bundle_path() -> str | None:

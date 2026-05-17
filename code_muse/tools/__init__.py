@@ -1,4 +1,8 @@
-from annotationlib import get_annotations
+try:
+    from annotationlib import get_annotations
+except ImportError:
+    # Python <3.14 fallback
+    from inspect import get_annotations
 
 from code_muse.callbacks import on_register_tools
 from code_muse.messaging import emit_warning

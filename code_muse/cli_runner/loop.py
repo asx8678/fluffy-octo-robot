@@ -200,7 +200,7 @@ async def _run_main_input_loop(message_renderer, terminal_session):
 
         try:
             task = await _read_user_input(message_renderer, terminal_session)
-        except KeyboardInterrupt, asyncio.CancelledError:
+        except (KeyboardInterrupt, asyncio.CancelledError):
             _handle_keyboard_interrupt(terminal_session)
             continue
         except EOFError:

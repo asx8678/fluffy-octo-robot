@@ -10,15 +10,12 @@ REQUIRED_KEYS = ["agent_name", "owner_name"]
 
 # Config cache to avoid repeated file reads
 _config_cache: tuple[str, float, configparser.ConfigParser | None] = None
-_config_cache_lock = None  # Will be initialized lazily; FREE-THREADED: sync-only cache
+_config_cache_lock = threading.Lock()  # Module-level; avoids lazy-init race
 
 
 def _get_cached_config() -> configparser.ConfigParser:
     """Return a cached ConfigParser, re-reading only when the file changes."""
-    global _config_cache, _config_cache_lock
-
-    if _config_cache_lock is None:
-        _config_cache_lock = threading.Lock()
+    global _config_cache
 
     cache_key = str(paths.CONFIG_FILE)
     try:

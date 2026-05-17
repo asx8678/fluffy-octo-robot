@@ -20,7 +20,12 @@ import math
 import pathlib
 import time
 import weakref
-from annotationlib import get_annotations
+
+try:
+    from annotationlib import get_annotations
+except ImportError:
+    # Python <3.14 fallback
+    from inspect import get_annotations
 from collections import OrderedDict
 from typing import Any
 

@@ -50,7 +50,7 @@ def has_completed_onboarding() -> bool:
 def mark_onboarding_complete() -> None:
     """Mark onboarding as complete."""
     ONBOARDING_COMPLETE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(ONBOARDING_COMPLETE_FILE, "w") as f:
+    with open(ONBOARDING_COMPLETE_FILE, "w", encoding="utf-8") as f:
         f.write("completed\n")
 
 
