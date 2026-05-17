@@ -14,8 +14,12 @@ cpdef str normalize_filter_text(str text):
     return " ".join(normalized.split())
 
 
-cpdef bint query_matches_text(str query, *candidates):
-    """Return True when every query term appears in the candidate text."""
+def query_matches_text(query: str, *candidates: str) -> bool:
+    """Return True when every query term appears in the candidate text.
+
+    Note: uses ``def`` instead of ``cpdef`` because Cython cpdef
+    functions cannot accept ``*args`` varargs.
+    """
     cdef list terms = normalize_filter_text(query).split()
     if not terms:
         return True

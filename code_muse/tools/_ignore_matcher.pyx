@@ -3,7 +3,7 @@
 from pathlib import Path
 import fnmatch
 
-from code_muse.tools.common import IGNORE_PATTERNS, DIR_IGNORE_PATTERNS
+from code_muse.tools._patterns import IGNORE_PATTERNS, DIR_IGNORE_PATTERNS
 
 
 cpdef bint should_ignore_path(str path):
