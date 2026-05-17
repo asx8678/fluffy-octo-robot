@@ -7,7 +7,9 @@ import traceback
 from collections.abc import Callable
 from typing import Any, Literal
 
-PhaseType = Literal[
+# Single canonical source of truth for all valid hook/phase names.
+# Used to build _callbacks dict and validated against PhaseType in tests.
+VALID_HOOKS: tuple[str, ...] = (
     "startup",
     "shutdown",
     "invoke_agent",
@@ -44,53 +46,19 @@ PhaseType = Literal[
     "agent_run_context",
     "agent_run_cancel",
     "should_skip_fallback_render",
-]
+)
+
+PhaseType = Literal[*VALID_HOOKS]
+
 CallbackFunc = Callable[..., Any]
 
 # (priority, func) tuples — higher priority runs first.
-_callbacks: dict[PhaseType, list[tuple[int, CallbackFunc]]] = {
-    "startup": [],
-    "shutdown": [],
-    "invoke_agent": [],
-    "agent_exception": [],
-    "version_check": [],
-    "edit_file": [],
-    "create_file": [],
-    "replace_in_file": [],
-    "delete_snippet": [],
-    "delete_file": [],
-    "run_shell_command": [],
-    "load_model_config": [],
-    "load_models_config": [],
-    "load_prompt": [],
-    "agent_reload": [],
-    "custom_command": [],
-    "custom_command_help": [],
-    "file_permission": [],
-    "pre_tool_call": [],
-    "post_tool_call": [],
-    "stream_event": [],
-    "register_tools": [],
-    "register_agents": [],
-    "register_model_type": [],
-    "get_model_system_prompt": [],
-    "prepare_model_prompt": [],
-    "agent_run_start": [],
-    "agent_run_end": [],
-    "agent_run_result": [],
-    "register_model_providers": [],
-    "message_history_processor_start": [],
-    "message_history_processor_end": [],
-    "on_message": [],
-    "agent_run_context": [],
-    "agent_run_cancel": [],
-    "should_skip_fallback_render": [],
-}
+_callbacks: dict[str, list[tuple[int, CallbackFunc]]] = {h: [] for h in VALID_HOOKS}
 
 # Pre-sorted cache: populated lazily by get_callbacks(), invalidated on
 # register/unregister/clear. Avoids sorting the (priority, func) tuples
 # on every dispatch.
-_sorted_cache: dict[PhaseType, list[CallbackFunc]] = {}
+_sorted_cache: dict[str, list[CallbackFunc]] = {}
 
 logger = logging.getLogger(__name__)
 # FREE-THREADED: ThreadPoolExecutor is compatible with free-threaded Python 3.14 —

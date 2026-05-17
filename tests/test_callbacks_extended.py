@@ -1,9 +1,13 @@
 import asyncio
+from typing import get_args
 from unittest.mock import patch
 
 import pytest
 
 from code_muse.callbacks import (
+    VALID_HOOKS,
+    PhaseType,
+    _callbacks,
     clear_callbacks,
     count_callbacks,
     get_callbacks,
@@ -739,3 +743,25 @@ class TestStreamEventCallback:
             assert results[1] == "OK"  # Survived
             assert successful_events == ["token"]
             mock_logger.error.assert_called_once()
+
+
+class TestHookRegistryConsistency:
+    """Validate that VALID_HOOKS, PhaseType, and _callbacks stay in sync."""
+
+    def test_valid_hooks_matches_phase_type_literal_args(self):
+        """VALID_HOOKS tuple must contain exactly the same members as PhaseType."""
+        phase_type_args = get_args(PhaseType)
+        assert set(VALID_HOOKS) == set(phase_type_args)
+        assert len(VALID_HOOKS) == len(phase_type_args)  # no duplicates
+
+    def test_callbacks_dict_keys_match_valid_hooks(self):
+        """_callbacks dict must have a key for every VALID_HOOK and nothing else."""
+        assert set(_callbacks.keys()) == set(VALID_HOOKS)
+
+    def test_valid_hooks_contains_no_duplicates(self):
+        """VALID_HOOKS must not contain duplicate entries."""
+        assert len(VALID_HOOKS) == len(set(VALID_HOOKS))
+
+    def test_valid_hooks_is_frozen_tuple(self):
+        """VALID_HOOKS should be a tuple (immutable)."""
+        assert isinstance(VALID_HOOKS, tuple)
