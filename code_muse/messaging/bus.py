@@ -422,13 +422,13 @@ class MessageBus:
             # put them in the incoming queue for the agent to process
             try:
                 self._incoming.put_nowait(command)
-                self._incoming_event.set()
+                self._signal_incoming_event()
             except queue.Full:
                 # Drop oldest and retry
                 try:
                     self._incoming.get_nowait()
                     self._incoming.put_nowait(command)
-                    self._incoming_event.set()
+                    self._signal_incoming_event()
                 except queue.Empty:
                     pass
 
@@ -455,6 +455,20 @@ class MessageBus:
         """Set a future's result if not already done."""
         if not future.done():
             future.set_result(result)
+
+    def _signal_incoming_event(self) -> None:
+        """Thread-safe signal on the incoming event.
+
+        Uses call_soo_threadsafe when the event loop is known and running,
+        falling back to direct set() otherwise.
+        """
+        if self._event_loop is not None and self._event_loop.is_running():
+            try:
+                self._event_loop.call_soon_threadsafe(self._incoming_event.set)
+            except RuntimeError:
+                self._incoming_event.set()
+        else:
+            self._incoming_event.set()
 
     # =========================================================================
     # Queue Access (for renderers/consumers)
@@ -496,8 +510,13 @@ class MessageBus:
             try:
                 return self._incoming.get_nowait()
             except queue.Empty:
-                self._incoming_event.clear()
-                await self._incoming_event.wait()
+                pass
+            self._incoming_event.clear()
+            try:
+                return self._incoming.get_nowait()
+            except queue.Empty:
+                pass
+            await self._incoming_event.wait()
 
     # =========================================================================
     # Startup Buffering
@@ -527,6 +546,11 @@ class MessageBus:
         """
         with self._lock:
             self._has_active_renderer = True
+            # Capture the running event loop so call_soon_threadsafe works
+            try:
+                self._event_loop = asyncio.get_running_loop()
+            except RuntimeError:
+                self._event_loop = None
 
     def mark_renderer_inactive(self) -> None:
         """Mark that no renderer is currently active.

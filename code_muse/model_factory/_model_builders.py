@@ -52,10 +52,14 @@ class ZaiCerebrasProvider(CerebrasProvider):
 
     def model_profile(self, model_name: str) -> ModelProfile | None:
         profile = super().model_profile(model_name)
-        if model_name.startswith("zai"):
+        if model_name.lower().startswith("zai"):
             from pydantic_ai.profiles.qwen import qwen_model_profile
 
-            profile = profile.update(qwen_model_profile("qwen-3-coder"))
+            qwen_profile = qwen_model_profile("qwen-3-coder")
+            if profile is not None:
+                profile = profile.update(qwen_profile)
+            else:
+                profile = qwen_profile
         return profile
 
 

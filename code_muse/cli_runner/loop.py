@@ -200,7 +200,7 @@ async def _run_main_input_loop(message_renderer, terminal_session):
 
         try:
             task = await _read_user_input(message_renderer, terminal_session)
-        except (KeyboardInterrupt, asyncio.CancelledError):
+        except KeyboardInterrupt, asyncio.CancelledError:
             _handle_keyboard_interrupt(terminal_session)
             continue
         except EOFError:
@@ -379,7 +379,7 @@ async def interactive_mode(message_renderer, initial_command: str = None) -> Non
     if initial_command:
         await _handle_initial_command(initial_command, current_agent, display_console)
 
-    _maybe_run_onboarding()
+    await asyncio.to_thread(_maybe_run_onboarding)
 
     async with TerminalSession(display_console) as terminal_session:
         # Track the current agent task for cancellation on quit

@@ -161,15 +161,8 @@ def _extract_json(text: str) -> dict | None:
     except json.JSONDecodeError:
         pass
 
-    # Fallback: heuristic
+    # Fallback: heuristic — fail closed, never auto-approve
     lower = text.lower()
-    if "approved" in lower and "rejected" not in lower:
-        return {
-            "verdict": "approved",
-            "summary": text[:300],
-            "issues": [],
-            "suggestion": None,
-        }
     if "rejected" in lower:
         return {
             "verdict": "rejected",
@@ -177,6 +170,7 @@ def _extract_json(text: str) -> dict | None:
             "issues": ["Reviewer identified problems"],
             "suggestion": "Rewrite based on the feedback above.",
         }
+    # Default to flagged — fail closed, never auto-approve
     return {
         "verdict": "flagged",
         "summary": text[:300],

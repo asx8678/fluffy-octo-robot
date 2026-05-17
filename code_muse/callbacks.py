@@ -2,6 +2,7 @@ import asyncio
 import atexit
 import concurrent.futures
 import logging
+import threading
 import traceback
 from collections.abc import Callable
 from typing import Any, Literal
@@ -96,6 +97,12 @@ logger = logging.getLogger(__name__)
 # no GIL contention for I/O-bound callback work.
 _executor = concurrent.futures.ThreadPoolExecutor(max_workers=8)
 
+# Thread-safe lock for all mutable global state
+_callback_lock = threading.Lock()
+
+# Shutdown flag to prevent new submissions during teardown
+_executor_shutdown = False
+
 # ---------------------------------------------------------------------------
 # Deferred (atomic) registration support
 # ---------------------------------------------------------------------------
@@ -113,8 +120,9 @@ def begin_deferred() -> None:
     ``rollback_deferred()`` to discard it.
     """
     global _defer_mode
-    _defer_mode = True
-    _deferred_registrations.clear()
+    with _callback_lock:
+        _defer_mode = True
+        _deferred_registrations.clear()
 
 
 def commit_deferred() -> list[str]:
@@ -127,65 +135,63 @@ def commit_deferred() -> list[str]:
     Returns a list of non-fatal validation warnings (empty on success).
     """
     global _defer_mode
-    _defer_mode = False
+    with _callback_lock:
+        _defer_mode = False
+        batch = list(_deferred_registrations)
+        _deferred_registrations.clear()
+        if not batch:
+            return []
 
-    batch = list(_deferred_registrations)
-    _deferred_registrations.clear()
-
-    if not batch:
-        return []
-
-    # --- Phase 1: validate everything before touching state ---
-    warnings: list[str] = []
-    seen_keys: set[tuple[PhaseType, int, str]] = set()
-    for phase, func, _priority in batch:
-        if phase not in _callbacks:
-            _defer_mode = False
-            raise ValueError(
-                f"Deferred registration references unsupported phase: {phase}"
-            )
-        if not callable(func):
-            raise TypeError(f"Deferred callback must be callable, got {type(func)}")
-        key = (phase, id(func), func.__name__)
-        if key in seen_keys:
-            warnings.append(
-                f"Duplicate deferred registration: {func.__name__} for '{phase}'"
-            )
-        seen_keys.add(key)
-
-    # --- Phase 2: apply; rollback on any unexpected error ---
-    committed: list[tuple[PhaseType, CallbackFunc, int]] = []
-    try:
-        for phase, func, priority in batch:
-            # Bypass the duplicate-is-func check in register_callback so that
-            # deferred registrations for *different* plugins can coexist.
-            # We still guard against the exact-same-func duplicate at commit
-            # time.
-            if any(f is func for _, f in _callbacks[phase]):
-                warnings.append(
-                    f"Skipping duplicate: {func.__name__} already in '{phase}'"
+        # --- Phase 1: validate everything before touching state ---
+        warnings: list[str] = []
+        seen_keys: set[tuple[PhaseType, int, str]] = set()
+        for phase, func, _priority in batch:
+            if phase not in _callbacks:
+                raise ValueError(
+                    f"Deferred registration references unsupported phase: {phase}"
                 )
-                continue
-            _callbacks[phase].append((priority, func))
-            _sorted_cache.pop(phase, None)  # Invalidate sorted cache
-            committed.append((phase, func, priority))
-            logger.debug(
-                f"Committed deferred callback {func.__name__} for "
-                f"phase '{phase}' (priority={priority})"
+            if not callable(func):
+                raise TypeError(f"Deferred callback must be callable, got {type(func)}")
+            key = (phase, id(func), func.__name__)
+            if key in seen_keys:
+                warnings.append(
+                    f"Duplicate deferred registration: {func.__name__} for '{phase}'"
+                )
+            seen_keys.add(key)
+
+        # --- Phase 2: apply; rollback on any unexpected error ---
+        committed: list[tuple[PhaseType, CallbackFunc, int]] = []
+        try:
+            for phase, func, priority in batch:
+                # Bypass the duplicate-is-func check in register_callback so that
+                # deferred registrations for *different* plugins can coexist.
+                # We still guard against the exact-same-func duplicate at commit
+                # time.
+                if any(f is func for _, f in _callbacks[phase]):
+                    warnings.append(
+                        f"Skipping duplicate: {func.__name__} already in '{phase}'"
+                    )
+                    continue
+                _callbacks[phase].append((priority, func))
+                _sorted_cache.pop(phase, None)  # Invalidate sorted cache
+                committed.append((phase, func, priority))
+                logger.debug(
+                    f"Committed deferred callback {func.__name__} for "
+                    f"phase '{phase}' (priority={priority})"
+                )
+        except Exception:
+            # Rollback everything we managed to commit
+            for phase, func, _priority in committed:
+                for idx, (_, existing_func) in enumerate(_callbacks[phase]):
+                    if existing_func is func:
+                        del _callbacks[phase][idx]
+                        _sorted_cache.pop(phase, None)  # Invalidate sorted cache
+                        break
+            logger.error(
+                "Deferred commit failed; rolled back %d registrations",
+                len(committed),
             )
-    except Exception:
-        # Rollback everything we managed to commit
-        for phase, func, _priority in committed:
-            for idx, (_, existing_func) in enumerate(_callbacks[phase]):
-                if existing_func is func:
-                    del _callbacks[phase][idx]
-                    _sorted_cache.pop(phase, None)  # Invalidate sorted cache
-                    break
-        logger.error(
-            "Deferred commit failed; rolled back %d registrations",
-            len(committed),
-        )
-        raise
+            raise
 
     logger.debug("Committed %d deferred registrations", len(committed))
     return warnings
@@ -194,9 +200,10 @@ def commit_deferred() -> list[str]:
 def rollback_deferred() -> None:
     """Discard all buffered registrations without committing."""
     global _defer_mode
-    count = len(_deferred_registrations)
-    _defer_mode = False
-    _deferred_registrations.clear()
+    with _callback_lock:
+        count = len(_deferred_registrations)
+        _defer_mode = False
+        _deferred_registrations.clear()
     logger.debug("Rolled back %d deferred registrations", count)
 
 
@@ -208,6 +215,8 @@ def _shutdown_executor() -> None:
     in response to the ``shutdown`` hook; this function only terminates the
     executor that runs those callbacks.
     """
+    global _executor_shutdown
+    _executor_shutdown = True
     try:
         _executor.shutdown(wait=True, cancel_futures=True)
         logger.debug("Callback executor shut down cleanly")
@@ -219,65 +228,67 @@ atexit.register(_shutdown_executor)
 
 
 def register_callback(phase: PhaseType, func: CallbackFunc, priority: int = 0) -> None:
-    if phase not in _callbacks:
-        raise ValueError(
-            f"Unsupported phase: {phase}. Supported phases: {list(_callbacks.keys())}"
-        )
-
     if not callable(func):
         raise TypeError(f"Callback must be callable, got {type(func)}")
 
-    # In deferred mode, buffer the registration for later atomic commit
-    if _defer_mode:
-        _deferred_registrations.append((phase, func, priority))
-        _sorted_cache.pop(phase, None)  # Invalidate sorted cache
-        logger.debug(
-            f"Buffered deferred callback {func.__name__} for "
-            f"phase '{phase}' (priority={priority})"
-        )
-        return
+    with _callback_lock:
+        if phase not in _callbacks:
+            raise ValueError(
+                f"Unsupported phase: {phase}. Supported phases: {list(_callbacks.keys())}"
+            )
 
-    # Prevent duplicate registration of the same callback function
-    # This can happen if plugins are accidentally loaded multiple times
-    for _existing_priority, existing_func in _callbacks[phase]:
-        if existing_func is func:
+        # In deferred mode, buffer the registration for later atomic commit
+        if _defer_mode:
+            _deferred_registrations.append((phase, func, priority))
+            _sorted_cache.pop(phase, None)  # Invalidate sorted cache
             logger.debug(
-                f"Callback {func.__name__} already registered for phase '{phase}', skipping"
+                f"Buffered deferred callback {func.__name__} for "
+                f"phase '{phase}' (priority={priority})"
             )
             return
 
-    _callbacks[phase].append((priority, func))
-    _sorted_cache.pop(phase, None)  # Invalidate sorted cache
-    logger.debug(
-        f"Registered async callback {func.__name__} for phase '{phase}' (priority={priority})"
-    )
+        # Prevent duplicate registration of the same callback function
+        # This can happen if plugins are accidentally loaded multiple times
+        for _existing_priority, existing_func in _callbacks[phase]:
+            if existing_func is func:
+                logger.debug(
+                    f"Callback {func.__name__} already registered for phase '{phase}', skipping"
+                )
+                return
+
+        _callbacks[phase].append((priority, func))
+        _sorted_cache.pop(phase, None)  # Invalidate sorted cache
+        logger.debug(
+            f"Registered async callback {func.__name__} for phase '{phase}' (priority={priority})"
+        )
 
 
 def unregister_callback(phase: PhaseType, func: CallbackFunc) -> bool:
-    if phase not in _callbacks:
-        return False
-
-    for idx, (_existing_priority, existing_func) in enumerate(_callbacks[phase]):
-        if existing_func is func:
-            del _callbacks[phase][idx]
-            _sorted_cache.pop(phase, None)  # Invalidate sorted cache
-            logger.debug(
-                f"Unregistered async callback {func.__name__} from phase '{phase}'"
-            )
-            return True
+    with _callback_lock:
+        if phase not in _callbacks:
+            return False
+        for idx, (_existing_priority, existing_func) in enumerate(_callbacks[phase]):
+            if existing_func is func:
+                del _callbacks[phase][idx]
+                _sorted_cache.pop(phase, None)  # Invalidate sorted cache
+                logger.debug(
+                    f"Unregistered async callback {func.__name__} from phase '{phase}'"
+                )
+                return True
     return False
 
 
 def clear_callbacks(phase: PhaseType | None = None) -> None:
-    if phase is None:
-        for p in _callbacks:
-            _callbacks[p].clear()
-        logger.debug("Cleared all async callbacks")
-    else:
-        if phase in _callbacks:
-            _callbacks[phase].clear()
-            logger.debug(f"Cleared async callbacks for phase '{phase}'")
-    _sorted_cache.clear()
+    with _callback_lock:
+        if phase is None:
+            for p in _callbacks:
+                _callbacks[p].clear()
+            logger.debug("Cleared all async callbacks")
+        else:
+            if phase in _callbacks:
+                _callbacks[phase].clear()
+                logger.debug(f"Cleared async callbacks for phase '{phase}'")
+        _sorted_cache.clear()
 
 
 def get_callbacks(phase: PhaseType) -> list[CallbackFunc]:
@@ -285,26 +296,28 @@ def get_callbacks(phase: PhaseType) -> list[CallbackFunc]:
 
     Uses a pre-sorted cache that is invalidated on register/unregister/clear.
     """
-    cached = _sorted_cache.get(phase)
-    if cached is not None:
-        return list(cached)
+    with _callback_lock:
+        cached = _sorted_cache.get(phase)
+        if cached is not None:
+            return list(cached)
 
-    callbacks = _callbacks.get(phase, [])
-    if not callbacks:
-        _sorted_cache[phase] = []
-        return []
+        callbacks = _callbacks.get(phase, [])
+        if not callbacks:
+            _sorted_cache[phase] = []
+            return []
 
-    # Sort by priority descending, then by registration order (stable sort)
-    sorted_callbacks = sorted(callbacks, key=lambda item: item[0], reverse=True)
-    result = [func for _priority, func in sorted_callbacks]
-    _sorted_cache[phase] = result
-    return list(result)
+        # Sort by priority descending, then by registration order (stable sort)
+        sorted_callbacks = sorted(callbacks, key=lambda item: item[0], reverse=True)
+        result = [func for _priority, func in sorted_callbacks]
+        _sorted_cache[phase] = result
+        return list(result)
 
 
 def count_callbacks(phase: PhaseType | None = None) -> int:
-    if phase is None:
-        return sum(len(callbacks) for callbacks in _callbacks.values())
-    return len(_callbacks.get(phase, []))
+    with _callback_lock:
+        if phase is None:
+            return sum(len(callbacks) for callbacks in _callbacks.values())
+        return len(_callbacks.get(phase, []))
 
 
 def fire_callbacks(phase: PhaseType, *args, **kwargs) -> None:
@@ -334,8 +347,6 @@ def fire_callbacks(phase: PhaseType, *args, **kwargs) -> None:
 
 
 def _trigger_callbacks_sync(phase: PhaseType, *args, **kwargs) -> list[Any]:
-    if not _callbacks.get(phase):
-        return []
     callbacks = get_callbacks(phase)
     if not callbacks:
         logger.debug(f"No callbacks registered for phase '{phase}'")
@@ -381,8 +392,6 @@ async def _trigger_callbacks(phase: PhaseType, *args, **kwargs) -> list[Any]:
 
     Intended priority chain for ``run_shell_command``:
     """
-    if not _callbacks.get(phase):
-        return []
     callbacks = get_callbacks(phase)
 
     if not callbacks:

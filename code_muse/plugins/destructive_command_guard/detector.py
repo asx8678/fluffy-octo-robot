@@ -28,10 +28,10 @@ class DestructiveCommandMatch:
 # Matches shell operators that precede a new command in a pipeline/chain.
 # E.g. "cd foo && rm -rf /" or "true || git reset --hard"
 # The capture ensures the command keyword follows a real shell boundary.
-_SHELL_OPERATOR_RE = re.compile(r"(?:^|&&|\|\||;|\|)\s*\w+", re.MULTILINE)
+_SHELL_OPERATOR_RE = re.compile(r"(?:^|&&|\|\||;|\||\$\()\s*\w+", re.MULTILINE)
 
 
-def _is_real_command(command: str) -> bool:
+def _has_real_invocation(command: str) -> bool:
     """Check that the destructive keyword is an actual invocation, not a string arg.
 
     Handles compound commands like "cd foo && rm -rf /" while
@@ -43,7 +43,27 @@ def _is_real_command(command: str) -> bool:
     Returns:
         True if the command appears to be a real invocation.
     """
-    return bool(_SHELL_OPERATOR_RE.search(command))
+    if _SHELL_OPERATOR_RE.search(command):
+        return True
+    # Also check for backtick command substitution
+    return "`" in command
+
+
+def _is_destructive_at_command_boundary(command: str, match_pos: int) -> bool:
+    """Check that a match at match_pos appears at a command boundary.
+
+    A command boundary means the matched text follows:
+    - Start of string (possibly with leading whitespace)
+    - A shell operator: &&, ||, ;, |, $(, `
+    """
+    if match_pos == 0:
+        return True
+    # Look at the character right before the match
+    prefix = command[:match_pos].rstrip()
+    if not prefix:
+        return True
+    # Check if prefix ends with a shell operator
+    return any(prefix.endswith(op) for op in ["&&", "||", ";", "|", "$", "`"])
 
 
 # ---------------------------------------------------------------------------
@@ -366,11 +386,14 @@ def detect_destructive_command(command: str) -> DestructiveCommandMatch | None:
         return None
 
     # Ensure the command is a real invocation, not a string argument
-    if not _is_real_command(command):
+    if not _has_real_invocation(command):
         return None
 
     for pattern, name, description in _DESTRUCTIVE_PATTERNS:
-        if pattern.search(command):
-            return DestructiveCommandMatch(pattern_name=name, description=description)
+        for match in pattern.finditer(command):
+            if _is_destructive_at_command_boundary(command, match.start()):
+                return DestructiveCommandMatch(
+                    pattern_name=name, description=description
+                )
 
     return None

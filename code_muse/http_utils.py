@@ -70,6 +70,10 @@ def _resolve_proxy_config(verify: bool | str | None = None) -> ProxyConfig:
     )
     if disable_tls_verify:
         verify = False
+        emit_warning(
+            "⚠️ TLS verification DISABLED via MUSE_DISABLE_TLS_VERIFY — "
+            "API calls are vulnerable to MITM!"
+        )
 
     proxy_url = _detect_proxy_url()
     has_proxy = proxy_url is not None
@@ -215,8 +219,8 @@ def get_cert_bundle_path() -> str | None:
 
 def create_client(
     timeout: int = 180,
-    verify: bool | str = None,
-    headers: dict[str, str | None] = None,
+    verify: bool | str | None = None,
+    headers: dict[str, str | None] | None = None,
     retry_status_codes: tuple = (429, 502, 503, 504),
 ) -> httpx.Client:
     if verify is None:
@@ -238,8 +242,8 @@ def create_client(
 
 def create_async_client(
     timeout: int = 180,
-    verify: bool | str = None,
-    headers: dict[str, str | None] = None,
+    verify: bool | str | None = None,
+    headers: dict[str, str | None] | None = None,
     retry_status_codes: tuple = (429, 502, 503, 504),
     model_name: str = "",
 ) -> httpx.AsyncClient:
@@ -269,16 +273,16 @@ def create_async_client(
 
 def create_httpx_client(
     timeout: float = 5.0,
-    verify: bool | str = None,
-    headers: dict[str, str | None] = None,
+    verify: bool | str | None = None,
+    headers: dict[str, str | None] | None = None,
 ) -> httpx.Client:
     if verify is None:
         verify = get_cert_bundle_path()
 
-    client = httpx.Client(verify=verify)
+    client = httpx.Client(verify=verify, timeout=timeout)
 
     if headers:
-        client.headers.update(headers or {})
+        client.headers.update(headers)
 
     return client
 
@@ -307,8 +311,8 @@ def resolve_env_var_in_header(headers: dict[str, str]) -> dict[str, str]:
 
 def create_reopenable_async_client(
     timeout: int = 180,
-    verify: bool | str = None,
-    headers: dict[str, str | None] = None,
+    verify: bool | str | None = None,
+    headers: dict[str, str | None] | None = None,
     retry_status_codes: tuple = (429, 502, 503, 504),
     model_name: str = "",
 ) -> ReopenableAsyncClient | httpx.AsyncClient:
