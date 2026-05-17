@@ -64,10 +64,14 @@ _model_instance_cache_lock = threading.Lock()
 # PERF-15d.4: Cache pydantic-ai Agent instances keyed by
 # (agent_name, model_name, frozenset(tools)) to avoid rebuilding Agents
 # under fan-out (parent → N sub-agents).
-_subagent_agent_cache: (
-    OrderedDict[tuple[str, str | None, frozenset], Any]
-) = OrderedDict()
+_subagent_agent_cache: OrderedDict[tuple[str, str | None, frozenset], Any] = (
+    OrderedDict()
+)
 _SUBAGENT_AGENT_CACHE_MAX = 64
+# FREE-THREADED: Lock for _subagent_agent_cache — mirrors
+# _model_instance_cache_lock pattern.  Guard dict mutations in
+# invoke_agent to be safe under free-threaded Python 3.14.
+_subagent_agent_cache_lock = threading.Lock()
 
 
 def _generate_session_hash_suffix() -> str:
@@ -258,7 +262,7 @@ def _load_session_history(session_id: str) -> list[ModelMessage]:
                     return ModelMessagesTypeAdapter.validate_python(raw_messages)
                 except Exception:
                     return raw_messages
-        except (UnicodeDecodeError, ValueError):
+        except UnicodeDecodeError, ValueError:
             pass
 
     return []
@@ -513,34 +517,43 @@ def register_invoke_agent(agent):
             # Agents under fan-out (parent → N sub-agents).
             agent_tools = agent_config.get_available_tools()
             cache_key = (agent_name, model_name, frozenset(agent_tools))
-            temp_agent = _subagent_agent_cache.get(cache_key)
 
-            if temp_agent is not None:
-                # Move to end to mark as recently used (LRU)
-                _subagent_agent_cache.move_to_end(cache_key)
-                logger.debug(f"Reusing cached pydantic-ai Agent for {agent_name}")
-            else:
-                # Build the pydantic-ai agent. external servers are always included in
-                # the constructor; plugins may swap them out at run
-                # time via the ``agent_run_context`` hook if their wrapper can't
-                # handle them directly.
-                temp_agent = Agent(
-                    model=model,
-                    instructions=instructions,
-                    output_type=str,
-                    retries=3,
-                    toolsets=external_servers,
-                    capabilities=[ProcessHistory(make_history_processor(agent_config))],
-                    model_settings=model_settings,
-                )
+            # FREE-THREADED: Lock guard for cache lookups + mutations.
+            # Reads are fast (dict.get + move_to_end), so contention is negligible.
+            with _subagent_agent_cache_lock:
+                temp_agent = _subagent_agent_cache.get(cache_key)
 
-                # Register the tools that the agent needs
-                register_tools_for_agent(temp_agent, agent_tools, model_name=model_name)
+                if temp_agent is not None:
+                    # Move to end to mark as recently used (LRU)
+                    _subagent_agent_cache.move_to_end(cache_key)
+                    logger.debug(f"Reusing cached pydantic-ai Agent for {agent_name}")
+                else:
+                    # Build the pydantic-ai agent. external servers
+                    # are always included in the constructor; plugins may
+                    # swap them out at run time via the
+                    # ``agent_run_context`` hook if their wrapper can't
+                    # handle them directly.
+                    temp_agent = Agent(
+                        model=model,
+                        instructions=instructions,
+                        output_type=str,
+                        retries=3,
+                        toolsets=external_servers,
+                        capabilities=[
+                            ProcessHistory(make_history_processor(agent_config))
+                        ],
+                        model_settings=model_settings,
+                    )
 
-                # Cache the result with LRU eviction
-                if len(_subagent_agent_cache) >= _SUBAGENT_AGENT_CACHE_MAX:
-                    _subagent_agent_cache.popitem(last=False)
-                _subagent_agent_cache[cache_key] = temp_agent
+                    # Register the tools that the agent needs
+                    register_tools_for_agent(
+                        temp_agent, agent_tools, model_name=model_name
+                    )
+
+                    # Cache the result with LRU eviction
+                    if len(_subagent_agent_cache) >= _SUBAGENT_AGENT_CACHE_MAX:
+                        _subagent_agent_cache.popitem(last=False)
+                    _subagent_agent_cache[cache_key] = temp_agent
 
             # Always use subagent_stream_handler to silence
             # output and update console manager
