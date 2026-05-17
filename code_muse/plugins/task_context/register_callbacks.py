@@ -10,6 +10,7 @@ Registers hooks into the Muse runtime for task-aware context management:
 """
 
 import logging
+from contextlib import suppress
 from typing import Any
 
 from code_muse.callbacks import register_callback
@@ -679,8 +680,143 @@ def _handle_experience_command(command: str, name: str) -> bool | str | None:
     return handle_experience_command(command)
 
 
+def _handle_pin_command(command: str, name: str) -> bool | str | None:
+    """Handle ``/pin`` subcommands for protecting facts from compaction."""
+    if name != "pin":
+        return None
+
+    from code_muse.messaging import emit_success, emit_warning
+    from code_muse.plugins.task_context.context_status import get_pin_help
+    from code_muse.plugins.task_context.protected_facts import (
+        ProtectedFact,
+        get_protected_fact_manager,
+    )
+
+    tokens = command.strip().split(maxsplit=2)
+    sub = tokens[1].strip().lower() if len(tokens) > 1 else "help"
+
+    mgr = get_protected_fact_manager()
+
+    if sub == "help":
+        return get_pin_help()
+
+    if sub == "list":
+        facts = mgr.get_all_facts()
+        if not facts:
+            return "No protected facts. Use /pin <content> to add one."
+        lines = [f"📋 Protected Facts ({len(facts)}):"]
+        for f in facts:
+            immutable_tag = " 🔒" if f.immutable else ""
+            lines.append(f"  - [{f.category}] {f.content}{immutable_tag}")
+        lines.append(
+            f"  Budget: {mgr.used_tokens}/"
+            f"{mgr.max_budget_tokens:,} tokens ({mgr.budget_used_pct:.0%})"
+        )
+        return "\n".join(lines)
+
+    if sub == "last":
+        # Protect the last user message content — we approximate by
+        # pulling the most recent user-facing text from the agent history.
+        try:
+            from code_muse.agents.agent_manager import get_current_agent
+
+            agent = get_current_agent()
+            history = agent.get_message_history()
+            # Walk backwards to find the last ModelRequest with user content
+            from pydantic_ai.messages import ModelRequest, UserPromptPart
+
+            for msg in reversed(history):
+                if isinstance(msg, ModelRequest):
+                    for part in msg.parts:
+                        if isinstance(part, UserPromptPart) and part.content:
+                            fact = ProtectedFact(
+                                content=part.content[:200],
+                                category="pinned_message",
+                                priority=1,
+                            )
+                            added, warning = mgr.add_fact(fact)
+                            if added:
+                                emit_success("📌 Pinned last user message")
+                            else:
+                                emit_warning(warning or "Failed to pin message")
+                            return True
+        except Exception as e:
+            emit_warning(f"Could not pin last message: {e}")
+            return True
+        emit_warning("No user message found to pin")
+        return True
+
+    if sub == "remove":
+        if len(tokens) < 3:
+            emit_warning("Usage: /pin remove <content>")
+            return True
+        content_to_remove = tokens[2].strip()
+        removed = mgr.remove_fact(content_to_remove)
+        if removed:
+            emit_success("🗑️ Removed protected fact")
+        else:
+            emit_warning("Fact not found")
+        return True
+
+    if sub == "clear":
+        mgr.clear()
+        emit_success("🧹 Cleared all non-immutable protected facts")
+        return True
+
+    # Default: /pin <content> — protect specific fact text
+    content = " ".join(tokens[1:]).strip()
+    if not content:
+        return get_pin_help()
+    fact = ProtectedFact(
+        content=content,
+        category="user_pinned",
+        priority=1,
+    )
+    added, warning = mgr.add_fact(fact)
+    if added:
+        emit_success(f"📌 Protected fact: {content[:80]}")
+    else:
+        emit_warning(warning or "Failed to add protected fact")
+    return True
+
+
+def _handle_context_command(command: str, name: str) -> bool | str | None:
+    """Handle ``/context`` command showing token usage and compaction plan."""
+    if name != "context":
+        return None
+
+    from code_muse.plugins.task_context.context_status import (
+        get_context_status_report,
+        reset_warning_state,
+    )
+
+    tokens = command.strip().split(maxsplit=1)
+    sub = tokens[1].strip().lower() if len(tokens) > 1 else ""
+
+    if sub == "reset-warnings":
+        reset_warning_state()
+        from code_muse.messaging import emit_success
+
+        emit_success("🔔 Context warning flags reset")
+        return True
+
+    # Default: show context status report
+    try:
+        from code_muse.agents.agent_manager import get_current_agent
+
+        agent = get_current_agent()
+        history = agent.get_message_history()
+        model_name = None
+        with suppress(Exception):
+            model_name = agent.get_model_name()
+        return get_context_status_report(history, model_name=model_name)
+    except Exception:
+        # Fallback: report with empty history
+        return get_context_status_report([])
+
+
 def _on_help() -> list[tuple[str, str]]:
-    """Return help entries for /task, /doc, and /experience."""
+    """Return help entries for /task, /doc, /experience, /pin, and /context."""
     from code_muse.plugins.task_context.experience_commands import (
         get_experience_help,
     )
@@ -699,6 +835,12 @@ def _on_help() -> list[tuple[str, str]]:
         ("doc section <id> <n>", "Retrieve section N of a stored document"),
         ("doc summary <id>", "3-bullet summary of stored document"),
         ("doc list", "List all stored documents"),
+        ("pin [content]", "Protect a fact from compaction"),
+        ("pin last", "Protect the last user message"),
+        ("pin list", "List all protected facts"),
+        ("pin clear", "Clear non-immutable protected facts"),
+        ("context", "Show token usage, protected budget, compaction plan"),
+        ("context reset-warnings", "Reset context warning flags"),
     ]
     return task_help + get_experience_help()
 
@@ -775,6 +917,8 @@ def register_all_callbacks() -> None:
     register_callback("custom_command", _handle_task_command)
     register_callback("custom_command", _handle_doc_command)
     register_callback("custom_command", _handle_experience_command)
+    register_callback("custom_command", _handle_pin_command)
+    register_callback("custom_command", _handle_context_command)
     register_callback("custom_command_help", _on_help)
     register_callback("load_prompt", _get_task_prompt)
 

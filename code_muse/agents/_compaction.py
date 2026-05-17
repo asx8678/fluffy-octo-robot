@@ -414,6 +414,21 @@ def compact(
     )
     update_spinner_context(context_summary)
 
+    # Emit user-visible context warnings
+    with suppress(Exception):
+        from code_muse.plugins.task_context.context_status import (
+            check_and_emit_context_warnings,
+        )
+
+        check_and_emit_context_warnings(
+            usage_pct=proportion_used,
+            budget_tokens=model_max,
+            tokens_used=total_tokens,
+            model_name=model_name,
+            message_count=len(messages),
+            hard_cap=get_max_messages_hard_cap(model_max=model_max),
+        )
+
     # Replace long pasted documents with reference stubs (before compaction)
     with suppress(Exception):
         from code_muse.plugins.task_context.document_store import (
@@ -531,6 +546,12 @@ def compact(
         final_token_count / model_max if model_max else 0.0,
     )
     update_spinner_context(final_summary)
+
+    # Reset warning flags after compaction so user gets alerted again if context refills
+    with suppress(Exception):
+        from code_muse.plugins.task_context.context_status import reset_warning_state
+
+        reset_warning_state()
 
     return result_messages, summarized_messages
 
