@@ -12,6 +12,7 @@ let the next ``history_processor`` invocation handle it.
 """
 
 import dataclasses
+import logging as _logging
 from collections.abc import Callable
 from contextlib import suppress
 from typing import Any
@@ -391,6 +392,10 @@ def compact(
     )
     update_spinner_context(context_summary)
 
+    # Inject protected facts into system message if available
+    with suppress(Exception):
+        _inject_protected_facts_into_system(messages)
+
     # Hard cap on message count: prevent unbounded history even when
     # token proportion is below threshold. Short messages can accumulate
     # past the cap without triggering token-based compaction.
@@ -676,6 +681,83 @@ def make_history_processor(agent: Any) -> Callable[..., list[ModelMessage]]:
         return cleaned
 
     return history_processor
+
+
+# --- Protected fact integration ---
+
+
+def _inject_protected_facts_into_system(messages: list[ModelMessage]) -> bool:
+    """Append protected facts to the system prompt (message at index 0).
+
+    Returns True if facts were injected, False otherwise.
+    """
+    if not messages:
+        return False
+
+    system_msg = messages[0]
+    if not isinstance(system_msg, ModelRequest):
+        return False
+
+    try:
+        from code_muse.plugins.task_context.protected_facts import (
+            get_protected_fact_manager,
+        )
+
+        mgr = get_protected_fact_manager()
+        fact_block = mgr.get_prompt_block()
+        if not fact_block:
+            return False
+
+        # Append to the first part with string content
+        for part in system_msg.parts:
+            if hasattr(part, "content") and isinstance(part.content, str):
+                if "## Protected User Facts" not in part.content:
+                    part.content += fact_block
+                return True
+    except Exception:
+        _log = _logging.getLogger(__name__)
+        _log.debug("Failed to inject protected facts", exc_info=True)
+
+    return False
+
+
+def _is_protected_message(
+    message: ModelMessage, fact_manager: Any | None = None
+) -> bool:
+    """Check if a message contains protected fact content."""
+    if fact_manager is None:
+        try:
+            from code_muse.plugins.task_context.protected_facts import (
+                get_protected_fact_manager,
+            )
+
+            fact_manager = get_protected_fact_manager()
+        except Exception:
+            return False
+
+    if not fact_manager.get_all_facts():
+        return False
+
+    text = _extract_message_text(message)
+    for fact in fact_manager.get_all_facts():
+        if fact.content.lower() in text.lower():
+            return True
+    return False
+
+
+def _extract_message_text(message: ModelMessage) -> str:
+    """Extract all text from a message for content matching."""
+    parts = getattr(message, "parts", []) or []
+    texts: list[str] = []
+    for part in parts:
+        content = getattr(part, "content", None)
+        if isinstance(content, str):
+            texts.append(content)
+        elif isinstance(content, list):
+            for item in content:
+                if isinstance(item, str):
+                    texts.append(item)
+    return " ".join(texts)
 
 
 # --- Phase 3: Enhanced History Compression ---

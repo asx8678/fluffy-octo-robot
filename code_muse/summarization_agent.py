@@ -169,6 +169,22 @@ def run_summarization_sync(prompt: str, message_history: list) -> list:
     )
     prompt = prepared.user_prompt
 
+    # Inject protected facts into summarization instructions to preserve them
+    try:
+        from code_muse.plugins.task_context.protected_facts import (
+            get_protected_fact_manager,
+        )
+
+        mgr = get_protected_fact_manager()
+        fact_block = mgr.get_prompt_block()
+        if fact_block:
+            prompt += (
+                "\n\nIMPORTANT — These facts MUST be preserved "
+                "verbatim in your summary:\n" + fact_block
+            )
+    except Exception:
+        pass
+
     logger.info(
         "Summarization LLM call starting: model=%s, messages=%d",
         model_name,

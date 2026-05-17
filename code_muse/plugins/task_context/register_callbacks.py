@@ -58,6 +58,19 @@ def _on_message_history_processor_start(
     """
     from code_muse.plugins.task_context.pruner import evaluate_and_prune
 
+    # Auto-update protected facts context window
+    try:
+        from code_muse.config.models import get_model_context_length
+        from code_muse.plugins.task_context.protected_facts import (
+            get_protected_fact_manager,
+        )
+
+        mgr = get_protected_fact_manager()
+        ctx = get_model_context_length()
+        mgr.update_context_window(ctx)
+    except Exception:
+        pass
+
     manager = _get_task_manager()
     summary = evaluate_and_prune(manager, message_history)
 

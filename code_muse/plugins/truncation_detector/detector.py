@@ -314,6 +314,52 @@ def _check_incomplete_json(content: str) -> TruncationResult | None:
 
 
 # ---------------------------------------------------------------------------
+# Protected fact truncation detection
+# ---------------------------------------------------------------------------
+
+
+def _check_protected_fact_truncation(
+    content: str, file_path: str = ""
+) -> TruncationResult | None:
+    """Check if content contains a truncated protected fact block."""
+    if "## Protected User Facts" not in content:
+        return None
+
+    # Parse the protected fact section
+    match = re.search(r"## Protected User Facts.*?(?=\n##|$)", content, re.DOTALL)
+    if not match:
+        return None
+
+    block = match.group()
+    # If the block starts but cuts off before budget info, it's truncated
+    if block.startswith("## Protected User Facts") and not block.rstrip().endswith(")"):
+        return TruncationResult(
+            is_truncated=True,
+            method="protected_fact_truncated",
+            reason="Protected fact section appears truncated in context.",
+        )
+
+    # Check if known facts from manager are referenced
+    try:
+        from code_muse.plugins.task_context.protected_facts import (
+            get_protected_fact_manager,
+        )
+
+        mgr = get_protected_fact_manager()
+        for fact in mgr.get_all_facts():
+            if fact.content not in block and not fact.immutable:
+                return TruncationResult(
+                    is_truncated=True,
+                    method="protected_fact_missing",
+                    reason=f"Protected fact missing from context: {fact.content[:50]}",
+                )
+    except Exception:
+        pass
+
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
@@ -345,6 +391,7 @@ def detect_truncation(content: str, file_path: str = "") -> TruncationResult:
         lambda c: _check_trailing_line(c),
         lambda c: _check_markdown_blocks(c),
         lambda c: _check_incomplete_json(c),
+        lambda c: _check_protected_fact_truncation(c, file_path),
     ]
 
     for check_fn in checks:

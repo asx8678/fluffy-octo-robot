@@ -151,6 +151,12 @@ _CLAUSE_TO_MODIFIER_RE = re.compile(
 # Fenced code blocks (``` ... ```) and inline code (` ... `)
 _CODE_SEGMENT_RE = re.compile(r"```[\s\S]*?```|`[^`]+`")
 
+# Protected fact markers — injected by the compaction system into system prompt
+# These must never be stripped or compressed
+_PROTECTED_FACT_HEADER_RE = re.compile(
+    r"## Protected User Facts.*?(?=\n##|$)", re.DOTALL
+)
+
 # Quoted strings (double or single, with backslash-escape support)
 # Protects JSON values, XML attributes, and other structured data.
 _QUOTED_STRING_RE = re.compile(r'"(?:[^"\\]|\\.)*"|\'(?:[^\'\\\\]|\\.)*\'')
@@ -166,6 +172,26 @@ def _split_code_blocks(text: str) -> list[tuple[bool, str]]:
     segments: list[tuple[bool, str]] = []
     pos = 0
     for match in _CODE_SEGMENT_RE.finditer(text):
+        start = match.start()
+        if start > pos:
+            segments.append((False, text[pos:start]))
+        segments.append((True, match.group()))
+        pos = match.end()
+    if pos < len(text):
+        segments.append((False, text[pos:]))
+    return segments
+
+
+def _split_protected_spans(text: str) -> list[tuple[bool, str]]:
+    """Split *text* into (is_protected, segment) tuples.
+
+    Protected fact blocks (``## Protected User Facts ...``) are marked as
+    protected and left untouched.  Everything else is eligible for
+    compression.
+    """
+    segments: list[tuple[bool, str]] = []
+    pos = 0
+    for match in _PROTECTED_FACT_HEADER_RE.finditer(text):
         start = match.start()
         if start > pos:
             segments.append((False, text[pos:start]))
@@ -228,7 +254,13 @@ def compress_semantic(text: str, aggressive: bool = False) -> str:
         if is_code:
             result_parts.append(segment)
         else:
-            result_parts.append(_compress_segment(segment, aggressive))
+            # Protect the protected-fact block from compression
+            protected_parts = _split_protected_spans(segment)
+            for is_protected, part in protected_parts:
+                if is_protected:
+                    result_parts.append(part)
+                else:
+                    result_parts.append(_compress_segment(part, aggressive))
 
     return "".join(result_parts)
 

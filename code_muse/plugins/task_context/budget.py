@@ -10,8 +10,50 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-# Default token budget (approximate context window)
+# Default token budget (approximate context window) — used when
+# get_model_context_length and drift tracker are both unavailable.
 _DEFAULT_BUDGET_TOKENS = 128_000
+
+
+def _resolve_budget_tokens() -> int:
+    """Resolve the token budget with drift-correction when available.
+
+    Resolution order:
+      1. Get the model context length from config (if a model is set).
+      2. If the drift tracker shows overestimation > 10%, apply a
+         ``(1 - drift_pct)`` correction factor so budgets don't lie.
+      3. Fall back to ``_DEFAULT_BUDGET_TOKENS``.
+    """
+    budget = _DEFAULT_BUDGET_TOKENS
+
+    # Try to get the model's actual context length
+    try:
+        from code_muse.config.models import get_model_context_length
+
+        budget = get_model_context_length()
+    except Exception:
+        pass
+
+    # Apply drift correction if we're overestimating by more than 10%
+    try:
+        from code_muse.agents._history import get_drift_tracker
+
+        tracker = get_drift_tracker()
+        if (
+            tracker.session_drift_pct > 0.10
+            and tracker.total_estimated > tracker.total_actual
+        ):
+            correction = 1 - tracker.session_drift_pct
+            budget = max(1, round(budget * correction))
+            logger.debug(
+                f"budget: applied drift correction {correction:.2f} "
+                f"(drift_pct={tracker.session_drift_pct:.2%})"
+            )
+    except Exception:
+        pass
+
+    return budget
+
 
 # Track whether we've already warned at each threshold
 _warned_at_warn = False
@@ -38,14 +80,28 @@ def estimate_current_budget(message_history: list[Any]) -> dict:
 
             total_tokens += estimate_tokens(text)
 
-    budget = _DEFAULT_BUDGET_TOKENS
+    budget = _resolve_budget_tokens()
     usage_pct = total_tokens / budget if budget > 0 else 0.0
+
+    # Protected facts token accounting
+    protected_facts_tokens = 0
+    try:
+        from code_muse.plugins.task_context.protected_facts import (
+            get_protected_fact_manager,
+        )
+
+        mgr = get_protected_fact_manager()
+        protected_facts_tokens = mgr.used_tokens
+    except Exception:
+        pass
 
     return {
         "total_tokens": total_tokens,
         "budget_tokens": budget,
         "usage_pct": usage_pct,
         "remaining_tokens": max(0, budget - total_tokens),
+        "protected_facts_tokens": protected_facts_tokens,
+        "protected_facts": get_fact_budget_info(),
     }
 
 
@@ -87,6 +143,36 @@ def check_and_warn(
             f"Tip: /task status to see task breakdown."
         )
         _warned_at_warn = True
+
+    # Also check protected fact budget
+    try:
+        fb = get_fact_budget_info()
+        if fb["usage_pct"] > 0.85 and not _warned_at_warn:
+            from code_muse.messaging import emit_info
+
+            emit_info(
+                f"🛡️ Protected fact budget at {fb['usage_pct']:.0%} "
+                f"({fb['fact_count']} facts, ~{fb['remaining']:,} tokens remaining). "
+                f"Consider reviewing pinned facts with /task facts."
+            )
+    except Exception:
+        pass
+
+
+def get_fact_budget_info() -> dict:
+    """Return current protected fact budget info."""
+    from code_muse.plugins.task_context.protected_facts import (
+        get_protected_fact_manager,
+    )
+
+    mgr = get_protected_fact_manager()
+    return {
+        "fact_count": len(mgr.get_all_facts()),
+        "used_tokens": mgr.used_tokens,
+        "max_budget": mgr.max_budget_tokens,
+        "remaining": mgr.budget_remaining,
+        "usage_pct": mgr.budget_used_pct,
+    }
 
 
 def reset_warning_flags() -> None:

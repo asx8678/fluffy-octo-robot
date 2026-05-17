@@ -104,7 +104,31 @@ class BaseAgent(ABC):
         )
 
     def get_full_system_prompt(self) -> str:
-        return self.get_system_prompt() + self.get_identity_prompt()
+        instructions = self.get_system_prompt() + self.get_identity_prompt()
+        # Also append pinned messages as protected facts
+        pinned = self.get_pinned_messages()
+        if pinned:
+            try:
+                from code_muse.plugins.task_context.protected_facts import (
+                    ProtectedFact,
+                    get_protected_fact_manager,
+                )
+
+                mgr = get_protected_fact_manager()
+                for msg in pinned:
+                    text = self._extract_message_text(msg)
+                    if text and not mgr.has_fact(text):
+                        mgr.add_fact(
+                            ProtectedFact(
+                                content=text[:200],
+                                category="pinned_message",
+                                priority=0,
+                                immutable=False,
+                            )
+                        )
+            except Exception:
+                pass
+        return instructions
 
     # ---- Message history (plain dict-level access) ------------------------
     def get_message_history(self) -> list[Any]:
@@ -136,13 +160,20 @@ class BaseAgent(ABC):
         """Remove a previously pinned message by content hash."""
         target_hash = self.hash_message(message)
         self._pinned_messages = [
-            m for m in self._pinned_messages
-            if self.hash_message(m) != target_hash
+            m for m in self._pinned_messages if self.hash_message(m) != target_hash
         ]
 
     def get_pinned_messages(self) -> list[Any]:
         """Return a shallow copy of pinned messages."""
         return list(self._pinned_messages)
+
+    def _extract_message_text(self, message: Any) -> str:
+        """Extract plain text from a message for protected fact content."""
+        from code_muse.plugins.task_context.protected_facts import (
+            _extract_message_text as _ext,
+        )
+
+        return _ext(message)
 
     # ---- Token / context helpers ------------------------------------------
     def estimate_tokens_for_message(self, message: Any) -> int:
@@ -204,7 +235,9 @@ class BaseAgent(ABC):
         """Delegate to ``_compaction.summarize`` with config-derived protection."""
         return summarize(
             messages,
-            get_protected_token_count(getattr(self, "model_name", None) or getattr(self, "_model_name", None)),
+            get_protected_token_count(
+                getattr(self, "model_name", None) or getattr(self, "_model_name", None)
+            ),
             with_protection=with_protection,
             model_name=self.get_model_name(),
         )
@@ -224,7 +257,7 @@ class BaseAgent(ABC):
         """
         try:
             return await run(self, prompt, **kwargs)
-        except (asyncio.CancelledError, KeyboardInterrupt, SystemExit):
+        except asyncio.CancelledError, KeyboardInterrupt, SystemExit:
             raise
         except BaseException as exc:
             import traceback
