@@ -323,9 +323,31 @@ def summarize(
     we log a warning and return ``(messages, [])`` so the run continues.
     """
     try:
-        return _run_summarization_core(
+        result_messages, summarized_messages = _run_summarization_core(
             messages, protected_tokens, with_protection, model_name, cache=cache
         )
+
+        # Validate summarization output
+        try:
+            from code_muse.summarization_agent import _validate_summary_fidelity
+
+            validation = _validate_summary_fidelity(result_messages)
+            if validation.retry_needed:
+                _logging.getLogger(__name__).warning(
+                    "Summarization validation failed: missing %d protected facts",
+                    len(validation.preserved_facts_missing),
+                )
+                # Fall back to truncation if summarization dropped critical facts
+                if validation.retry_needed:
+                    result_messages, summarized_messages = messages, []
+                    emit_warning(
+                        "Summarization dropped protected facts — "
+                        "falling back to truncation."
+                    )
+        except ImportError:
+            pass
+
+        return result_messages, summarized_messages
     except Exception as e:
         _log_summarization_failure(
             e,
@@ -391,6 +413,14 @@ def compact(
         total_tokens, model_max, proportion_used
     )
     update_spinner_context(context_summary)
+
+    # Replace long pasted documents with reference stubs (before compaction)
+    with suppress(Exception):
+        from code_muse.plugins.task_context.document_store import (
+            replace_long_documents_in_history,
+        )
+
+        messages = replace_long_documents_in_history(messages)
 
     # Inject protected facts into system message if available
     with suppress(Exception):

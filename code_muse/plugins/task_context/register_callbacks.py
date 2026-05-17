@@ -152,9 +152,11 @@ def _on_message_history_processor_start(
                         from code_muse.messaging import emit_info
 
                         emit_info(
-                            f"📄 Long document detected ({doc.word_count:,} words, "
+                            f"📄 Long document detected "
+                            f"({doc.word_count:,} words, "
                             f"{doc.section_count} sections). "
-                            f"Stored externally. Use /doc get {doc.doc_id[:12]} to retrieve."
+                            f"Stored externally. Use "
+                            f"/doc get {doc.doc_id[:12]} to retrieve."
                         )
                         # Replace in-place
                         part.content = doc.reference_stub
@@ -585,7 +587,7 @@ def _handle_doc_command(command: str, name: str) -> str | bool | None:
     if name != "doc":
         return None
 
-    from code_muse.messaging import emit_error, emit_info
+    from code_muse.messaging import emit_error
 
     tokens = command.strip().split(maxsplit=3)
     sub = tokens[1].strip().lower() if len(tokens) > 1 else "help"
@@ -633,8 +635,6 @@ def _handle_doc_command(command: str, name: str) -> str | bool | None:
                 if doc:
                     # Load content from disk if needed
                     if not doc.content:
-                        from pathlib import Path
-
                         content_path = store._get_content_path(doc.doc_id)
                         if content_path.exists():
                             doc.content = content_path.read_text()
