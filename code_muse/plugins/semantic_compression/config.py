@@ -18,11 +18,11 @@ def get_semantic_compression_enabled() -> bool:
     """Check if automatic semantic compression of tool output is enabled.
 
     Returns:
-        True if enabled, False otherwise. Default: False (opt-in).
+        True if enabled, False otherwise. Default: True (enabled by default).
     """
     cfg_val = get_value(_CONFIG_KEY_ENABLED)
     if cfg_val is None:
-        return False
+        return True  # Enabled by default for high-impact tools
     return str(cfg_val).strip().lower() in _TRUTHY
 
 
@@ -55,7 +55,7 @@ def _parse_json_tool_list(config_value: str | None) -> set[str]:
 
 def _serialize_tool_list(tool_names: set[str]) -> str:
     """Serialize a set of tool names to a JSON list string."""
-    return json.dumps(sorted(tool_names))
+    return json.dumps(sorted(tool_names)).decode("utf-8")
 
 
 def get_compression_allowlist() -> set[str]:
@@ -99,14 +99,32 @@ def set_compression_blocklist(tool_names: set[str]) -> None:
     logger.info("Compression blocklist updated: %s", sorted(tool_names) or "(empty)")
 
 
+# Tools enabled for compression by default
+DEFAULT_COMPRESSION_TOOLS: set[str] = {
+    "read_file",
+    "grep",
+    "run_shell_command",
+    "list_files",
+    "agent_run_shell_command",
+    "invoke_agent",
+    "read_relevant_code",
+}
+
+
+def get_default_compression_tools() -> set[str]:
+    """Return the set of tools enabled for compression by default."""
+    return set(DEFAULT_COMPRESSION_TOOLS)
+
+
 def is_tool_allowed(tool_name: str) -> bool:
     """Check if a specific tool's output should be compressed.
 
-    Logic (opt-in model — empty allowlist means NO tools eligible):
+    Logic (opt-out model — compression enabled by default for
+    DEFAULT_COMPRESSION_TOOLS):
         1. If blocklist contains the tool name → False.
-        2. If allowlist is empty → False (must explicitly opt-in tools).
-        3. If allowlist is non-empty and does NOT contain the tool → False.
-        4. Otherwise → True.
+        2. If tool is in DEFAULT_COMPRESSION_TOOLS → True.
+        3. If allowlist is non-empty and contains the tool → True.
+        4. Otherwise → False.
 
     Args:
         tool_name: Name of the tool to check.
@@ -118,7 +136,8 @@ def is_tool_allowed(tool_name: str) -> bool:
     if tool_name in blocklist:
         return False
 
+    if tool_name in DEFAULT_COMPRESSION_TOOLS:
+        return True
+
     allowlist = get_compression_allowlist()
-    if not allowlist:
-        return False  # Opt-in: empty allowlist = no tools eligible
     return tool_name in allowlist
