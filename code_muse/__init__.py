@@ -13,8 +13,22 @@ except Exception:
     __version__ = "0.0.0-dev"
 
 
-# Pure-Python build: no compiled extensions are shipped or required.
-# These constants are retained for backward compatibility with any code
-# that still inspects them.
+# Dynamic detection of compiled Cython extensions
 PYX_MODULE_COUNT: int = 0
 CYTHON_ENABLED: bool = False
+
+try:
+    import Cython  # noqa: F401 — presence check only
+
+    CYTHON_ENABLED = True
+    # Count .so files in the code_muse package (compiled extensions)
+    import importlib
+    import pathlib
+
+    _pkg_path = pathlib.Path(importlib.util.find_spec("code_muse").origin).parent
+    for _so in _pkg_path.rglob("*.so"):
+        # Only count .so files that have a corresponding .pyx (not 3rd-party)
+        if _so.stem.startswith("_"):
+            PYX_MODULE_COUNT += 1
+except ImportError:
+    pass
