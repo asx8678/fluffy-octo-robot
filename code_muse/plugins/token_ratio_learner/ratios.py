@@ -53,7 +53,7 @@ def _load_learned_ratios() -> dict[str, float]:
                     for k, v in data.items()
                     if isinstance(v, (int, float)) and v > 0
                 }
-    except OSError, json.JSONDecodeError, ValueError:
+    except (OSError, json.JSONDecodeError, ValueError):
         pass
     return {}
 

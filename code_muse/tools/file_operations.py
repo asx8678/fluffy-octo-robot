@@ -553,7 +553,7 @@ def _read_file(
                 content = content.encode("utf-8", errors="surrogatepass").decode(
                     "utf-8", errors="replace"
                 )
-            except UnicodeEncodeError, UnicodeDecodeError:
+            except (UnicodeEncodeError, UnicodeDecodeError):
                 # If that fails, do a more aggressive cleanup
                 content = "".join(
                     char if ord(char) < 0xD800 or ord(char) > 0xDFFF else "\ufffd"
@@ -623,7 +623,7 @@ def _sanitize_string(text: str) -> str:
         return text.encode("utf-8", errors="surrogatepass").decode(
             "utf-8", errors="replace"
         )
-    except UnicodeEncodeError, UnicodeDecodeError:
+    except (UnicodeEncodeError, UnicodeDecodeError):
         # Last resort: filter out surrogate characters
         return "".join(
             char if ord(char) < 0xD800 or ord(char) > 0xDFFF else "\ufffd"

@@ -199,7 +199,7 @@ class BaseAgent(ABC):
         """
         try:
             return await run(self, prompt, **kwargs)
-        except asyncio.CancelledError, KeyboardInterrupt, SystemExit:
+        except (asyncio.CancelledError, KeyboardInterrupt, SystemExit):
             raise
         except BaseException as exc:
             import traceback

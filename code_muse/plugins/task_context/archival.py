@@ -221,7 +221,7 @@ def get_archive_stats() -> dict:
             with open(path, encoding="utf-8") as f:
                 data = json.load(f)
             total_messages += data.get("message_count", 0)
-        except json.JSONDecodeError, OSError:
+        except (json.JSONDecodeError, OSError):
             pass
 
     return {
@@ -311,7 +311,7 @@ def _get_task_creation_time(task_id: str) -> str:
 
                 parsed = dt.strptime(timestamp_str, "%y%m%d%H%M%S")
                 return parsed.isoformat()
-    except ValueError, IndexError:
+    except (ValueError, IndexError):
         pass
     return datetime.now().isoformat()
 

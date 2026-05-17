@@ -379,7 +379,7 @@ def get_max_consecutive_tool_errors(default: int = 3) -> int:
     val = get_value("max_consecutive_tool_errors")
     try:
         return int(val) if val else default
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return default
 
 
@@ -388,7 +388,7 @@ def get_overall_run_timeout_seconds(default: int = 600) -> int:
     val = get_value("overall_run_timeout")
     try:
         return int(val) if val else default
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return default
 
 
@@ -405,7 +405,7 @@ def get_resume_message_count() -> int:
         configured_value = int(val) if val else 50
         # Enforce reasonable bounds: minimum 1, maximum 100
         return max(1, min(configured_value, 100))
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return 50
 
 
@@ -421,7 +421,7 @@ def get_compaction_threshold():
         threshold = float(val) if val else 0.85
         # Clamp between reasonable bounds
         return max(0.5, min(0.95, threshold))
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return 0.85
 
 
@@ -449,7 +449,7 @@ def get_message_limit(default: int = 1000) -> int:
     val = get_value("message_limit")
     try:
         return int(val) if val else default
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return default
 
 
@@ -537,7 +537,7 @@ def get_max_hook_retries() -> int:
     try:
         n = int(val)
         return max(1, n)  # At least 1 to avoid nonsensical values
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return 10
 
 
@@ -555,7 +555,7 @@ def get_max_critic_retries() -> int:
     try:
         n = int(val)
         return max(1, n)
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return 10
 
 
@@ -595,5 +595,5 @@ def get_filter_huge_message_threshold(default: int = 50000) -> int:
     try:
         threshold = int(val) if val else default
         return max(1000, threshold)
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return default
