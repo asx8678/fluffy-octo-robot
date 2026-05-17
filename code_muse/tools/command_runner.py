@@ -98,7 +98,7 @@ if sys.platform.startswith("win"):
             if result:
                 return bytes_available.value > 0
             return False
-        except (ValueError, OSError, ctypes.ArgumentError):
+        except ValueError, OSError, ctypes.ArgumentError:
             # Handle closed, invalid, or other errors
             return False
 else:
@@ -174,7 +174,7 @@ def _kill_process_group(proc: subprocess.Popen) -> None:
                     check=False,
                 )
                 time.sleep(0.3)
-            except (OSError, subprocess.TimeoutExpired, FileNotFoundError):
+            except OSError, subprocess.TimeoutExpired, FileNotFoundError:
                 # Fallback to Python's built-in methods
                 pass
 
@@ -183,7 +183,7 @@ def _kill_process_group(proc: subprocess.Popen) -> None:
                 try:
                     proc.kill()
                     time.sleep(0.3)
-                except (OSError, PermissionError):
+                except OSError, PermissionError:
                     pass
             return
 
@@ -215,7 +215,7 @@ def _kill_process_group(proc: subprocess.Popen) -> None:
                     time.sleep(0.2)
                     if proc.poll() is not None:
                         break
-            except (OSError, PermissionError):
+            except OSError, PermissionError:
                 pass
     except Exception as e:
         logger.warning("Kill process error: %s", e)
@@ -246,7 +246,7 @@ def kill_all_running_shell_processes() -> int:
                     p.stderr.close()
                 if p.stdin and not p.stdin.closed:
                     p.stdin.close()
-            except (OSError, ValueError):
+            except OSError, ValueError:
                 pass
 
             if p.poll() is None:
@@ -391,7 +391,7 @@ def _listen_for_ctrl_x_windows(
                             )
                     # Note: In some Windows terminals, Ctrl+X might not be captured
                     # Users can use Ctrl+C as alternative, which is handled by signal handler
-                except (OSError, ValueError):
+                except OSError, ValueError:
                     # kbhit/getwch can fail on Windows in certain terminal states
                     # Just continue, user can use Ctrl+C
                     pass
@@ -413,11 +413,11 @@ def _listen_for_ctrl_x_posix(
     stdin = sys.stdin
     try:
         fd = stdin.fileno()
-    except (AttributeError, ValueError, OSError):
+    except AttributeError, ValueError, OSError:
         return
     try:
         original_attrs = termios.tcgetattr(fd)
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return
 
     try:
@@ -425,7 +425,7 @@ def _listen_for_ctrl_x_posix(
         while not stop_event.is_set():
             try:
                 read_ready, _, _ = select.select([stdin], [], [], 0.05)
-            except (OSError, ValueError):
+            except OSError, ValueError:
                 break
             if not read_ready:
                 continue
@@ -460,7 +460,7 @@ def _spawn_ctrl_x_key_listener(
     try:
         if not stdin.isatty():
             return None
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return None
 
     def listener() -> None:
@@ -514,7 +514,7 @@ def _shell_command_keyboard_context():
     # Replace SIGINT handler temporarily
     try:
         _ORIGINAL_SIGINT_HANDLER = signal.signal(signal.SIGINT, shell_sigint_handler)
-    except (ValueError, OSError):
+    except ValueError, OSError:
         # Can't set signal handler (maybe not main thread?)
         _ORIGINAL_SIGINT_HANDLER = None
 
@@ -569,7 +569,7 @@ def _start_keyboard_listener() -> None:
     # Replace SIGINT handler temporarily
     try:
         _ORIGINAL_SIGINT_HANDLER = signal.signal(signal.SIGINT, _shell_sigint_handler)
-    except (ValueError, OSError):
+    except ValueError, OSError:
         # Can't set signal handler (maybe not main thread?)
         _ORIGINAL_SIGINT_HANDLER = None
 
@@ -664,7 +664,7 @@ def run_shell_command_streaming(
     def read_stdout():
         try:
             fd = process.stdout.fileno()
-        except (ValueError, OSError):
+        except ValueError, OSError:
             return
 
         try:
@@ -701,18 +701,18 @@ def run_shell_command_streaming(
                                             stdout_lines.append(line)
                                             if not silent:
                                                 emit_shell_line(line, stream="stdout")
-                                except (ValueError, OSError):
+                                except ValueError, OSError:
                                     pass
                                 break
                             # Sleep briefly to avoid busy-waiting (100ms like POSIX)
                             time.sleep(0.1)
-                    except (ValueError, OSError):
+                    except ValueError, OSError:
                         break
                 else:
                     # POSIX: use select with timeout
                     try:
                         ready, _, _ = select.select([fd], [], [], 0.1)  # 100ms timeout
-                    except (ValueError, OSError):
+                    except ValueError, OSError:
                         break
 
                     if ready:
@@ -726,7 +726,7 @@ def run_shell_command_streaming(
                             emit_shell_line(line, stream="stdout")
                         last_output_time[0] = time.time()
                     # If not ready, loop continues and checks stop event again
-        except (ValueError, OSError):
+        except ValueError, OSError:
             pass
         except Exception as exc:
             logger.warning("stdout reader error: %s", exc)
@@ -734,7 +734,7 @@ def run_shell_command_streaming(
     def read_stderr():
         try:
             fd = process.stderr.fileno()
-        except (ValueError, OSError):
+        except ValueError, OSError:
             return
 
         try:
@@ -770,17 +770,17 @@ def run_shell_command_streaming(
                                             stderr_lines.append(line)
                                             if not silent:
                                                 emit_shell_line(line, stream="stderr")
-                                except (ValueError, OSError):
+                                except ValueError, OSError:
                                     pass
                                 break
                             # Sleep briefly to avoid busy-waiting (100ms like POSIX)
                             time.sleep(0.1)
-                    except (ValueError, OSError):
+                    except ValueError, OSError:
                         break
                 else:
                     try:
                         ready, _, _ = select.select([fd], [], [], 0.1)
-                    except (ValueError, OSError):
+                    except ValueError, OSError:
                         break
 
                     if ready:
@@ -793,7 +793,7 @@ def run_shell_command_streaming(
                         if not silent:
                             emit_shell_line(line, stream="stderr")
                         last_output_time[0] = time.time()
-        except (ValueError, OSError):
+        except ValueError, OSError:
             pass
         except Exception as exc:
             logger.warning("stderr reader error: %s", exc)
@@ -818,7 +818,7 @@ def run_shell_command_streaming(
                     process.stderr.close()
                 if process.stdin and not process.stdin.closed:
                     process.stdin.close()
-            except (OSError, ValueError):
+            except OSError, ValueError:
                 pass
 
             # Unregister once we're done cleaning up
@@ -904,7 +904,7 @@ def run_shell_command_streaming(
                 process.stderr.close()
             if process.stdin and not process.stdin.closed:
                 process.stdin.close()
-        except (OSError, ValueError):
+        except OSError, ValueError:
             pass
 
         _unregister_process(process)

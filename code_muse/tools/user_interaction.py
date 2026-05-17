@@ -363,7 +363,7 @@ def get_user_approval(
             if not user_feedback:
                 user_feedback = None
 
-    except (KeyboardInterrupt, EOFError):
+    except KeyboardInterrupt, EOFError:
         emit_error("Cancelled by user")
         confirmed = False
 
@@ -532,7 +532,7 @@ async def get_user_approval_async(
             if not user_feedback:
                 user_feedback = None
 
-    except (KeyboardInterrupt, EOFError):
+    except KeyboardInterrupt, EOFError:
         emit_error("Cancelled by user")
         confirmed = False
 

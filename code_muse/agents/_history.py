@@ -34,6 +34,69 @@ import pydantic
 from pydantic_ai import BinaryContent
 from pydantic_ai.messages import ModelMessage, ModelRequest, ToolReturnPart
 
+# ---------------------------------------------------------------------------
+# Drift tracking: calibration between estimates and actual provider usage
+# ---------------------------------------------------------------------------
+
+
+@dataclasses.dataclass
+class DriftTracker:
+    """Tracks cumulative drift between token estimates and provider-reported usage.
+
+    Records the running total of *estimated* tokens (from our heuristics /
+    tiktoken / learned ratios) versus *actual* tokens reported by the model
+    provider (e.g. ``usage.input_tokens`` from a pydantic-ai RunResult).
+
+    The drift percentage tells us how far off our estimates are, so budget
+    calculations can self-correct.
+    """
+
+    total_estimated: int = 0
+    total_actual: int = 0
+    session_drift_pct: float = 0.0
+    last_calibration_model: str | None = None
+    warnings_fired: set[str] = dataclasses.field(default_factory=set)
+
+    def record_usage(
+        self, estimated: int, actual: int, model_name: str | None = None
+    ) -> float:
+        """Record a calibration point and return current drift percentage.
+
+        Drift is ``abs(estimated - actual) / actual`` over the running totals.
+        A positive drift means we're overestimating; negative means under.
+        The percentage is always absolute — direction is not distinguished.
+        """
+        self.total_estimated += estimated
+        self.total_actual += actual
+        if self.total_actual > 0:
+            self.session_drift_pct = (
+                abs(self.total_estimated - self.total_actual) / self.total_actual
+            )
+        if model_name:
+            self.last_calibration_model = model_name
+        return self.session_drift_pct
+
+    def should_warn(self) -> bool:
+        """Return True if drift exceeds 10% and warning hasn't fired this session."""
+        return (
+            self.session_drift_pct > 0.10 and "drift_10pct" not in self.warnings_fired
+        )
+
+
+# Module-level global — one tracker per process lifetime.
+_drift_tracker = DriftTracker()
+
+
+def get_drift_tracker() -> DriftTracker:
+    """Return the module-level :class:`DriftTracker` singleton."""
+    return _drift_tracker
+
+
+def reset_drift_tracker() -> None:
+    """Reset the drift tracker to a fresh state (called on startup)."""
+    global _drift_tracker
+    _drift_tracker = DriftTracker()
+
 
 def _prep_for_orjson(obj):
     """Prepare object for orjson serialization by converting non-serializable types."""

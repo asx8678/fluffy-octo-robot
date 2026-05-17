@@ -102,7 +102,7 @@ def resolve_user_path(file_path: str) -> Path:
     p = Path(file_path).expanduser()
     try:
         return p.resolve()
-    except (OSError, RuntimeError):
+    except OSError, RuntimeError:
         # If resolve fails (e.g., permission denied), fall back to absolute
         return p.absolute()
 

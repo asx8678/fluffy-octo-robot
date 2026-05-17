@@ -111,7 +111,7 @@ def _listen_posix(
     stdin = sys.stdin
     try:
         fd = stdin.fileno()
-    except (AttributeError, ValueError, OSError):
+    except AttributeError, ValueError, OSError:
         return
     try:
         original_attrs = termios.tcgetattr(fd)

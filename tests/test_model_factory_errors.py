@@ -218,7 +218,9 @@ class TestModelFactoryErrors:
         }
         with patch("code_muse.model_factory._custom_config.emit_warning") as mock_warn:
             # Mock the http client creation to avoid the httpx.AsyncClient type error
-            with patch("code_muse.model_factory._model_builders.create_async_client") as mock_client:
+            with patch(
+                "code_muse.model_factory._model_builders.create_async_client"
+            ) as mock_client:
                 mock_client.return_value = None  # Return None to avoid type checking
                 result = ModelFactory.get_model("custom-env-bad", config2)
                 # Should still create model but with empty header value
@@ -258,10 +260,14 @@ class TestModelFactoryErrors:
     def test_model_instantiation_errors_missing_api_keys(self):
         """Test various model instantiation errors when API keys are missing."""
         # Mock get_api_key to return None for all keys (simulating missing API keys)
-        with patch("code_muse.model_factory._model_builders.get_api_key", return_value=None):
+        with patch(
+            "code_muse.model_factory._model_builders.get_api_key", return_value=None
+        ):
             # Test OpenAI without API key
             config_openai = {"openai-test": {"type": "openai", "name": "gpt-4"}}
-            with patch("code_muse.model_factory._model_builders.emit_warning") as mock_warn:
+            with patch(
+                "code_muse.model_factory._model_builders.emit_warning"
+            ) as mock_warn:
                 result = ModelFactory.get_model("openai-test", config_openai)
                 assert result is None
                 mock_warn.assert_called_with(
@@ -272,7 +278,9 @@ class TestModelFactoryErrors:
             config_anthropic = {
                 "anthropic-test": {"type": "anthropic", "name": "claude-3"}
             }
-            with patch("code_muse.model_factory._model_builders.emit_warning") as mock_warn:
+            with patch(
+                "code_muse.model_factory._model_builders.emit_warning"
+            ) as mock_warn:
                 result = ModelFactory.get_model("anthropic-test", config_anthropic)
                 assert result is None
                 mock_warn.assert_called_with(
@@ -281,7 +289,9 @@ class TestModelFactoryErrors:
 
             # Test Gemini without API key
             config_gemini = {"gemini-test": {"type": "gemini", "name": "gemini-pro"}}
-            with patch("code_muse.model_factory._model_builders.emit_warning") as mock_warn:
+            with patch(
+                "code_muse.model_factory._model_builders.emit_warning"
+            ) as mock_warn:
                 result = ModelFactory.get_model("gemini-test", config_gemini)
                 assert result is None
                 mock_warn.assert_called_with(
@@ -290,7 +300,9 @@ class TestModelFactoryErrors:
 
             # Test ZAI models without API key
             config_zai = {"zai-test": {"type": "zai_coding", "name": "zai-model"}}
-            with patch("code_muse.model_factory._model_builders.emit_warning") as mock_warn:
+            with patch(
+                "code_muse.model_factory._model_builders.emit_warning"
+            ) as mock_warn:
                 result = ModelFactory.get_model("zai-test", config_zai)
                 assert result is None
                 mock_warn.assert_called_with(
@@ -301,7 +313,9 @@ class TestModelFactoryErrors:
             config_openrouter = {
                 "openrouter-test": {"type": "openrouter", "name": "anthropic/claude-3"}
             }
-            with patch("code_muse.model_factory._model_builders.emit_warning") as mock_warn:
+            with patch(
+                "code_muse.model_factory._model_builders.emit_warning"
+            ) as mock_warn:
                 result = ModelFactory.get_model("openrouter-test", config_openrouter)
                 assert result is None
                 mock_warn.assert_called_with(

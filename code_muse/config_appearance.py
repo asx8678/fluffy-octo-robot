@@ -187,7 +187,7 @@ def get_diff_context_lines() -> int:
         context_lines = int(val) if val else 6
         # Apply reasonable bounds: minimum 0, maximum 50
         return max(0, min(context_lines, 50))
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return 6
 
 

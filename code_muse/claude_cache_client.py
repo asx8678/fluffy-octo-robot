@@ -465,7 +465,7 @@ class ClaudeCacheAsyncClient(httpx.AsyncClient):
 
                                 date = parsedate_to_datetime(retry_after)
                                 wait_time = max(0, date.timestamp() - time.time())
-                            except (ValueError, TypeError, OverflowError):
+                            except ValueError, TypeError, OverflowError:
                                 pass
 
                 # Cap wait time between 0.5s and 60s
@@ -517,7 +517,7 @@ class ClaudeCacheAsyncClient(httpx.AsyncClient):
             content = request.content
             if content:
                 return content
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             pass
 
         # Fallback to private attr if necessary
@@ -525,7 +525,7 @@ class ClaudeCacheAsyncClient(httpx.AsyncClient):
             content = getattr(request, "_content", None)
             if content:
                 return content
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             pass
 
         return None
@@ -571,7 +571,7 @@ class ClaudeCacheAsyncClient(httpx.AsyncClient):
                 # Fallback to text property (should work after aread)
                 try:
                     body = response.text
-                except (httpx.HTTPError, UnicodeDecodeError, RuntimeError):
+                except httpx.HTTPError, UnicodeDecodeError, RuntimeError:
                     return False
 
             # Look for Cloudflare and 400 Bad Request markers

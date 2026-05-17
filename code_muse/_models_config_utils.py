@@ -84,9 +84,7 @@ def get_cached_config() -> tuple[dict[str, Any] | None, tuple[float, str] | None
         return _models_config_cache
 
 
-def set_cached_config(
-    config: dict[str, Any], fingerprint: tuple[float, str]
-) -> None:
+def set_cached_config(config: dict[str, Any], fingerprint: tuple[float, str]) -> None:
     """Store a config dict with its fingerprint in the shared cache."""
     global _models_config_cache
     with _models_config_lock:

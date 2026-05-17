@@ -234,7 +234,7 @@ class UCRegistry:
                         try:
                             meta_str = ast.unparse(node.value)
                             return ast.literal_eval(meta_str)
-                        except (ValueError, SyntaxError):
+                        except ValueError, SyntaxError:
                             return None
         return None
 

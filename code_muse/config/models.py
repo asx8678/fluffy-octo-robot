@@ -352,6 +352,6 @@ def get_protected_token_count(model_name: str | None = None) -> int:
 
         configured_value = int(val) if val else max_protected_tokens
         return max(1000, min(configured_value, max_protected_tokens))
-    except (ValueError, TypeError, Exception):
+    except ValueError, TypeError, Exception:
         model_context_length = get_model_context_length(model_name)
         return max(1000, int(model_context_length * 0.55))

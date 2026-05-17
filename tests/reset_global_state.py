@@ -124,14 +124,14 @@ def reset_global_state() -> None:
         from code_muse.plugins.custom_commands import register_callbacks as cc
 
         cc._command_cache.clear()
-    except (ImportError, AttributeError):
+    except ImportError, AttributeError:
         pass
 
     try:
         from code_muse.plugins.token_ratio_learner import ratios as ratios
 
         ratios._LEARNED_RATIOS.clear()
-    except (ImportError, AttributeError):
+    except ImportError, AttributeError:
         pass
 
     try:
@@ -139,7 +139,7 @@ def reset_global_state() -> None:
 
         cuc._custom_commands.clear()
         cuc._command_descriptions.clear()
-    except (ImportError, AttributeError):
+    except ImportError, AttributeError:
         pass
 
     try:
@@ -150,35 +150,35 @@ def reset_global_state() -> None:
         ds._review_history.clear()
         dt._review_timestamps.clear()
         dr._pending_review_indices.clear()
-    except (ImportError, AttributeError):
+    except ImportError, AttributeError:
         pass
 
     try:
         from code_muse.plugins.policy_engine import policy_file_discovery as pfd
 
         pfd._file_mtimes.clear()
-    except (ImportError, AttributeError):
+    except ImportError, AttributeError:
         pass
 
     try:
         from code_muse.plugins.universal_critic import orchestrator as uco
 
         uco._ITERATION_TRACKER.clear()
-    except (ImportError, AttributeError):
+    except ImportError, AttributeError:
         pass
 
     try:
         from code_muse.plugins.agent_skills import register_callbacks as asr
 
         asr._deactivated_skills.clear()
-    except (ImportError, AttributeError):
+    except ImportError, AttributeError:
         pass
 
     try:
         from code_muse.plugins.task_context import detector as tcd
 
         tcd._previous_message_vectors.clear()
-    except (ImportError, AttributeError):
+    except ImportError, AttributeError:
         pass
 
     # --- model_factory/_plugin_registry.py ---
@@ -186,7 +186,7 @@ def reset_global_state() -> None:
         from code_muse.model_factory import _plugin_registry as pr
 
         pr._CUSTOM_MODEL_PROVIDERS.clear()
-    except (ImportError, AttributeError):
+    except ImportError, AttributeError:
         pass
 
     # --- messaging/spinner/__init__.py ---
@@ -194,7 +194,7 @@ def reset_global_state() -> None:
         import code_muse.messaging.spinner as sp
 
         sp._active_spinners.clear()
-    except (ImportError, AttributeError):
+    except ImportError, AttributeError:
         pass
 
     # --- summarization_agent.py ---
