@@ -8,6 +8,9 @@ Covers:
     5. Fabric review() orchestrates preflight → backend
     6. code_critic.reviewer.review_code uses fabric preflight
     7. Golden truncation set — deterministic offline false-negative gate
+    8. Structured verdict models (CriticLocation, ReasonCode, new fields)
+    9. Review cache with content-hash deduplication
+    10. Fabric cache integration (hash stamping, cache hit/miss)
 """
 
 from __future__ import annotations
@@ -26,10 +29,16 @@ from code_muse.plugins.critic_fabric.backends import (
     register_alias,
     register_backend,
 )
+from code_muse.plugins.critic_fabric.cache import (
+    CriticReviewCache,
+    get_review_cache,
+)
 from code_muse.plugins.critic_fabric.models import (
     CriticIssue,
+    CriticLocation,
     CriticRequest,
     CriticVerdict,
+    ReasonCode,
     VerdictKind,
 )
 from code_muse.plugins.critic_fabric.preflight import run_preflight
@@ -575,3 +584,365 @@ class TestGoldenTruncationSet:
                 f"Expected {file_path!r} to pass preflight, but got rejected: "
                 f"{result.summary}"
             )
+
+
+# ===================================================================
+# 8. Structured verdict — new models and fields
+# ===================================================================
+
+
+class TestStructuredVerdict:
+    """Tests for new structured output fields."""
+
+    def test_needs_changes_verdict(self) -> None:
+        v = CriticVerdict(
+            verdict=VerdictKind.NEEDS_CHANGES,
+            summary="requires changes",
+        )
+        assert v.verdict == VerdictKind.NEEDS_CHANGES
+        assert v.verdict.value == "needs_changes"
+
+    def test_critic_location(self) -> None:
+        loc = CriticLocation(
+            file_path="app.py",
+            start_line=10,
+            end_line=15,
+            description="SQL injection risk",
+        )
+        assert loc.file_path == "app.py"
+        assert loc.start_line == 10
+        data = loc.model_dump()
+        restored = CriticLocation.model_validate(data)
+        assert restored == loc
+
+    def test_reason_code(self) -> None:
+        rc = ReasonCode(code="SEC-001", text="Potential SQL injection")
+        assert rc.code == "SEC-001"
+        assert rc.text == "Potential SQL injection"
+        data = rc.model_dump()
+        restored = ReasonCode.model_validate(data)
+        assert restored == rc
+
+    def test_verdict_with_all_new_fields(self) -> None:
+        v = CriticVerdict(
+            verdict=VerdictKind.NEEDS_CHANGES,
+            summary="Security + style issues",
+            issues=["SQL injection", "bare except"],
+            suggestion="Parameterize queries",
+            reasons=[
+                ReasonCode(code="SEC-001", text="SQL injection"),
+                ReasonCode(code="STYLE-003", text="bare except"),
+            ],
+            locations=[
+                CriticLocation(
+                    file_path="app.py",
+                    start_line=10,
+                    end_line=15,
+                    description="unsafe query",
+                ),
+            ],
+            confidence=0.85,
+            reviewer_id="code_critic",
+            review_hash="abc123def4567890",
+            content_hash="feedface01234567",
+        )
+        assert v.confidence == 0.85
+        assert v.reviewer_id == "code_critic"
+        assert v.review_hash == "abc123def4567890"
+        assert v.content_hash == "feedface01234567"
+        assert len(v.reasons) == 2
+        assert v.reasons[0].code == "SEC-001"
+        assert len(v.locations) == 1
+        assert v.locations[0].start_line == 10
+
+    def test_to_dict_backward_compat(self) -> None:
+        """to_dict() still has old fields; new fields are optional extras."""
+        v = CriticVerdict(
+            verdict=VerdictKind.APPROVED,
+            summary="ok",
+            issues=[],
+            suggestion=None,
+        )
+        d = v.to_dict()
+        # Old fields always present
+        assert "verdict" in d
+        assert "summary" in d
+        assert "issues" in d
+        assert "suggestion" in d
+        # New fields absent when default
+        assert "review_hash" not in d
+        assert "confidence" not in d
+        assert "locations" not in d
+        assert "reasons" not in d
+        assert "content_hash" not in d
+        assert "reviewer_id" not in d
+
+    def test_to_dict_includes_new_fields_when_populated(self) -> None:
+        v = CriticVerdict(
+            verdict=VerdictKind.NEEDS_CHANGES,
+            summary="needs work",
+            review_hash="abcd1234ef567890",
+            content_hash="feed1234face5678",
+            confidence=0.9,
+            reviewer_id="test-reviewer",
+            reasons=[ReasonCode(code="PERF-002", text="slow loop")],
+            locations=[
+                CriticLocation(
+                    file_path="x.py",
+                    start_line=1,
+                    description="slow",
+                ),
+            ],
+        )
+        d = v.to_dict()
+        assert d["review_hash"] == "abcd1234ef567890"
+        assert d["content_hash"] == "feed1234face5678"
+        assert d["confidence"] == 0.9
+        assert d["reviewer_id"] == "test-reviewer"
+        assert len(d["reasons"]) == 1
+        assert d["reasons"][0]["code"] == "PERF-002"
+        assert len(d["locations"]) == 1
+
+    def test_from_dict_backward_compat(self) -> None:
+        """from_dict() tolerates missing new fields."""
+        data = {
+            "verdict": "approved",
+            "summary": "clean",
+            "issues": [],
+            "suggestion": None,
+        }
+        v = CriticVerdict.from_dict(data, backend="test")
+        assert v.verdict == VerdictKind.APPROVED
+        assert v.confidence == 0.0
+        assert v.reviewer_id == ""
+        assert v.review_hash == ""
+        assert v.content_hash == ""
+        assert v.reasons == []
+        assert v.locations == []
+
+    def test_from_dict_with_new_fields(self) -> None:
+        """from_dict() parses new fields when present."""
+        data = {
+            "verdict": "needs_changes",
+            "summary": "issues found",
+            "issues": ["sql injection"],
+            "suggestion": "fix it",
+            "review_hash": "abcd1234ef567890",
+            "content_hash": "feed1234face5678",
+            "confidence": 0.75,
+            "reviewer_id": "my-reviewer",
+            "reasons": [{"code": "SEC-001", "text": "SQL injection"}],
+            "locations": [
+                {
+                    "file_path": "app.py",
+                    "start_line": 10,
+                    "end_line": 15,
+                    "description": "unsafe query",
+                },
+            ],
+        }
+        v = CriticVerdict.from_dict(data, backend="test")
+        assert v.verdict == VerdictKind.NEEDS_CHANGES
+        assert v.confidence == 0.75
+        assert v.reviewer_id == "my-reviewer"
+        assert v.review_hash == "abcd1234ef567890"
+        assert v.content_hash == "feed1234face5678"
+        assert len(v.reasons) == 1
+        assert v.reasons[0].code == "SEC-001"
+        assert len(v.locations) == 1
+        assert v.locations[0].start_line == 10
+
+
+# ===================================================================
+# 9. Review cache — content-hash deduplication
+# ===================================================================
+
+
+class TestReviewCache:
+    """Tests for CriticReviewCache."""
+
+    def setup_method(self) -> None:
+        """Reset the singleton cache before each test."""
+        get_review_cache().clear()
+
+    def test_cache_miss(self) -> None:
+        cache = get_review_cache()
+        result = cache.get("nonexistent_hash")
+        assert result is None
+        assert cache.stats.misses == 1
+
+    def test_cache_hit(self) -> None:
+        cache = get_review_cache()
+        verdict_dict = {"verdict": "approved", "summary": "ok"}
+        cache.set("hash123", verdict_dict, reviewer_id="rev1")
+        result = cache.get("hash123", reviewer_id="rev1")
+        assert result is not None
+        assert result["verdict"] == "approved"
+        assert cache.stats.hits == 1
+
+    def test_cache_key_differentiator(self) -> None:
+        """Different reviewer_ids produce different cache entries."""
+        cache = get_review_cache()
+        cache.set("hash123", {"verdict": "approved"}, reviewer_id="revA")
+        cache.set("hash123", {"verdict": "rejected"}, reviewer_id="revB")
+        assert cache.get("hash123", reviewer_id="revA")["verdict"] == "approved"
+        assert cache.get("hash123", reviewer_id="revB")["verdict"] == "rejected"
+
+    def test_cache_clear(self) -> None:
+        cache = get_review_cache()
+        cache.set("h1", {"verdict": "approved"})
+        cache.get("h1")  # hit
+        cache.get("h2")  # miss
+        cache.clear()
+        assert cache.stats.size == 0
+        assert cache.stats.hits == 0
+        assert cache.stats.misses == 0
+
+    def test_thread_safety(self) -> None:
+        """Quick concurrent access from 2 threads doesn't crash."""
+        import threading
+
+        cache = CriticReviewCache()
+        errors: list[Exception] = []
+
+        def writer() -> None:
+            try:
+                for i in range(100):
+                    cache.set(f"hash{i}", {"verdict": "approved"})
+            except Exception as exc:
+                errors.append(exc)
+
+        def reader() -> None:
+            try:
+                for i in range(100):
+                    cache.get(f"hash{i}")
+            except Exception as exc:
+                errors.append(exc)
+
+        t1 = threading.Thread(target=writer)
+        t2 = threading.Thread(target=reader)
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
+        assert errors == []
+
+
+# ===================================================================
+# 10. Fabric cache integration
+# ===================================================================
+
+
+class TestFabricWithCache:
+    """Tests for fabric review() cache integration."""
+
+    def setup_method(self) -> None:
+        """Reset the singleton cache before each test."""
+        get_review_cache().clear()
+
+    def test_review_stamps_hashes_on_preflight_rejection(self) -> None:
+        """Preflight rejections get content_hash and review_hash stamped."""
+        from code_muse.plugins.critic_fabric.fabric import review
+
+        request = CriticRequest(
+            file_path="test.py",
+            code_snippet="def foo(",  # truncated
+            backend="code_critic",
+        )
+        verdict = _run_async(review(request))
+        assert verdict.verdict == VerdictKind.REJECTED
+        assert verdict.preflight_rejected is True
+        assert verdict.content_hash != ""
+        assert verdict.review_hash != ""
+        assert verdict.reviewer_id == "code_critic"
+
+    def test_review_stamps_hashes_on_backend_success(self) -> None:
+        """Backend verdicts get content_hash and review_hash stamped."""
+        from code_muse.plugins.critic_fabric.fabric import review
+
+        async def _approve(request: CriticRequest) -> CriticVerdict:
+            return CriticVerdict(
+                verdict=VerdictKind.APPROVED,
+                summary="test approved",
+                backend="__test_stamp",
+            )
+
+        register_backend("__test_stamp", _approve)
+
+        request = CriticRequest(
+            file_path="test.py",
+            code_snippet="x = 1\n",
+            backend="__test_stamp",
+        )
+        verdict = _run_async(review(request))
+        assert verdict.verdict == VerdictKind.APPROVED
+        assert verdict.content_hash != ""
+        assert verdict.review_hash != ""
+        assert verdict.reviewer_id == "__test_stamp"
+
+        _REGISTRY.pop("__test_stamp", None)
+
+    def test_review_cache_hit_count(self) -> None:
+        """Calling review() twice on same request caches on second call."""
+        from code_muse.plugins.critic_fabric.fabric import review
+
+        call_count = 0
+
+        async def _counting(request: CriticRequest) -> CriticVerdict:
+            nonlocal call_count
+            call_count += 1
+            return CriticVerdict(
+                verdict=VerdictKind.APPROVED,
+                summary=f"call {call_count}",
+                backend="__test_count",
+            )
+
+        register_backend("__test_count", _counting)
+
+        request = CriticRequest(
+            file_path="test.py",
+            code_snippet="x = 1\n",
+            backend="__test_count",
+        )
+
+        verdict1 = _run_async(review(request))
+        verdict2 = _run_async(review(request))
+
+        assert verdict1.verdict == VerdictKind.APPROVED
+        assert verdict2.verdict == VerdictKind.APPROVED
+        # Second call should be a cache hit
+        cache = get_review_cache()
+        assert cache.stats.hits >= 1
+
+        _REGISTRY.pop("__test_count", None)
+
+    def test_review_cache_bypasses_backend(self) -> None:
+        """Second call should not invoke backend (mock call_count stays 1)."""
+        from code_muse.plugins.critic_fabric.fabric import review
+
+        call_count = 0
+
+        async def _counting(request: CriticRequest) -> CriticVerdict:
+            nonlocal call_count
+            call_count += 1
+            return CriticVerdict(
+                verdict=VerdictKind.APPROVED,
+                summary=f"call {call_count}",
+                backend="__test_bypass",
+            )
+
+        register_backend("__test_bypass", _counting)
+
+        request = CriticRequest(
+            file_path="test_bypass.py",
+            code_snippet="y = 2\n",
+            backend="__test_bypass",
+        )
+
+        _run_async(review(request))
+        _run_async(review(request))
+
+        # Backend should only have been called once
+        assert call_count == 1
+
+        _REGISTRY.pop("__test_bypass", None)

@@ -181,6 +181,7 @@ async def _debate_backend(request: CriticRequest) -> CriticVerdict:
         issues=issues,
         raw_response=response.verdict.model_dump_json(),
         backend="debate",
+        confidence=response.verdict.confidence,
     )
 
 
