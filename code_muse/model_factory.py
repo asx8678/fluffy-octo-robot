@@ -24,6 +24,12 @@ from code_muse.gemini_model import GeminiModel
 from code_muse.messaging import emit_warning
 
 from . import callbacks
+from ._models_config_utils import (
+    get_cached_config,
+    invalidate_models_config_cache,
+    models_config_fingerprint,
+    set_cached_config,
+)
 from .claude_cache_client import ClaudeCacheAsyncClient, patch_anthropic_client_messages
 from .config import EXTRA_MODELS_FILE, MODELS_FILE, get_value
 from .http_utils import create_async_client, get_cert_bundle_path, get_http2
@@ -38,87 +44,6 @@ logger = logging.getLogger(__name__)
 
 # Registry for custom model provider classes from plugins
 _CUSTOM_MODEL_PROVIDERS: dict[str, type] = {}
-
-# ---------------------------------------------------------------------------
-# PERF-06: Mtime-based config cache to avoid re-reading JSON files on every
-# ModelFactory.load_config() call.  Mirrors the pattern already used in
-# summarization_agent.get_cached_models_config().  Invalidation: any source
-# file's mtime changes, or invalidate_models_config_cache() is called
-# explicitly (e.g. after /set commands).
-# ---------------------------------------------------------------------------
-import hashlib as _hashlib  # noqa: E402
-import threading as _threading  # noqa: E402
-
-_models_config_cache: tuple[dict[str, Any] | None, tuple[float, str] | None] = (
-    None,
-    None,
-)
-# FREE-THREADED: _models_config_lock guards sync-only cache access.
-# All callers are sync; keep as threading.Lock.
-_models_config_lock = _threading.Lock()
-
-
-def _models_config_fingerprint() -> tuple[float, str]:
-    """Compute a lightweight fingerprint of all model config source files.
-
-    Returns (max_mtime, content_hash) — if either changes, the cached
-    config is stale and must be reloaded.
-    """
-    source_paths: list[pathlib.Path] = []
-
-    bundled = pathlib.Path(__file__).parent / "models.json"
-    source_paths.append(bundled)
-
-    try:
-        from code_muse.config import (
-            CHATGPT_MODELS_FILE,
-            CLAUDE_MODELS_FILE,
-            COPILOT_MODELS_FILE,
-            EXTRA_MODELS_FILE,
-            GEMINI_MODELS_FILE,
-            MODELS_FILE,
-        )
-
-        for p in (
-            MODELS_FILE,
-            EXTRA_MODELS_FILE,
-            CHATGPT_MODELS_FILE,
-            CLAUDE_MODELS_FILE,
-            GEMINI_MODELS_FILE,
-            COPILOT_MODELS_FILE,
-        ):
-            source_paths.append(pathlib.Path(p))
-    except Exception:
-        pass
-
-    max_mtime = 0.0
-    hasher = _hashlib.blake2b(digest_size=16)
-    for sp in source_paths:
-        try:
-            if sp.exists():
-                stat = sp.stat()
-                mtime = stat.st_mtime
-                if isinstance(mtime, (int, float)):
-                    max_mtime = max(max_mtime, mtime)
-                    hasher.update(f"{sp}:{stat.st_size}:{mtime}".encode())
-                else:
-                    # Mocked stat objects in tests — force cache miss
-                    max_mtime = float("inf")
-        except OSError:
-            pass
-
-    return max_mtime, hasher.hexdigest()
-
-
-def invalidate_models_config_cache() -> None:
-    """Force the next ``ModelFactory.load_config()`` call to reload from disk.
-
-    Call this when settings or model files are known to have changed
-    (e.g. after a ``/set`` command that modifies model config).
-    """
-    global _models_config_cache
-    with _models_config_lock:
-        _models_config_cache = (None, None)
 
 
 def _load_plugin_model_providers():
@@ -500,13 +425,11 @@ class ModelFactory:
 
     @staticmethod
     def load_config() -> dict[str, Any]:
-        global _models_config_cache
         # PERF-06: Return cached config when source files haven't changed.
-        fingerprint = _models_config_fingerprint()
-        with _models_config_lock:
-            cached_config, cached_fp = _models_config_cache
-            if cached_config is not None and cached_fp == fingerprint:
-                return cached_config
+        fingerprint = models_config_fingerprint()
+        cached_config, cached_fp = get_cached_config()
+        if cached_config is not None and cached_fp == fingerprint:
+            return cached_config
 
         # --- Original loading logic (cache miss) ---
         load_model_config_callbacks = callbacks.get_callbacks("load_model_config")
@@ -600,8 +523,7 @@ class ModelFactory:
         # --- End original loading logic ---
 
         # Store in cache
-        with _models_config_lock:
-            _models_config_cache = (config, fingerprint)
+        set_cached_config(config, fingerprint)
         return config
 
     @staticmethod

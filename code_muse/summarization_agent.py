@@ -1,8 +1,6 @@
 import asyncio
 import atexit
-import hashlib
 import logging
-import pathlib
 import threading
 
 # FREE-THREADED: ThreadPoolExecutor is compatible with free-threaded Python 3.14 —
@@ -12,6 +10,12 @@ from typing import Any
 
 from pydantic_ai import Agent
 
+from code_muse._models_config_utils import (
+    get_cached_config,
+    invalidate_models_config_cache,
+    models_config_fingerprint,
+    set_cached_config,
+)
 from code_muse.config import get_summarization_model_name
 from code_muse.model_factory import ModelFactory, make_model_settings
 
@@ -35,66 +39,8 @@ _reload_count = 0
 
 # ---------------------------------------------------------------------------
 # P2-05/PERF-05: Model config cache with mtime invalidation
+# (fingerprint, cache, lock, and invalidate live in _models_config_utils)
 # ---------------------------------------------------------------------------
-
-
-def _models_config_fingerprint() -> tuple[float, str]:
-    """Compute a lightweight fingerprint of all model config sources.
-
-    Returns (max_mtime, content_hash) — if either changes, the cached
-    config is stale and must be reloaded.
-    """
-    source_paths: list[pathlib.Path] = []
-
-    # Bundled models.json is always loaded
-    bundled = pathlib.Path(__file__).parent / "models.json"
-    source_paths.append(bundled)
-
-    # Extra model sources (mirrors ModelFactory.load_config)
-    try:
-        from code_muse.config import (
-            CHATGPT_MODELS_FILE,
-            CLAUDE_MODELS_FILE,
-            COPILOT_MODELS_FILE,
-            EXTRA_MODELS_FILE,
-            GEMINI_MODELS_FILE,
-            MODELS_FILE,
-        )
-
-        for p in (
-            MODELS_FILE,
-            EXTRA_MODELS_FILE,
-            CHATGPT_MODELS_FILE,
-            CLAUDE_MODELS_FILE,
-            GEMINI_MODELS_FILE,
-            COPILOT_MODELS_FILE,
-        ):
-            source_paths.append(pathlib.Path(p))
-    except Exception:
-        pass
-
-    max_mtime = 0.0
-    hasher = hashlib.blake2b(digest_size=16)
-    for sp in source_paths:
-        try:
-            if sp.exists():
-                stat = sp.stat()
-                max_mtime = max(max_mtime, stat.st_mtime)
-                # Hash file contents (or just size+mtime as a cheap proxy)
-                hasher.update(f"{sp}:{stat.st_size}:{stat.st_mtime}".encode())
-        except OSError:
-            pass
-
-    return max_mtime, hasher.hexdigest()
-
-
-# Module-level model config cache: (config_dict, fingerprint)
-_models_config_cache: tuple[dict[str, Any | None], tuple[float, str | None]] = (
-    None,
-    None,
-)
-# FREE-THREADED: _models_config_lock guards sync-only config cache access.
-_models_config_lock = threading.Lock()
 
 
 def get_cached_models_config() -> dict[str, Any]:
@@ -106,32 +52,21 @@ def get_cached_models_config() -> dict[str, Any]:
 
     Falls back to ``ModelFactory.load_config()`` on any error.
     """
-    global _models_config_cache
+    fingerprint = models_config_fingerprint()
 
-    fingerprint = _models_config_fingerprint()
+    cached_config, cached_fp = get_cached_config()
+    if cached_config is not None and cached_fp == fingerprint:
+        return cached_config
 
-    with _models_config_lock:
-        cached_config, cached_fp = _models_config_cache
-        if cached_config is not None and cached_fp == fingerprint:
-            return cached_config
-
-        # Cache miss — reload. Let exceptions propagate so callers
-        # (including reload_summarization_agent) see the same errors they
-        # would have seen without the cache.
-        config = ModelFactory.load_config()
-        _models_config_cache = (config, fingerprint)
-        return config
+    # Cache miss — reload. Let exceptions propagate so callers
+    # (including reload_summarization_agent) see the same errors they
+    # would have seen without the cache.
+    config = ModelFactory.load_config()
+    set_cached_config(config, fingerprint)
+    return config
 
 
-def invalidate_models_config_cache() -> None:
-    """Force the next ``get_cached_models_config()`` call to reload.
-
-    Call this when settings or model files are known to have changed
-    (e.g. after a ``/set`` command that modifies model config).
-    """
-    global _models_config_cache
-    with _models_config_lock:
-        _models_config_cache = (None, None)
+# invalidate_models_config_cache is imported from _models_config_utils
 
 
 def _ensure_thread_pool():
@@ -234,6 +169,12 @@ def run_summarization_sync(prompt: str, message_history: list) -> list:
     )
     prompt = prepared.user_prompt
 
+    logger.info(
+        "Summarization LLM call starting: model=%s, messages=%d",
+        model_name,
+        len(message_history),
+    )
+
     def _run_in_thread():
         """Run the async agent using the persistent summarization event loop.
 
@@ -249,7 +190,13 @@ def run_summarization_sync(prompt: str, message_history: list) -> list:
         # Always use thread pool since we're likely in an existing event loop
         pool = _ensure_thread_pool()
         result = pool.submit(_run_in_thread).result()
-        return result.new_messages()
+        new_msgs = result.new_messages()
+        logger.info(
+            "Summarization LLM call complete: input=%d msgs, output=%d msgs",
+            len(message_history),
+            len(new_msgs),
+        )
+        return new_msgs
     except Exception as e:
         error_type = type(e).__name__
         error_msg = str(e) if str(e) else "(no details available)"
