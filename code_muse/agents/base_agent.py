@@ -49,6 +49,7 @@ class BaseAgent(ABC):
     def __init__(self) -> None:
         self.id: str = str(uuid.uuid4())
         self._message_history: list[Any] = []
+        self._pinned_messages: list[Any] = []
         self._compacted_message_hashes: set[int] = set()
         self._code_generation_agent: Any = None
         self._last_model_name: str | None = None
@@ -114,10 +115,34 @@ class BaseAgent(ABC):
 
     def clear_message_history(self) -> None:
         self._message_history = []
+        self._pinned_messages.clear()
         self._compacted_message_hashes.clear()
 
     def append_to_message_history(self, message: Any) -> None:
         self._message_history.append(message)
+
+    # ---- Pinned messages (compaction-proof) --------------------------------
+    def pin_message(self, message: Any) -> None:
+        """Pin a message so it survives compaction.
+
+        Pinned messages are always preserved during summarization or
+        truncation and prepended after the system message in the history.
+        """
+        msg_hash = self.hash_message(message)
+        if msg_hash not in {self.hash_message(m) for m in self._pinned_messages}:
+            self._pinned_messages.append(message)
+
+    def unpin_message(self, message: Any) -> None:
+        """Remove a previously pinned message by content hash."""
+        target_hash = self.hash_message(message)
+        self._pinned_messages = [
+            m for m in self._pinned_messages
+            if self.hash_message(m) != target_hash
+        ]
+
+    def get_pinned_messages(self) -> list[Any]:
+        """Return a shallow copy of pinned messages."""
+        return list(self._pinned_messages)
 
     # ---- Token / context helpers ------------------------------------------
     def estimate_tokens_for_message(self, message: Any) -> int:
@@ -179,7 +204,7 @@ class BaseAgent(ABC):
         """Delegate to ``_compaction.summarize`` with config-derived protection."""
         return summarize(
             messages,
-            get_protected_token_count(),
+            get_protected_token_count(getattr(self, "model_name", None) or getattr(self, "_model_name", None)),
             with_protection=with_protection,
             model_name=self.get_model_name(),
         )

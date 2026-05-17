@@ -313,27 +313,34 @@ def compute_effective_history_budget(
     return max(4096, budget)
 
 
-def get_protected_token_count():
-    """
-    Returns the user-configured protected token count for message history compaction.
-    This is the number of tokens in recent messages that won't be summarized.
-    Defaults to the adaptive budget (based on model context length) if unset or misconfigured.
-    Configurable by 'protected_token_count' key.
+def get_protected_token_count(model_name: str | None = None) -> int:
+    """Returns the user-configured protected token count for message history compaction.
 
-    Now respects the adaptive compute_effective_history_budget (from the 2026-05
-    performance audit) so 1M models get much larger protected tails (~85-88%)
-    while 32k models are aggressively capped.
+    This is the number of tokens in recent messages that won't be summarized.
+    Defaults to the adaptive budget (based on model context length) if unset
+    or misconfigured.  Configurable by 'protected_token_count' key.
+
+    Now respects the adaptive compute_effective_history_budget (from the
+    2026-05 performance audit) so 1M models get much larger protected tails
+    (~85-88%) while 32k models are aggressively capped.
+
+    Args:
+        model_name: Optional model name for per-model budget computation.
+            Falls back to the global model if not provided.
     """
     val = _parser.get_value("protected_token_count")
     try:
-        model_context_length = get_model_context_length()
-        model_name = None
-        with suppress(Exception):
-            model_name = get_global_model_name()
+        model_context_length = get_model_context_length(model_name)
+        # Use caller-supplied model_name when available, otherwise resolve
+        # from global config.
+        resolved_name = model_name
+        if resolved_name is None:
+            with suppress(Exception):
+                resolved_name = get_global_model_name()
 
         # New adaptive budget is the authoritative cap for protected zone
         effective_budget = compute_effective_history_budget(
-            model_context_length, overhead=0, model_name=model_name
+            model_context_length, overhead=0, model_name=resolved_name
         )
         # Leave headroom inside the budget for overhead + a few turns
         adaptive_max = max(4096, int(effective_budget * 0.92))
@@ -346,5 +353,5 @@ def get_protected_token_count():
         configured_value = int(val) if val else max_protected_tokens
         return max(1000, min(configured_value, max_protected_tokens))
     except (ValueError, TypeError, Exception):
-        model_context_length = get_model_context_length()
+        model_context_length = get_model_context_length(model_name)
         return max(1000, int(model_context_length * 0.55))

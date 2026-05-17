@@ -136,7 +136,7 @@ class TestCompactionCachePreservesOutput:
             cm,
             get_compaction_threshold=lambda: 0.1,
             get_compaction_strategy=lambda: "truncation",
-            get_protected_token_count=lambda: 500,
+            get_protected_token_count=lambda model_name=None: 500,
         ):
             new_msgs, dropped = compact(
                 agent=None, messages=msgs, model_max=10_000, context_overhead=0

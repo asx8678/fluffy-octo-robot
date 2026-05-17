@@ -290,11 +290,17 @@ def _deserialize_messages(serialized: list[dict]) -> list[Any]:
 
 
 def _estimate_archive_tokens(messages: list[Any]) -> int:
-    """Estimate total tokens for a list of messages (for metadata)."""
+    """Estimate total tokens for a list of messages (for metadata).
+
+    Delegates to the core ``estimate_tokens`` helper (char/2.5 heuristic)
+    so archival token counts stay consistent with compaction.
+    """
+    from code_muse.agents._history import estimate_tokens
+
     total = 0
     for msg in messages:
         text = _extract_text(msg)
-        total += max(1, len(text) // 3)
+        total += estimate_tokens(text)
     return total
 
 

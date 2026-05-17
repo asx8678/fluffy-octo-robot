@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=77.0.0", "wheel"]
+requires = ["setuptools>=77.0.0", "wheel", "cython>=3.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -37,6 +37,7 @@ dependencies = [
     "tree-sitter-javascript>=0.21.0",
     "tree-sitter-go>=0.21.0",
     "websockets>=15.0",
+    "cython>=3.2.4",
 ]
 authors = [
     {name = "Michael Pfaffenberger"}
@@ -79,6 +80,7 @@ select = ["E", "F", "UP", "B", "SIM", "I"]
 "code_muse/plugins/mindpack/orchestration.py" = ["E402"]
 "code_muse/tools/chrome_cdp/*.py" = ["E501"]
 "code_muse/agents/agent_muse.py" = ["E501"]
+"code_muse/model_factory/*.py" = ["E501"]
 
 [tool.setuptools.packages.find]
 include = ["code_muse", "code_muse.*"]

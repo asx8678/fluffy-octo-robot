@@ -144,7 +144,7 @@ def test_custom_openai_timeout_config(monkeypatch):
         }
     }
 
-    with patch("code_muse.model_factory.create_async_client") as mock_client:
+    with patch("code_muse.model_factory._model_builders.create_async_client") as mock_client:
         mock_client.return_value = httpx.AsyncClient(timeout=600)
         model = ModelFactory.get_model("custom", config)
 
@@ -170,7 +170,7 @@ def test_custom_gemini_timeout_config(monkeypatch):
         }
     }
 
-    with patch("code_muse.model_factory.create_async_client") as mock_client:
+    with patch("code_muse.model_factory._model_builders.create_async_client") as mock_client:
         mock_client.return_value = httpx.AsyncClient(timeout=600)
         model = ModelFactory.get_model("custom", config)
 
@@ -197,10 +197,10 @@ def test_custom_anthropic_timeout_config(monkeypatch):
     }
 
     with (
-        patch("code_muse.model_factory.ClaudeCacheAsyncClient") as mock_client,
-        patch("code_muse.model_factory.make_anthropic_provider") as mock_provider,
-        patch("code_muse.model_factory.AsyncAnthropic") as mock_anthropic,
-        patch("code_muse.model_factory.get_http2", return_value=False),
+        patch("code_muse.model_factory._model_builders.ClaudeCacheAsyncClient") as mock_client,
+        patch("code_muse.model_factory._model_builders.make_anthropic_provider") as mock_provider,
+        patch("code_muse.model_factory._model_builders.AsyncAnthropic") as mock_anthropic,
+        patch("code_muse.model_factory._model_builders.get_http2", return_value=False),
     ):
         mock_client.return_value = MagicMock()
         mock_provider.return_value = MagicMock()
@@ -232,7 +232,7 @@ def test_cerebras_timeout_config(monkeypatch):
         }
     }
 
-    with patch("code_muse.model_factory.create_async_client") as mock_client:
+    with patch("code_muse.model_factory._model_builders.create_async_client") as mock_client:
         mock_client.return_value = httpx.AsyncClient(timeout=600)
         model = ModelFactory.get_model("custom", config)
 
@@ -249,7 +249,7 @@ def test_anthropic_missing_api_key(monkeypatch):
     config = {"anthropic": {"type": "anthropic", "name": "claude-v2"}}
     if "ANTHROPIC_API_KEY" in os.environ:
         monkeypatch.delenv("ANTHROPIC_API_KEY")
-    with patch("code_muse.model_factory.emit_warning") as mock_warn:
+    with patch("code_muse.model_factory._model_builders.emit_warning") as mock_warn:
         model = ModelFactory.get_model("anthropic", config)
         assert model is None
         mock_warn.assert_called_once()
@@ -315,7 +315,7 @@ def test_extra_models_json_decode_error(tmp_path, monkeypatch):
     from code_muse.model_factory import ModelFactory
 
     monkeypatch.setattr(
-        "code_muse.model_factory.EXTRA_MODELS_FILE", str(extra_models_file)
+        "code_muse.model_factory._config_loader.EXTRA_MODELS_FILE", str(extra_models_file)
     )
 
     # This should not raise an exception despite the invalid JSON
@@ -336,7 +336,7 @@ def test_extra_models_exception_handling(tmp_path, monkeypatch, caplog):
     from code_muse.model_factory import ModelFactory, invalidate_models_config_cache
 
     monkeypatch.setattr(
-        "code_muse.model_factory.EXTRA_MODELS_FILE", str(extra_models_file)
+        "code_muse.model_factory._config_loader.EXTRA_MODELS_FILE", str(extra_models_file)
     )
 
     # Clear cache so the monkeypatched path is actually loaded
@@ -402,7 +402,7 @@ def test_custom_timeout_precedence(monkeypatch):
         }
     }
 
-    with patch("code_muse.model_factory.create_async_client") as mock_client:
+    with patch("code_muse.model_factory._model_builders.create_async_client") as mock_client:
         mock_client.return_value = httpx.AsyncClient(timeout=300)
         model = ModelFactory.get_model("custom", config)
 

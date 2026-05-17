@@ -5,6 +5,10 @@
 # Include the entire code_muse package tree (all .py, .pyx, data files, etc.)
 graft code_muse
 
+# Explicit .pyx includes (extra safety for sdist correctness)
+include code_muse/*.pyx
+include code_muse/tools/*.pyx
+
 # Root project files required for building and packaging
 include LICENSE
 include README.md

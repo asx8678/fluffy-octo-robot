@@ -6,13 +6,19 @@ needed, already-resolved strings / tool dicts) in explicitly.
 
 PERF-04 adds :class:`CompactionCache` — a per-compaction-run cache that avoids
 repeated ``hash_message`` / ``estimate_tokens_for_message`` calls on the same
-message objects within a single ``compact()`` invocation. No global caches
-that retain message objects.
+message objects within a single ``compact()`` invocation.
+
+PERF-TOK-CACHE adds a global TTL cache (5 min) for ``estimate_tokens_for_message``
+results, keyed by content hash + model name.  This extends caching to all call
+sites (session commands, loop, resume, etc.) that previously bypassed the
+CompactionCache.  The cache does not retain message objects — only integer
+hashes as keys — so there is no lifecycle concern.
 """
 
 import dataclasses
 import math
 import pathlib
+import time
 import weakref
 from annotationlib import get_annotations
 from collections import OrderedDict
@@ -194,6 +200,22 @@ def _apply_multiplier(raw_tokens: int, model_name: str | None) -> int:
     return max(1, math.floor(raw_tokens * multiplier))
 
 
+# PERF-TOK-CACHE: Global TTL cache for token estimates, keyed by content hash
+# + model_name.  Extends the CompactionCache pattern to all call sites
+# (session_commands, loop, resume, session_storage) that previously bypassed
+# caching entirely.  TTL: 5 minutes; bounded to 200 entries with LRU eviction.
+_token_estimate_cache: OrderedDict[tuple[int, str | None], tuple[int, float]] = (
+    OrderedDict()
+)
+_TOKEN_ESTIMATE_CACHE_MAX = 200
+_TOKEN_ESTIMATE_TTL = 300.0  # seconds
+
+
+def clear_token_estimate_cache() -> None:
+    """Clear the global token-estimate TTL cache (useful in tests)."""
+    _token_estimate_cache.clear()
+
+
 def estimate_tokens_for_message(
     message: ModelMessage,
     model_name: str | None = None,
@@ -203,13 +225,36 @@ def estimate_tokens_for_message(
     When ``model_name`` is provided, the raw count is scaled by
     :func:`model_token_multiplier` to compensate for tokenizers that don't
     play nicely with our char/2.5 heuristic.
+
+    Results are cached globally by ``(content_hash, model_name)`` with a
+    5-minute TTL so that repeated calls from different call sites (compact,
+    session commands, resume, etc.) avoid recomputing the same estimate.
     """
+    # Content-hash keyed cache check — avoids recomputation across call sites.
+    msg_hash = hash_message(message)
+    cache_key = (msg_hash, model_name)
+    now = time.monotonic()
+    cached = _token_estimate_cache.get(cache_key)
+    if cached is not None:
+        tokens, ts = cached
+        if now - ts < _TOKEN_ESTIMATE_TTL:
+            _token_estimate_cache.move_to_end(cache_key)
+            return tokens
+        # Expired — evict and recompute below.
+        del _token_estimate_cache[cache_key]
+
     total = 0
     for part in getattr(message, "parts", []) or []:
         part_str = stringify_part(part)
         if part_str:
             total += estimate_tokens(part_str)
-    return _apply_multiplier(max(1, total), model_name)
+    result = _apply_multiplier(max(1, total), model_name)
+
+    # Store in global cache with TTL timestamp.
+    if len(_token_estimate_cache) >= _TOKEN_ESTIMATE_CACHE_MAX:
+        _token_estimate_cache.popitem(last=False)
+    _token_estimate_cache[cache_key] = (result, now)
+    return result
 
 
 def estimate_context_overhead(

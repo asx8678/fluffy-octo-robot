@@ -16,6 +16,7 @@ Algorithm (triggered at PRUNE_AT_PERCENT = 85% of token budget):
 import logging
 from typing import Any
 
+from code_muse.agents._history import estimate_tokens
 from code_muse.messaging import emit_info, emit_success
 from code_muse.plugins.task_context._text_utils import _extract_text
 from code_muse.plugins.task_context.archival import archive_messages_for_task
@@ -364,12 +365,13 @@ def _decide_action(
 def _estimate_total_tokens(messages: list[Any]) -> int:
     """Estimate total tokens for a list of messages.
 
-    Uses the simple char/3 heuristic for consistency with existing estimates.
+    Delegates to the core ``estimate_tokens`` helper (char/2.5 heuristic)
+    so that the task-context plugin stays consistent with compaction.
     """
     total = 0
     for msg in messages:
         text = _extract_text(msg)
-        total += max(1, len(text) // 3)
+        total += estimate_tokens(text)
     return total
 
 
@@ -382,5 +384,5 @@ def _estimate_tokens_for_indices(
     for idx in indices:
         if 0 <= idx < len(messages):
             text = _extract_text(messages[idx])
-            total += max(1, len(text) // 3)
+            total += estimate_tokens(text)
     return total
