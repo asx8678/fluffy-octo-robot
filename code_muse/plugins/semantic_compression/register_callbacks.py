@@ -114,6 +114,19 @@ async def _on_post_tool_call(
         # Append marker to prevent double compression
         compressed = compressed + _COMPRESSION_MARKER
 
+        # Record compression provenance
+        try:
+            from .provenance import create_compression_record
+
+            create_compression_record(
+                original=result,
+                compressed=compressed,
+                tier="tier1",
+                tool_name=tool_name,
+            )
+        except Exception:
+            pass  # Provenance is non-critical
+
         # Compute token counts for metrics and visibility
         original_tokens = estimate_tokens(result)
         compressed_tokens = estimate_tokens(compressed)
@@ -298,6 +311,18 @@ def _compress_command_help() -> list[tuple[str, str]]:
         (
             "show original",
             "Show the last uncompressed tool output",
+        ),
+        (
+            "rehydrate <hash>",
+            "Retrieve original uncompressed content by provenance hash",
+        ),
+        (
+            "provenance stats",
+            "Show compression provenance statistics",
+        ),
+        (
+            "provenance get <hash>",
+            "Show provenance record for a hash",
         ),
     ]
 
@@ -500,5 +525,84 @@ register_callback("custom_command_help", _compress_command_help)
 register_callback("custom_command", _handle_compress_command)
 register_callback("custom_command", _handle_semantic_compression_command)
 register_callback("custom_command", _handle_show_command)
+
+
+# ---------------------------------------------------------------------------
+# /rehydrate and /provenance slash commands
+# ---------------------------------------------------------------------------
+
+
+def _handle_provenance_command(command: str, name: str) -> str | bool | None:
+    """Handle /rehydrate and /provenance commands."""
+    if name not in ("rehydrate", "provenance"):
+        return None
+
+    tokens = command.strip().split(maxsplit=2)
+    sub = tokens[1].strip().lower() if len(tokens) > 1 else "help"
+
+    try:
+        from code_muse.plugins.semantic_compression.provenance import (
+            get_provenance_store,
+        )
+
+        store = get_provenance_store()
+
+        if sub == "help":
+            return (
+                "/rehydrate <hash> — Retrieve original content by hash\n"
+                "/provenance stats — Show compression provenance statistics\n"
+                "/provenance get <hash> — Show provenance record for a hash\n"
+                "/provenance list — List recent compression records"
+            )
+
+        if sub == "stats":
+            stats = store.get_stats()
+            return (
+                f"Compression Provenance Statistics:\n"
+                f"  Total records: {stats['count']}\n"
+                f"  Original tokens: {stats['total_original_tokens']:,}\n"
+                f"  Compressed tokens: {stats['total_compressed_tokens']:,}\n"
+                f"  Overall compression ratio: {stats['compression_ratio']:.1%}"
+            )
+
+        if sub == "get":
+            hash_val = tokens[2].strip() if len(tokens) > 2 else ""
+            if not hash_val:
+                return "Usage: /provenance get <hash>"
+            record = store.get_record(hash_val)
+            if record:
+                return (
+                    f"Provenance record for {hash_val}:\n"
+                    f"  Tier: {record.compression_tier}\n"
+                    f"  Tool: {record.tool_name or 'N/A'}\n"
+                    f"  Original: {record.original_size_tokens:,} tokens\n"
+                    f"  Compressed: {record.compressed_size_tokens:,} tokens\n"
+                    f"  Timestamp: {record.timestamp}\n"
+                    f"  Storage: {record.storage_ref}\n"
+                    f"  Preview: {record.compressed_preview[:60]}..."
+                )
+            return f"No record for hash: {hash_val}"
+
+        if sub == "list":
+            # Use the store's internal access order
+            records = list(store._records.values())[-10:]  # Last 10
+            if not records:
+                return "No compression records."
+            lines = ["Recent compression records:"]
+            for r in records:
+                lines.append(
+                    f"  {r.original_hash[:12]} | {r.tool_name or 'N/A':<15} | "
+                    f"{r.original_size_tokens:>6,}\u2192"
+                    f"{r.compressed_size_tokens:>6,} tok | {r.compression_tier}"
+                )
+            return "\n".join(lines)
+
+        return f"Unknown subcommand: {sub}. Use /provenance help."
+    except Exception as e:
+        emit_error(f"/{name} command failed: {e}")
+        return True
+
+
+register_callback("custom_command", _handle_provenance_command)
 
 logger.info("Semantic Compression Plugin loaded")
