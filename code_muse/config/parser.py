@@ -383,6 +383,32 @@ def get_max_consecutive_tool_errors(default: int = 3) -> int:
         return default
 
 
+def get_total_tokens_limit(default: int = 0) -> int:
+    """Return the maximum total tokens allowed for a single agent run.
+
+    0 means no limit (unlimited).
+    Configurable by 'total_tokens_limit' key.
+    """
+    val = get_value("total_tokens_limit")
+    try:
+        return int(val) if val else default
+    except ValueError, TypeError:
+        return default
+
+
+def get_max_tool_calls(default: int = 0) -> int:
+    """Return the maximum number of tool calls allowed per agent run.
+
+    0 means no limit (unlimited).
+    Configurable by 'max_tool_calls' key.
+    """
+    val = get_value("max_tool_calls")
+    try:
+        return int(val) if val else default
+    except ValueError, TypeError:
+        return default
+
+
 def get_overall_run_timeout_seconds(default: int = 600) -> int:
     """Max wall-clock time in seconds for a single agent run (0 = no limit)."""
     val = get_value("overall_run_timeout")
@@ -486,27 +512,6 @@ def get_animations_enabled() -> bool:
     if val is None:
         return True
     return val.lower() in ("true", "1", "yes", "on")
-
-    """Check if frontend emitter is enabled."""
-    if val is None:
-        return True  # Enabled by default
-    return str(val).lower() in ("1", "true", "yes", "on")
-
-    """Get max number of recent events to buffer."""
-    if val is None:
-        return 100
-    try:
-        return int(val)
-    except ValueError:
-        return 100
-
-    """Get max subscriber queue size."""
-    if val is None:
-        return 100
-    try:
-        return int(val)
-    except ValueError:
-        return 100
 
 
 def get_subagent_verbose() -> bool:

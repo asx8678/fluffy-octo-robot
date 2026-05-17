@@ -5,6 +5,7 @@ import logging
 import re
 import threading
 import traceback
+from collections import OrderedDict
 from contextlib import AsyncExitStack, suppress
 from contextvars import ContextVar
 from datetime import datetime
@@ -63,7 +64,9 @@ _model_instance_cache_lock = threading.Lock()
 # PERF-15d.4: Cache pydantic-ai Agent instances keyed by
 # (agent_name, model_name, frozenset(tools)) to avoid rebuilding Agents
 # under fan-out (parent → N sub-agents).
-_subagent_agent_cache: dict[tuple[str, str | None, frozenset], Any] = {}
+_subagent_agent_cache: (
+    OrderedDict[tuple[str, str | None, frozenset], Any]
+) = OrderedDict()
 _SUBAGENT_AGENT_CACHE_MAX = 64
 
 
@@ -122,7 +125,8 @@ def _validate_session_id(session_id: str) -> None:
 
     if len(session_id) > SESSION_ID_MAX_LENGTH:
         raise ValueError(
-            f"Invalid session_id '{session_id}': must be {SESSION_ID_MAX_LENGTH} characters or less"
+            f"Invalid session_id '{session_id}': "
+            f"must be {SESSION_ID_MAX_LENGTH} characters or less"
         )
 
     if not SESSION_ID_PATTERN.match(session_id):
@@ -324,7 +328,8 @@ def register_list_agents(agent):
             agent_count = len(agents)
             emit_info(
                 Text.from_markup(
-                    f"[bold white on {list_agents_color}] LIST AGENTS [/bold white on {list_agents_color}] "
+                    f"[bold white on {list_agents_color}] "
+                    f"LIST AGENTS [/bold white on {list_agents_color}] "
                     f"[dim]Found {agent_count} agent(s).[/dim]"
                 ),
                 message_group=group_id,
@@ -354,7 +359,8 @@ def register_invoke_agent(agent):
         """Invoke a specific sub-agent with a given prompt.
 
         Returns:
-            AgentInvokeOutput: Contains response, agent_name, session_id, and error fields.
+            AgentInvokeOutput: Contains response,
+                agent_name, session_id, and error fields.
         """
         from code_muse.agents.agent_manager import load_agent
 
@@ -461,7 +467,8 @@ def register_invoke_agent(agent):
                 with _model_instance_cache_lock:
                     _model_instance_cache[model_name] = model
 
-            # Create a temporary agent instance to avoid interfering with current agent state
+            # Create a temporary agent instance to avoid
+            # interfering with current agent state
             instructions = agent_config.get_full_system_prompt()
 
             # Add AGENTS.md content to subagents.
@@ -483,7 +490,8 @@ def register_invoke_agent(agent):
                     str(p) for p in prompt_additions if p is not None
                 )
 
-            # Handle claude-code models: swap instructions, and prepend system prompt only on first message
+            # Handle claude-code models: swap instructions,
+            # and prepend system prompt only on first message
             prepared = prepare_prompt_for_model(
                 model_name,
                 instructions,
@@ -507,7 +515,11 @@ def register_invoke_agent(agent):
             cache_key = (agent_name, model_name, frozenset(agent_tools))
             temp_agent = _subagent_agent_cache.get(cache_key)
 
-            if temp_agent is None:
+            if temp_agent is not None:
+                # Move to end to mark as recently used (LRU)
+                _subagent_agent_cache.move_to_end(cache_key)
+                logger.debug(f"Reusing cached pydantic-ai Agent for {agent_name}")
+            else:
                 # Build the pydantic-ai agent. external servers are always included in
                 # the constructor; plugins may swap them out at run
                 # time via the ``agent_run_context`` hook if their wrapper can't
@@ -525,14 +537,13 @@ def register_invoke_agent(agent):
                 # Register the tools that the agent needs
                 register_tools_for_agent(temp_agent, agent_tools, model_name=model_name)
 
-                # Cache the result (simple LRU-like: clear when full)
+                # Cache the result with LRU eviction
                 if len(_subagent_agent_cache) >= _SUBAGENT_AGENT_CACHE_MAX:
-                    _subagent_agent_cache.clear()
+                    _subagent_agent_cache.popitem(last=False)
                 _subagent_agent_cache[cache_key] = temp_agent
-            else:
-                logger.debug(f"Reusing cached pydantic-ai Agent for {agent_name}")
 
-            # Always use subagent_stream_handler to silence output and update console manager
+            # Always use subagent_stream_handler to silence
+            # output and update console manager
             # This ensures all sub-agent output goes through the aggregated dashboard
             stream_handler = partial(subagent_stream_handler, session_id=session_id)
 
