@@ -41,7 +41,7 @@ def get_task_prune_threshold() -> float:
     try:
         threshold = float(val) if val else 0.85
         return max(0.5, min(0.95, threshold))
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return 0.85
 
 
@@ -57,7 +57,7 @@ def get_task_auto_complete_timeout() -> int:
     try:
         timeout = int(val) if val else 600
         return max(30, min(3600, timeout))
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return 600
 
 
@@ -86,7 +86,7 @@ def get_task_max_archive_contexts() -> int:
     try:
         n = int(val) if val else 20
         return max(1, min(500, n))
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return 20
 
 

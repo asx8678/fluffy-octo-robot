@@ -13,25 +13,6 @@ except Exception:
     __version__ = "0.0.0-dev"
 
 
-# Dynamic detection of compiled Cython extensions
+# Cython is not used — everything runs in pure Python
 PYX_MODULE_COUNT: int = 0
 CYTHON_ENABLED: bool = False
-
-try:
-    import importlib
-    import pathlib
-
-    _spec = importlib.util.find_spec("code_muse")
-    if _spec is not None and _spec.origin is not None:
-        _pkg_path = pathlib.Path(_spec.origin).parent
-        for _so in _pkg_path.rglob("*.so"):
-            # Extract module name from PEP 3149 naming: {name}.cpython-{ver}-{abi}.so
-            _module_name = _so.name.split(".cpython-")[0]
-            # Only count .so files that have a corresponding .pyx (not 3rd-party)
-            _pyx_path = _so.parent / f"{_module_name}.pyx"
-            if _pyx_path.exists():
-                PYX_MODULE_COUNT += 1
-
-        CYTHON_ENABLED = PYX_MODULE_COUNT > 0
-except Exception:
-    pass

@@ -219,7 +219,7 @@ def _json_to_verdict(data: dict) -> Verdict:
     try:
         confidence = float(data.get("confidence", 0.5))
         confidence = max(0.0, min(1.0, confidence))
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         confidence = 0.5
 
     return Verdict(

@@ -151,6 +151,10 @@ def get_config_keys():
         default_keys.append(f"banner_color_{banner_name}")
     # Add resume message count configuration
     default_keys.append("resume_message_count")
+    # Add compaction tuning keys
+    default_keys.append("recent_tool_results_to_keep")
+    default_keys.append("max_messages_hard_cap")
+    default_keys.append("filter_huge_message_threshold")
 
     config = configparser.ConfigParser()
     config.read(paths.CONFIG_FILE)
@@ -379,7 +383,7 @@ def get_max_consecutive_tool_errors(default: int = 3) -> int:
     val = get_value("max_consecutive_tool_errors")
     try:
         return int(val) if val else default
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return default
 
 
@@ -392,7 +396,7 @@ def get_total_tokens_limit(default: int = 0) -> int:
     val = get_value("total_tokens_limit")
     try:
         return int(val) if val else default
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return default
 
 
@@ -405,7 +409,7 @@ def get_max_tool_calls(default: int = 0) -> int:
     val = get_value("max_tool_calls")
     try:
         return int(val) if val else default
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return default
 
 
@@ -414,7 +418,7 @@ def get_overall_run_timeout_seconds(default: int = 600) -> int:
     val = get_value("overall_run_timeout")
     try:
         return int(val) if val else default
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return default
 
 
@@ -431,7 +435,7 @@ def get_resume_message_count() -> int:
         configured_value = int(val) if val else 50
         # Enforce reasonable bounds: minimum 1, maximum 100
         return max(1, min(configured_value, 100))
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return 50
 
 
@@ -447,7 +451,7 @@ def get_compaction_threshold():
         threshold = float(val) if val else 0.85
         # Clamp between reasonable bounds
         return max(0.5, min(0.95, threshold))
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return 0.85
 
 
@@ -475,7 +479,7 @@ def get_message_limit(default: int = 1000) -> int:
     val = get_value("message_limit")
     try:
         return int(val) if val else default
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return default
 
 
@@ -542,7 +546,7 @@ def get_max_hook_retries() -> int:
     try:
         n = int(val)
         return max(1, n)  # At least 1 to avoid nonsensical values
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return 10
 
 
@@ -560,7 +564,7 @@ def get_max_critic_retries() -> int:
     try:
         n = int(val)
         return max(1, n)
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return 10
 
 
@@ -600,5 +604,39 @@ def get_filter_huge_message_threshold(default: int = 50000) -> int:
     try:
         threshold = int(val) if val else default
         return max(1000, threshold)
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
+        return default
+
+
+def get_recent_tool_results_to_keep(default: int = 7) -> int:
+    """Return the number of recent tool results to keep in full during truncation.
+
+    Configurable by 'recent_tool_results_to_keep' key.
+    Older tool results get their content replaced with a truncation marker.
+    Defaults to 7 if unset or misconfigured.
+    Clamped to a minimum of 1.
+    """
+    val = get_value("recent_tool_results_to_keep")
+    try:
+        count = int(val) if val else default
+        return max(1, count)
+    except (ValueError, TypeError):
+        return default
+
+
+def get_max_messages_hard_cap(default: int = 50) -> int:
+    """Return the max message count before forced compaction.
+
+    Prevents unbounded history growth even when token proportion is
+    below the compaction threshold. Short messages can accumulate
+    past the token-based threshold without triggering compaction.
+    Configurable by 'max_messages_hard_cap' key.
+    Defaults to 50 if unset or misconfigured.
+    Clamped to a minimum of 10.
+    """
+    val = get_value("max_messages_hard_cap")
+    try:
+        cap = int(val) if val else default
+        return max(10, cap)
+    except (ValueError, TypeError):
         return default

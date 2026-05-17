@@ -317,7 +317,7 @@ def _get_task_creation_time(task_id: str) -> str:
 
                 parsed = dt.strptime(timestamp_str, "%y%m%d%H%M%S")
                 return parsed.isoformat()
-    except ValueError, IndexError:
+    except (ValueError, IndexError):
         pass
     return datetime.now().isoformat()
 

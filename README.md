@@ -62,7 +62,7 @@ Muse is an open-source AI coding agent with an extensive feature set built aroun
 - **Lint Compression (~80%)** — Groups lint errors by rule, not by file
 - **Code Compression (~50%)** — Strips comments, trims boilerplate, removes excess blank lines
 - **Read Compression (~60%)** — Smart-ranged file reading, grep/find output grouping
-- **Tree-sitter AST Compression** — Language-aware abstract syntax tree compression via Cython-optimized parsers (Python, JavaScript, Go)
+- **Tree-sitter AST Compression** — Language-aware abstract syntax tree compression via tree-sitter parsers (Python, JavaScript, Go)
 - **JSON Compression** — Structural JSON output minimization
 - **Build Filter** — Compresses build tool output (make, cargo, npm, pip, etc.)
 
@@ -147,7 +147,7 @@ Muse is an open-source AI coding agent with an extensive feature set built aroun
 - **Workspace Boundaries** — File tools enforce cwd containment, block `.env`, `.ssh`, etc.
 - **Hook Trust** — Content-hash based trust verification
 - **Grep Safety** — Patterns passed after `--` to prevent CLI flag injection
-- **Cython Redaction Engine** — High-performance C-compiled secret redaction
+- **Secret Redaction** — High-performance secret redaction with pure-Python pattern matching
 
 ### Quality of Life
 - **100% Privacy** — Zero telemetry, zero prompt logging, zero behavioral profiling, zero third-party data sharing

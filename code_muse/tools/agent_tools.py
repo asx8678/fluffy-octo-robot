@@ -258,7 +258,7 @@ def _load_session_history(session_id: str) -> list[ModelMessage]:
                     return ModelMessagesTypeAdapter.validate_python(raw_messages)
                 except Exception:
                     return raw_messages
-        except UnicodeDecodeError, ValueError:
+        except (UnicodeDecodeError, ValueError):
             pass
 
     return []

@@ -437,20 +437,6 @@ async def on_startup() -> list[Any]:
         # TODO: PEP 750 t-string — use templatelib when stable
         emit_warning(f"⚠️ {count} plugin(s) failed to load: {names_str}")
 
-    # Report Cython status from the core package
-    import code_muse
-
-    if code_muse.CYTHON_ENABLED:
-        from code_muse.messaging import emit_success
-
-        emit_success(
-            # TODO: PEP 750 t-string — use templatelib when stable
-            f"✅ Cython enabled — {code_muse.PYX_MODULE_COUNT} modules compiled"
-        )
-    else:
-        from code_muse.messaging import emit_warning
-
-        emit_warning("⚠️ Cython not available — running in pure Python mode")
     return results
 
 

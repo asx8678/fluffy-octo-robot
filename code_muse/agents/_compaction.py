@@ -41,7 +41,9 @@ from code_muse.callbacks import (
 from code_muse.config import (
     get_compaction_strategy,
     get_compaction_threshold,
+    get_max_messages_hard_cap,
     get_protected_token_count,
+    get_recent_tool_results_to_keep,
 )
 from code_muse.messaging import emit_error, emit_info, emit_warning
 from code_muse.messaging.spinner import SpinnerBase, update_spinner_context
@@ -59,10 +61,12 @@ _SUMMARIZATION_INSTRUCTIONS = (
     "Recent messages are preserved separately."
 )
 
-# Hard cap on message count to prevent unbounded history growth.
-# If the message list exceeds this count, compaction is forced even
-# if token proportion is below the threshold.
-_MAX_MESSAGES_HARD_CAP = 50
+# Default for tool result retention; actual value comes from config.
+_DEFAULT_TOOL_RESULTS_TO_KEEP = 7
+
+# Token-proportion threshold above which compact_with_tool_truncation
+# applies tool-result truncation even for short histories.
+_TOOL_TRUNCATION_TOKEN_THRESHOLD = 0.50
 
 
 def _find_safe_split_index(messages: list[ModelMessage], initial_split_idx: int) -> int:
@@ -390,7 +394,7 @@ def compact(
     # Hard cap on message count: prevent unbounded history even when
     # token proportion is below threshold. Short messages can accumulate
     # past the cap without triggering token-based compaction.
-    if len(messages) > _MAX_MESSAGES_HARD_CAP:
+    if len(messages) > get_max_messages_hard_cap():
         strategy = get_compaction_strategy()
         protected_tokens = get_protected_token_count()
         filtered = filter_huge_messages(messages, model_name, cache=cache)
@@ -469,13 +473,17 @@ def compact(
         # with nothing dropped), fall back to truncation for this cycle.
         # The user's strategy preference is preserved for the next cycle.
         if not summarized_messages:
-            emit_warning(
-                "↪️  Summarization produced no compaction; "
-                "falling back to truncation for this cycle.",
-                message_group="token_context_status",
-            )
+            pre_truncate_count = len(filtered)
             result_messages, summarized_messages = _truncate_with_dropped(
                 filtered, protected_tokens, model_name, cache=cache
+            )
+            dropped_count = pre_truncate_count - len(result_messages)
+            emit_warning(
+                f"↪️  Summarization produced no compaction; "
+                f"falling back to truncation: "
+                f"{pre_truncate_count} → {len(result_messages)} messages "
+                f"({dropped_count} dropped)",
+                message_group="token_context_status",
             )
 
     final_token_count = cache.sum_tokens(result_messages, model_name)
@@ -668,13 +676,11 @@ def make_history_processor(agent: Any) -> Callable[..., list[ModelMessage]]:
 
 
 # --- Phase 3: Enhanced History Compression ---
-PROTECTION_ZONE_MESSAGES = 6  # Last N messages never pruned
-RECENT_TOOL_RESULTS_TO_KEEP = 7  # Keep last N tool results in full
 
 
 def _truncate_tool_result_content(
     messages: list[ModelMessage],
-    keep_count: int = RECENT_TOOL_RESULTS_TO_KEEP,
+    keep_count: int | None = None,
 ) -> list[ModelMessage]:
     """Replace older tool result content with a truncation marker.
 
@@ -683,7 +689,14 @@ def _truncate_tool_result_content(
     The structural pairing (tool_call ↔ tool_return) stays intact.
 
     Only affects ToolReturnPart content — all other parts preserved.
+
+    Args:
+        messages: The message history.
+        keep_count: Number of recent tool results to keep in full.
+            Defaults to the configurable ``recent_tool_results_to_keep``.
     """
+    if keep_count is None:
+        keep_count = get_recent_tool_results_to_keep()
     # Reverse-scan: collect tool_call_ids of the most recent N tool results
     protected_ids: set[str] = set()
     seen = 0
@@ -739,13 +752,31 @@ def compact_with_tool_truncation(
     """Enhanced compact() that first truncates old tool results,
     then runs normal compaction.
 
-    Only truncates when history is large enough to need it; small histories
-    skip straight to compact() to avoid unnecessary work.
+    Tool-result truncation runs when EITHER:
+    - The message count is > 20, OR
+    - Token usage already exceeds 50% of the context window.
+    This ensures large tool results in short histories still get truncated.
 
     Returns: (new_messages, dropped_messages_for_hash_tracking)
     """
-    # Guard: skip truncation for small histories where it's unlikely to help
-    if len(messages) <= 20:
+    # Decide whether tool-result truncation is worthwhile.
+    # Skip only for very small histories that are also well within budget.
+    model_name: str | None = None
+    if agent is not None:
+        try:
+            model_name = agent.get_model_name()
+        except Exception:
+            model_name = None
+
+    cache = CompactionCache()
+    message_tokens = cache.sum_tokens(messages, model_name)
+    proportion_used = (
+        (message_tokens + context_overhead) / model_max if model_max else 0.0
+    )
+    needs_tool_truncation = (
+        len(messages) > 20 or proportion_used > _TOOL_TRUNCATION_TOKEN_THRESHOLD
+    )
+    if not needs_tool_truncation:
         return compact(agent, messages, model_max, context_overhead)
 
     # Step 1: Truncate old tool results (always safe, always reduces tokens)
@@ -754,26 +785,3 @@ def compact_with_tool_truncation(
     # Step 2: Run existing compaction on the already-trimmed history
     # The existing compact() handles summarization or truncation if still over threshold
     return compact(agent, truncated, model_max, context_overhead)
-
-
-def _protect_zone_messages(
-    messages: list[ModelMessage],
-    zone_size: int = PROTECTION_ZONE_MESSAGES,
-) -> tuple[list[ModelMessage], list[ModelMessage]]:
-    """Split messages into (middle_for_summarization, protected_tail).
-
-    The last `zone_size` messages (or fewer if history is short) are protected
-    and never summarized/truncated. Returns (middle, protected).
-
-    System message (index 0) is always protected.
-    """
-    if len(messages) <= zone_size + 1:
-        return [], messages
-
-    split_idx = max(1, len(messages) - zone_size)
-    # Adjust split to not sever tool_call/tool_return pairs (use existing logic)
-    adjusted_idx = _find_safe_split_index(messages, split_idx)
-
-    middle = messages[1:adjusted_idx]
-    protected = messages[:1] + messages[adjusted_idx:]
-    return middle, protected

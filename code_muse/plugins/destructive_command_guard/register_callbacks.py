@@ -23,7 +23,7 @@ def _is_interactive() -> bool:
     """Check if we're in an interactive terminal that can show prompts."""
     try:
         return sys.stdin.isatty()
-    except AttributeError, OSError:
+    except (AttributeError, OSError):
         return False
 
 

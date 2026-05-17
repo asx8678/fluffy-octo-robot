@@ -49,7 +49,7 @@ def get_debate_max_reviews() -> int:
     if val is not None:
         try:
             return max(1, int(val))
-        except ValueError, TypeError:
+        except (ValueError, TypeError):
             pass
     return 20
 
@@ -64,6 +64,6 @@ def get_debate_max_loops() -> int:
     if val is not None:
         try:
             return max(1, int(val))
-        except ValueError, TypeError:
+        except (ValueError, TypeError):
             pass
     return 3

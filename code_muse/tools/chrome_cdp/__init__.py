@@ -95,7 +95,7 @@ def _get_devtools_port() -> int:
             text = p.read_text(encoding="utf-8").strip()
             first_line = text.splitlines()[0]
             return int(first_line)
-        except OSError, ValueError:
+        except (OSError, ValueError):
             continue
 
     raise FileNotFoundError(

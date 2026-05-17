@@ -514,5 +514,5 @@ def is_path_within_uc_dir(file_path: Path, uc_dir: Path) -> bool:
         resolved_dir = uc_dir.resolve()
         resolved_file.relative_to(resolved_dir)
         return True
-    except ValueError, OSError:
+    except (ValueError, OSError):
         return False

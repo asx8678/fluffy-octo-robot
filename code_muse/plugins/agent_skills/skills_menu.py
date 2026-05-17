@@ -510,7 +510,7 @@ def _prompt_for_directory() -> Path | None:
         if path:
             # Expand ~ to home directory
             return Path(path).expanduser()
-    except KeyboardInterrupt, EOFError:
+    except (KeyboardInterrupt, EOFError):
         print("\nCancelled.")
     return None
 
@@ -549,7 +549,7 @@ def _show_directories_menu() -> str | None:
                     remove_skill_directory(dir_to_remove)
                     print(f"Removed: {dir_to_remove}")
                     return "changed"
-    except KeyboardInterrupt, EOFError:
+    except (KeyboardInterrupt, EOFError):
         print("\nCancelled.")
     return None
 

@@ -79,7 +79,7 @@ def _sanitize_prompt(prompt: str) -> str:
         return prompt.encode("utf-8", errors="surrogatepass").decode(
             "utf-8", errors="replace"
         )
-    except UnicodeEncodeError, UnicodeDecodeError:
+    except (UnicodeEncodeError, UnicodeDecodeError):
         return "".join(
             ch if ord(ch) < 0xD800 or ord(ch) > 0xDFFF else "\ufffd" for ch in prompt
         )

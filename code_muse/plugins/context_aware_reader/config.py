@@ -54,7 +54,7 @@ def get_max_relevant_lines() -> int:
     try:
         n = int(val) if val else 200
         return max(50, min(1000, n))
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return 200
 
 

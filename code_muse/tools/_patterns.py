@@ -1,6 +1,6 @@
 """Ignore-pattern definitions — kept separate to avoid circular imports.
 
-Both ``common.py`` and the Cython-compiled ``_ignore_matcher.pyx`` import
+Both ``common.py`` and ``_ignore_matcher`` import
 from here, so this module must have *no* dependency on either of them.
 """
 
