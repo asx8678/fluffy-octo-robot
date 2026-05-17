@@ -107,7 +107,7 @@ def _log_task_exception(task: asyncio.Task) -> None:
     """Log exceptions from fire-and-forget sound tasks."""
     try:
         exc = task.exception()
-    except (asyncio.CancelledError, asyncio.InvalidStateError):
+    except asyncio.CancelledError, asyncio.InvalidStateError:
         return
     if exc is not None:
         logger.debug("Sound notification task failed: %s", exc)

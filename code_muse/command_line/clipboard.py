@@ -101,7 +101,7 @@ def _check_linux_clipboard_tool() -> str | None:
             timeout=5,
         )
         return "wl-paste"
-    except (FileNotFoundError, subprocess.TimeoutExpired):
+    except FileNotFoundError, subprocess.TimeoutExpired:
         pass
 
     # Check for xclip (X11)
@@ -112,7 +112,7 @@ def _check_linux_clipboard_tool() -> str | None:
             timeout=5,
         )
         return "xclip"
-    except (FileNotFoundError, subprocess.TimeoutExpired):
+    except FileNotFoundError, subprocess.TimeoutExpired:
         pass
 
     return None

@@ -313,7 +313,7 @@ async def restore_autosave_interactively(base_dir: Path) -> None:
                     ]
                 )
             )
-        except (KeyboardInterrupt, EOFError):
+        except KeyboardInterrupt, EOFError:
             emit_warning("Autosave selection cancelled")
             return
 

@@ -221,7 +221,7 @@ class RichConsoleRenderer:
             if message:
                 self._render_sync(message)
             else:
-                time.sleep(0.01)
+                time.sleep(0.1)  # 100ms poll interval; avoids 100Hz busy-wait
 
     def _render_sync(self, message: AnyMessage) -> None:
         """Render a message synchronously with error handling."""

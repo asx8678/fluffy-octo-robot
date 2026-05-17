@@ -110,7 +110,7 @@ def _load_trust_db() -> dict[str, dict]:
             data = json.loads(f.read())
         if isinstance(data, dict):
             return data
-    except (json.JSONDecodeError, OSError):
+    except json.JSONDecodeError, OSError:
         pass
     return {}
 

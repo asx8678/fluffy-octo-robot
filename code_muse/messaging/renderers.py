@@ -300,7 +300,7 @@ class SynchronousInteractiveRenderer:
 
             provide_prompt_response(prompt_id, response)
 
-        except (EOFError, KeyboardInterrupt):
+        except EOFError, KeyboardInterrupt:
             # Handle Ctrl+C or Ctrl+D
             provide_prompt_response(prompt_id, "")
         except Exception as e:

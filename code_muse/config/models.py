@@ -317,7 +317,7 @@ def get_protected_token_count():
     """
     Returns the user-configured protected token count for message history compaction.
     This is the number of tokens in recent messages that won't be summarized.
-    Defaults to 50000 if unset or misconfigured.
+    Defaults to the adaptive budget (based on model context length) if unset or misconfigured.
     Configurable by 'protected_token_count' key.
 
     Now respects the adaptive compute_effective_history_budget (from the 2026-05
@@ -343,8 +343,8 @@ def get_protected_token_count():
 
         max_protected_tokens = min(adaptive_max, legacy_max)
 
-        configured_value = int(val) if val else 50000
+        configured_value = int(val) if val else max_protected_tokens
         return max(1000, min(configured_value, max_protected_tokens))
-    except (ValueError, TypeError, Exception):
+    except ValueError, TypeError, Exception:
         model_context_length = get_model_context_length()
-        return min(50000, int(model_context_length * 0.55))
+        return max(1000, int(model_context_length * 0.55))

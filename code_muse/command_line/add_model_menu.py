@@ -994,7 +994,7 @@ class AddModelMenu:
                 os.environ[env_var] = value
                 emit_info(f"✅ Saved {env_var} to config")
 
-            except (KeyboardInterrupt, EOFError):
+            except KeyboardInterrupt, EOFError:
                 emit_info("")  # Clean newline
                 emit_warning("Credential input cancelled")
                 return False
@@ -1078,7 +1078,7 @@ class AddModelMenu:
 
             return (model_name, context_length)
 
-        except (KeyboardInterrupt, EOFError):
+        except KeyboardInterrupt, EOFError:
             emit_info("")  # Clean newline
             emit_warning("Custom model input cancelled")
             return None
@@ -1305,7 +1305,7 @@ class AddModelMenu:
                     if confirm not in ("y", "yes"):
                         emit_info("Model addition cancelled.")
                         return False
-                except (KeyboardInterrupt, EOFError):
+                except KeyboardInterrupt, EOFError:
                     emit_info("")
                     return False
 

@@ -168,11 +168,12 @@ class MessageBus:
             # Put into asyncio.Queue (thread-safe via event loop scheduling)
             self._enqueue_outgoing(message)
 
-        # Fire global observation hook for plugins (non-blocking)
-        from code_muse.callbacks import fire_callbacks
+            # Fire global observation hook for plugins (non-blocking)
+            # Must be inside lock so callbacks see consistent session_id
+            from code_muse.callbacks import fire_callbacks
 
-        message_id = type(message).__name__
-        fire_callbacks("on_message", message_id, message)
+            message_id = type(message).__name__
+            fire_callbacks("on_message", message_id, message)
 
     def emit_text(
         self,
