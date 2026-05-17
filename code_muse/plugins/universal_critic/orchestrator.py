@@ -10,7 +10,6 @@ A secondary ``auto_review_after_run`` on ``agent_run_end`` is purely
 informational (no retry).
 """
 
-import ast
 import logging
 from pathlib import Path
 from typing import Any
@@ -18,10 +17,58 @@ from typing import Any
 from pydantic_ai.messages import ModelResponse, ToolCallPart
 
 from code_muse.messaging import emit_info, emit_success, emit_warning
-from code_muse.plugins.code_critic.reviewer import _detect_code_truncation
 from code_muse.plugins.universal_critic.models import ReviewResult
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Preflight helper — delegates to critic_fabric when available
+# ---------------------------------------------------------------------------
+
+
+def _run_preflight(content: str, file_path: str):
+    """Run preflight checks via critic_fabric, with graceful fallback.
+
+    Returns a simple namespace with ``summary``, ``issues``, ``suggestion``
+    attributes when the code is truncated, or ``None`` when preflight passes.
+    Falls back to the code_critic truncation wrapper when critic_fabric is
+    not importable.
+    """
+    try:
+        from code_muse.plugins.critic_fabric.preflight import run_preflight
+
+        return run_preflight(content, file_path)
+    except ImportError:
+        # critic_fabric unavailable — fall back to code_critic's wrapper
+        from code_muse.plugins.code_critic.reviewer import (
+            _detect_code_truncation,
+        )
+
+        is_trunc, reason = _detect_code_truncation(content, file_path)
+        if is_trunc:
+            # Return a minimal object that matches the CriticVerdict interface
+            # used by the caller (summary, issues, suggestion).
+            return _PreflightRejected(
+                summary="Code appears syntactically truncated or incomplete",
+                issues=[reason or "Output ends in an incomplete construct."],
+                suggestion=(
+                    "Rewrite the ENTIRE file in one response. "
+                    "Output the complete, valid source for the whole file."
+                ),
+            )
+        return None
+
+
+class _PreflightRejected:
+    """Minimal preflight-rejected container for the fallback path."""
+
+    __slots__ = ("summary", "issues", "suggestion")
+
+    def __init__(self, summary: str, issues: list[str], suggestion: str | None) -> None:
+        self.summary = summary
+        self.issues = issues
+        self.suggestion = suggestion
+
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -227,56 +274,30 @@ async def review_on_result(
             emit_info(f"ℹ️ Skipped {file_path} (file not found on disk)")
             continue
 
-        # Fast local syntax / truncation check — catches truncated generations
-        # from the Planning Agent or heavy coding agent without an LLM round-trip.
-        if file_path.endswith((".py", ".pyi")):
-            try:
-                ast.parse(content)
-            except SyntaxError as e:
-                emit_warning(
-                    f"❌ Universal Code Critic REJECTED {file_path}: "
-                    f"syntactically truncated or invalid Python (AST parse failed)"
-                )
-                emit_warning(f"   • {e.msg} at line {e.lineno}")
-                review_result = ReviewResult(
-                    verdict="rejected",
-                    summary="Python code is syntactically truncated or invalid",
-                    issues=[
-                        f"SyntaxError: {e.msg} (line {e.lineno})",
-                        "File ends mid-statement (e.g. `monkeypatch.`).",
-                        "Model output was cut off before file was complete.",
-                    ],
-                    suggestion=(
-                        "Rewrite the ENTIRE file in one response. "
-                        "Output complete, valid Python that parses with ast.parse()."
-                    ),
-                )
-            else:
-                review_result = await run_review(
-                    code_snippet=content,
-                    file_path=file_path,
-                    originating_agent=agent_name,
-                )
+        # --- Preflight via critic_fabric (canonical single place) ---
+        preflight_result = _run_preflight(content, file_path)
+
+        if preflight_result is not None:
+            # Fabric rejected before LLM — emit warning and build ReviewResult
+            emit_warning(
+                f"❌ Universal Code Critic REJECTED {file_path}: "
+                f"{preflight_result.summary}"
+            )
+            for issue in preflight_result.issues:
+                emit_warning(f"   • {issue}")
+            review_result = ReviewResult(
+                verdict="rejected",
+                summary=preflight_result.summary,
+                issues=list(preflight_result.issues),
+                suggestion=preflight_result.suggestion,
+            )
         else:
-            # Non-Python: use lightweight structural heuristic
-            is_trunc, reason = _detect_code_truncation(content, file_path)
-            if is_trunc:
-                emit_warning(f"❌ Universal Code Critic REJECTED {file_path}: {reason}")
-                review_result = ReviewResult(
-                    verdict="rejected",
-                    summary="Code appears syntactically truncated or incomplete",
-                    issues=[reason or "Output ends in an incomplete construct."],
-                    suggestion=(
-                        "Rewrite the ENTIRE file in one response. "
-                        "Output the complete, valid source for the whole file."
-                    ),
-                )
-            else:
-                review_result = await run_review(
-                    code_snippet=content,
-                    file_path=file_path,
-                    originating_agent=agent_name,
-                )
+            # Preflight passed — proceed to LLM review
+            review_result = await run_review(
+                code_snippet=content,
+                file_path=file_path,
+                originating_agent=agent_name,
+            )
 
         if review_result.verdict == "approved":
             emit_success(

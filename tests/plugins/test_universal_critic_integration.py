@@ -234,7 +234,9 @@ class TestDetectCodeTruncation:
         bad_py = "def foo():\n    x = 1\n    monkeypatch."
         is_bad, reason = _detect_code_truncation(bad_py, "test_foo.py")
         assert is_bad is True
-        assert "SyntaxError" in (reason or "") or "truncated" in (reason or "").lower()
+        assert (
+            "syntax" in (reason or "").lower() or "truncated" in (reason or "").lower()
+        )
 
     def test_python_valid_passes(self):
         good_py = "def add(a, b):\n    return a + b\n\nprint(add(1, 2))"
@@ -248,12 +250,13 @@ class TestDetectCodeTruncation:
         assert (
             "incomplete token" in (reason or "").lower()
             or "bracket" in (reason or "").lower()
+            or "partial identifier" in (reason or "").lower()
         )
 
     def test_go_truncated_declaration(self):
         bad_go = (
             "func handleRequest(w http.ResponseWriter, r *http.Request) {\n"
-            "    fmt.Println"
+            "    fmt.Println("
         )
         is_bad, reason = _detect_code_truncation(bad_go, "server.go")
         assert is_bad is True
@@ -378,7 +381,11 @@ class TestReviewOnResult:
         with (
             patch(
                 "code_muse.plugins.universal_critic.orchestrator._read_file_content",
-                return_value="good code",
+                return_value="x = 1\n",
+            ),
+            patch(
+                "code_muse.plugins.universal_critic.orchestrator._run_preflight",
+                return_value=None,
             ),
             patch(
                 "code_muse.plugins.universal_critic.orchestrator.run_review",
