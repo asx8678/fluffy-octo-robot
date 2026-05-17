@@ -3,6 +3,9 @@
 Tracks current token usage vs budget and emits warnings
 at configurable thresholds so the user can act before
 the hard pruning limit is hit.
+
+Now model-aware: budget_tokens is resolved from the actual model context
+window instead of a hardcoded 128k default.
 """
 
 import logging
@@ -10,49 +13,44 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-# Default token budget (approximate context window) — used when
-# get_model_context_length and drift tracker are both unavailable.
-_DEFAULT_BUDGET_TOKENS = 128_000
 
+def _resolve_budget_tokens(model_name: str | None = None) -> int:
+    """Resolve the actual token budget from model context + drift correction.
 
-def _resolve_budget_tokens() -> int:
-    """Resolve the token budget with drift-correction when available.
+    Resolution:
+    1. Get model context limit (via centralized _context_utils)
+    2. Apply drift correction if token calibration shows overestimation > 10%
+    3. Fall back to 128k (conservative)
 
-    Resolution order:
-      1. Get the model context length from config (if a model is set).
-      2. If the drift tracker shows overestimation > 10%, apply a
-         ``(1 - drift_pct)`` correction factor so budgets don't lie.
-      3. Fall back to ``_DEFAULT_BUDGET_TOKENS``.
+    Args:
+        model_name: Optional model name for context-aware budget resolution.
+
+    Returns:
+        Token budget for the model's context window.
     """
-    budget = _DEFAULT_BUDGET_TOKENS
-
-    # Try to get the model's actual context length
     try:
-        from code_muse.config.models import get_model_context_length
+        from code_muse.plugins.task_context._context_utils import (
+            get_cached_context_limit,
+        )
 
-        budget = get_model_context_length()
+        base = get_cached_context_limit(model_name)
+
+        # Apply drift correction if available
+        try:
+            from code_muse.agents._history import get_drift_tracker
+
+            tracker = get_drift_tracker()
+            drift = tracker.session_drift_pct
+            if drift > 0.10:  # Only correct if significant overestimation
+                correction = 1.0 - min(drift, 0.50)  # Max 50% correction
+                base = max(4096, int(base * correction))
+        except Exception:
+            pass
+
+        return max(4096, base)
     except Exception:
-        pass
-
-    # Apply drift correction if we're overestimating by more than 10%
-    try:
-        from code_muse.agents._history import get_drift_tracker
-
-        tracker = get_drift_tracker()
-        if (
-            tracker.session_drift_pct > 0.10
-            and tracker.total_estimated > tracker.total_actual
-        ):
-            correction = 1 - tracker.session_drift_pct
-            budget = max(1, round(budget * correction))
-            logger.debug(
-                f"budget: applied drift correction {correction:.2f} "
-                f"(drift_pct={tracker.session_drift_pct:.2%})"
-            )
-    except Exception:
-        pass
-
-    return budget
+        logger.debug("Budget resolution failed, using fallback 128k")
+        return 128_000
 
 
 # Track whether we've already warned at each threshold
@@ -60,18 +58,27 @@ _warned_at_warn = False
 _warned_at_critical = False
 
 
-def estimate_current_budget(message_history: list[Any]) -> dict:
+def estimate_current_budget(
+    message_history: list[Any],
+    model_name: str | None = None,
+) -> dict:
     """Compute current budget usage from message history.
 
-    Returns dict with: total_tokens, budget_tokens, usage_pct, remaining_tokens
+    Now model-aware: budget_tokens is resolved from the actual model context
+    window instead of a hardcoded 128k default.
+
+    Args:
+        message_history: The current message history.
+        model_name: Optional model name for context-aware budget resolution.
+
+    Returns dict with: total_tokens, budget_tokens, usage_pct, remaining_tokens,
+    protected_facts_tokens, protected_facts (if protected facts plugin loaded).
     """
     from code_muse.agents._history import estimate_tokens_for_message
     from code_muse.plugins.task_context._text_utils import _extract_text
 
     total_tokens = 0
     for msg in message_history:
-        # Use the proper per-message estimator when available,
-        # fall back to text-based heuristic otherwise.
         try:
             total_tokens += estimate_tokens_for_message(msg)
         except Exception:
@@ -80,38 +87,50 @@ def estimate_current_budget(message_history: list[Any]) -> dict:
 
             total_tokens += estimate_tokens(text)
 
-    budget = _resolve_budget_tokens()
+    budget = _resolve_budget_tokens(model_name)
     usage_pct = total_tokens / budget if budget > 0 else 0.0
 
-    # Protected facts token accounting
-    protected_facts_tokens = 0
+    result = {
+        "total_tokens": total_tokens,
+        "budget_tokens": budget,
+        "model_name": model_name,
+        "usage_pct": usage_pct,
+        "remaining_tokens": max(0, budget - total_tokens),
+        "protected_facts_tokens": 0,
+        "protected_facts": [],
+    }
+
+    # Include protected fact info if available
     try:
         from code_muse.plugins.task_context.protected_facts import (
             get_protected_fact_manager,
         )
 
         mgr = get_protected_fact_manager()
-        protected_facts_tokens = mgr.used_tokens
+        result["protected_facts_tokens"] = mgr.used_tokens
+        result["protected_facts"] = [
+            {
+                "content": f.content,
+                "category": f.category,
+                "tokens": f.token_cost,
+            }
+            for f in mgr.get_all_facts()
+        ]
     except Exception:
         pass
 
-    return {
-        "total_tokens": total_tokens,
-        "budget_tokens": budget,
-        "usage_pct": usage_pct,
-        "remaining_tokens": max(0, budget - total_tokens),
-        "protected_facts_tokens": protected_facts_tokens,
-        "protected_facts": get_fact_budget_info(),
-    }
+    return result
 
 
 def check_and_warn(
     budget_info: dict,
     warn_at: float = 0.65,
     critical_at: float = 0.85,
+    model_name: str | None = None,
 ) -> None:
     """Emit proactive budget warnings at thresholds.
 
+    Now model-aware: budgets are calibrated to the actual model context window.
     Only warns once per threshold crossing (not every message).
     After crossing the critical threshold, the warn flag resets
     so that if the user prunes and usage drops below warn_at,
@@ -121,13 +140,24 @@ def check_and_warn(
 
     usage = budget_info["usage_pct"]
     remaining = budget_info["remaining_tokens"]
+    budget_tokens = budget_info.get("budget_tokens", 0)
+
+    # Log model context for debugging
+    if model_name:
+        logger.debug(
+            "Budget check: model=%s, budget=%d, usage=%.1f%%",
+            model_name,
+            budget_tokens,
+            usage * 100,
+        )
 
     if usage >= critical_at and not _warned_at_critical:
         from code_muse.messaging import emit_warning
 
+        model_info = f" ({model_name})" if model_name else ""
         emit_warning(
-            f"🧠 Context budget at {usage:.0%}! "
-            f"~{remaining:,} tokens remaining. "
+            f"🧠 Context budget at {usage:.0%}{model_info}! "
+            f"~{remaining:,} tokens remaining (budget: {budget_tokens:,}). "
             f"Consider completing tasks with /task complete or archiving old tasks."
         )
         _warned_at_critical = True
@@ -137,9 +167,10 @@ def check_and_warn(
     elif usage >= warn_at and not _warned_at_warn:
         from code_muse.messaging import emit_info
 
+        model_info = f" ({model_name})" if model_name else ""
         emit_info(
-            f"🧠 Context budget at {usage:.0%} "
-            f"(~{remaining:,} tokens remaining). "
+            f"🧠 Context budget at {usage:.0%}{model_info} "
+            f"(~{remaining:,} tokens remaining, budget: {budget_tokens:,}). "
             f"Tip: /task status to see task breakdown."
         )
         _warned_at_warn = True

@@ -55,21 +55,9 @@ def _on_message_history_processor_start(
     """Evaluate context before processing; trigger pruning if near limits.
 
     Modifies message_history in-place to remove pruned messages.
+    Now model-aware: budgets are calibrated to the actual model context window.
     """
     from code_muse.plugins.task_context.pruner import evaluate_and_prune
-
-    # Auto-update protected facts context window
-    try:
-        from code_muse.config.models import get_model_context_length
-        from code_muse.plugins.task_context.protected_facts import (
-            get_protected_fact_manager,
-        )
-
-        mgr = get_protected_fact_manager()
-        ctx = get_model_context_length()
-        mgr.update_context_window(ctx)
-    except Exception:
-        pass
 
     manager = _get_task_manager()
     summary = evaluate_and_prune(manager, message_history)
@@ -107,7 +95,7 @@ def _on_message_history_processor_start(
                 len(remove_indices),
             )
 
-    # Proactive budget warning after pruning check
+    # Proactive budget warning AFTER pruning, WITH model awareness
     from code_muse.plugins.task_context.budget import (
         check_and_warn,
         estimate_current_budget,
@@ -117,12 +105,77 @@ def _on_message_history_processor_start(
         get_task_budget_warn_at,
     )
 
-    budget_info = estimate_current_budget(message_history)
+    # Resolve model name
+    try:
+        from code_muse.config.models import get_global_model_name
+
+        model_name = get_global_model_name()
+    except Exception:
+        model_name = None
+
+    # Update protected fact manager context window
+    try:
+        from code_muse.plugins.task_context._context_utils import (
+            get_cached_context_limit,
+        )
+        from code_muse.plugins.task_context.protected_facts import (
+            get_protected_fact_manager,
+        )
+
+        ctx = get_cached_context_limit(model_name)
+        mgr = get_protected_fact_manager()
+        mgr.update_context_window(ctx)
+    except Exception:
+        pass
+
+    budget_info = estimate_current_budget(message_history, model_name=model_name)
     check_and_warn(
         budget_info,
         warn_at=get_task_budget_warn_at(),
         critical_at=get_task_budget_critical_at(),
+        model_name=model_name,
     )
+
+    # Check for long pasted documents in incoming messages
+    try:
+        from code_muse.plugins.task_context.document_store import (
+            is_long_document,
+            store_long_document,
+        )
+
+        for msg in incoming_messages:
+            for part in getattr(msg, "parts", []) or []:
+                content = getattr(part, "content", None)
+                if isinstance(content, str) and is_long_document(content):
+                    doc = store_long_document(content)
+                    if doc:
+                        from code_muse.messaging import emit_info
+
+                        emit_info(
+                            f"📄 Long document detected ({doc.word_count:,} words, "
+                            f"{doc.section_count} sections). "
+                            f"Stored externally. Use /doc get {doc.doc_id[:12]} to retrieve."
+                        )
+                        # Replace in-place
+                        part.content = doc.reference_stub
+                        # Add as protected fact
+                        from code_muse.plugins.task_context.protected_facts import (
+                            ProtectedFact,
+                            get_protected_fact_manager,
+                        )
+
+                        mgr = get_protected_fact_manager()
+                        mgr.add_fact(
+                            ProtectedFact(
+                                content=f"Document reference: {doc.title} "
+                                f"({doc.doc_id[:12]}) - {doc.word_count:,} words",
+                                category="document_reference",
+                                priority=1,
+                                token_cost=50,
+                            )
+                        )
+    except Exception:
+        pass
 
     # Auto-populate cross-references from file overlap
     from code_muse.plugins.task_context.dependencies import (
@@ -527,6 +580,94 @@ def _fuzzy_match_task(manager: Any, partial_id: str) -> Any | None:
     return None
 
 
+def _handle_doc_command(command: str, name: str) -> str | bool | None:
+    """Handle /doc get|section|list|summary|clear|help commands."""
+    if name != "doc":
+        return None
+
+    from code_muse.messaging import emit_error, emit_info
+
+    tokens = command.strip().split(maxsplit=3)
+    sub = tokens[1].strip().lower() if len(tokens) > 1 else "help"
+
+    try:
+        from code_muse.plugins.task_context.document_store import (
+            get_document_store,
+            reset_document_store,
+        )
+
+        store = get_document_store()
+
+        if sub == "help":
+            return (
+                "/doc get <id> — retrieve full document by ID\n"
+                "/doc section <id> <n> — retrieve section N of document\n"
+                "/doc summary <id> — 3-bullet summary of document\n"
+                "/doc list — list stored documents\n"
+                "/doc clear — clear all stored documents"
+            )
+
+        if sub == "list":
+            docs = store.list_documents()
+            if not docs:
+                return "No documents stored."
+            lines = ["Stored documents:"]
+            for d in docs:
+                lines.append(
+                    f"  {d['doc_id']}: {d['title']} "
+                    f"({d['words']:,} words, {d['sections']} sections)"
+                )
+            return "\n".join(lines)
+
+        if sub == "clear":
+            reset_document_store()
+            return "Document store cleared."
+
+        if sub in ("get", "section", "summary"):
+            doc_id = tokens[2].strip() if len(tokens) > 2 else ""
+            if not doc_id:
+                return "Usage: /doc get|section|summary <id> [section_number]"
+
+            if sub == "get":
+                doc = store.get_document(doc_id)
+                if doc:
+                    # Load content from disk if needed
+                    if not doc.content:
+                        from pathlib import Path
+
+                        content_path = store._get_content_path(doc.doc_id)
+                        if content_path.exists():
+                            doc.content = content_path.read_text()
+                    preview = doc.content[:500]
+                    suffix = "..." if len(doc.content) > 500 else ""
+                    return (
+                        f"Document: {doc.title}\n{preview}{suffix}\n\n"
+                        f"Full content at: {store._get_content_path(doc.doc_id)}"
+                    )
+                return f"Document not found: {doc_id}"
+
+            if sub == "section":
+                section_num = int(tokens[3]) if len(tokens) > 3 else 1
+                section = store.get_section(doc_id, section_num)
+                if section:
+                    return (
+                        f"Section {section.section_number}: "
+                        f"{section.heading}\n{section.content[:1000]}"
+                    )
+                return f"Section {section_num} not found in {doc_id}"
+
+            if sub == "summary":
+                summary = store.get_document_summary(doc_id)
+                if summary:
+                    return f"Summary of document {doc_id}:\n{summary}"
+                return f"Document not found: {doc_id}"
+
+        return f"Unknown subcommand: {sub}. Use /doc help."
+    except Exception as e:
+        emit_error(f"/doc command failed: {e}")
+        return True
+
+
 def _handle_experience_command(command: str, name: str) -> bool | str | None:
     """Handle ``/experience`` subcommands via custom_command hook."""
     if name != "experience":
@@ -539,7 +680,7 @@ def _handle_experience_command(command: str, name: str) -> bool | str | None:
 
 
 def _on_help() -> list[tuple[str, str]]:
-    """Return help entries for /task and /experience."""
+    """Return help entries for /task, /doc, and /experience."""
     from code_muse.plugins.task_context.experience_commands import (
         get_experience_help,
     )
@@ -554,6 +695,10 @@ def _on_help() -> list[tuple[str, str]]:
         ("task forget <id>", "Delete archived context permanently"),
         ("task config", "Show task pruning configuration"),
         ("task on|off", "Enable/disable task-aware pruning"),
+        ("doc get <id>", "Retrieve full stored document by ID"),
+        ("doc section <id> <n>", "Retrieve section N of a stored document"),
+        ("doc summary <id>", "3-bullet summary of stored document"),
+        ("doc list", "List all stored documents"),
     ]
     return task_help + get_experience_help()
 
@@ -628,6 +773,7 @@ def register_all_callbacks() -> None:
     )
     register_callback("agent_run_end", _on_agent_run_end)
     register_callback("custom_command", _handle_task_command)
+    register_callback("custom_command", _handle_doc_command)
     register_callback("custom_command", _handle_experience_command)
     register_callback("custom_command_help", _on_help)
     register_callback("load_prompt", _get_task_prompt)

@@ -67,18 +67,28 @@ def evaluate_and_prune(
     if not message_history or len(message_history) <= 1:
         return None
 
-    # Estimate tokens if budget provided
-    if token_budget is not None:
-        total_tokens = _estimate_total_tokens(message_history)
-        utilization = (total_tokens + context_overhead) / max(token_budget, 1)
-        threshold = get_task_prune_threshold()
-        if utilization < threshold:
-            return None  # No need to prune yet
+    # Resolve model-aware context budget if not explicitly provided
+    if token_budget is None:
+        try:
+            from code_muse.plugins.task_context._context_utils import (
+                get_cached_context_limit,
+            )
 
-        emit_info(
-            f"🧹 Context at {utilization:.0%} — "
-            f"evaluating completed-task messages for pruning..."
-        )
+            token_budget = get_cached_context_limit()
+        except Exception:
+            token_budget = 128_000  # safe fallback only
+
+    # Check if we're above the pruning threshold
+    total_tokens = _estimate_total_tokens(message_history)
+    utilization = (total_tokens + context_overhead) / max(token_budget, 1)
+    threshold = get_task_prune_threshold()
+    if utilization < threshold:
+        return None  # No need to prune yet
+
+    emit_info(
+        f"🧹 Context at {utilization:.0%} — "
+        f"evaluating completed-task messages for pruning..."
+    )
 
     # Perform the pruning evaluation
     return _run_prune_pass(task_manager, message_history)

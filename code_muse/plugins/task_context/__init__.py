@@ -7,6 +7,7 @@ This plugin implements the v2.1 design document (DESIGN-TOKEN-CAPS-v2.md).
 """
 
 from code_muse.plugins.task_context import (
+    _context_utils,
     archival,
     budget,
     completion,
@@ -25,6 +26,7 @@ from code_muse.plugins.task_context import (
 from code_muse.plugins.task_context.register_callbacks import register_all_callbacks
 
 __all__ = [
+    "_context_utils",
     "archival",
     "budget",
     "completion",
