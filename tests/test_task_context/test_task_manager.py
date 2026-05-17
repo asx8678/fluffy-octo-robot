@@ -6,6 +6,7 @@ Lifecycle, tagging, cross-refs, serialization.
 import threading
 
 from code_muse.plugins.task_context.models import TaskStatus
+from code_muse.plugins.task_context.register_callbacks import _fuzzy_match_task
 from code_muse.plugins.task_context.task_manager import TaskManager
 
 # ---------------------------------------------------------------------------
@@ -344,3 +345,44 @@ class TestThreadSafety:
 
         assert len(errors) == 0
         assert len(results) == 5
+
+
+# ---------------------------------------------------------------------------
+# Fuzzy task matching
+# ---------------------------------------------------------------------------
+
+
+class TestFuzzyMatchTask:
+    def test_exact_prefix_match(self):
+        mgr = TaskManager()
+        tid = mgr.get_active_task_id()
+        result = _fuzzy_match_task(mgr, tid[:8])
+        assert result is not None
+        assert result.task_id == tid
+
+    def test_label_substring_match(self):
+        mgr = TaskManager()
+        mgr.start_new_task(label="refactor authentication")
+        result = _fuzzy_match_task(mgr, "auth")
+        assert result is not None
+        assert "auth" in result.label.lower()
+
+    def test_outcome_substring_match(self):
+        mgr = TaskManager()
+        mgr.start_new_task(label="work")
+        mgr.complete_current_task(outcome="PR #123 merged successfully")
+        result = _fuzzy_match_task(mgr, "merged")
+        assert result is not None
+        assert result.outcome_summary is not None
+        assert "merged" in result.outcome_summary.lower()
+
+    def test_no_match_returns_none(self):
+        mgr = TaskManager()
+        result = _fuzzy_match_task(mgr, "zzzzzz_nonexistent")
+        assert result is None
+
+    def test_case_insensitive(self):
+        mgr = TaskManager()
+        mgr.start_new_task(label="BigFeature")
+        result = _fuzzy_match_task(mgr, "bigfeature")
+        assert result is not None

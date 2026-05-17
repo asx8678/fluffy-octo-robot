@@ -94,6 +94,30 @@ def _on_message_history_processor_start(
                 len(remove_indices),
             )
 
+    # Proactive budget warning after pruning check
+    from code_muse.plugins.task_context.budget import (
+        check_and_warn,
+        estimate_current_budget,
+    )
+    from code_muse.plugins.task_context.config import (
+        get_task_budget_critical_at,
+        get_task_budget_warn_at,
+    )
+
+    budget_info = estimate_current_budget(message_history)
+    check_and_warn(
+        budget_info,
+        warn_at=get_task_budget_warn_at(),
+        critical_at=get_task_budget_critical_at(),
+    )
+
+    # Auto-populate cross-references from file overlap
+    from code_muse.plugins.task_context.dependencies import (
+        sync_cross_references,
+    )
+
+    sync_cross_references(manager)
+
 
 def _on_message_history_processor_end(
     agent_name: str,
@@ -142,6 +166,12 @@ async def _on_agent_run_end(
         # Capture experience capsule if enabled
         if get_experience_retrieval_enabled():
             _capture_experience(manager, signal)
+
+    # Reset budget warning flags on task completion so fresh warnings
+    # can be emitted as usage climbs again.
+    from code_muse.plugins.task_context.budget import reset_warning_flags
+
+    reset_warning_flags()
 
 
 # ---------------------------------------------------------------------------
@@ -370,20 +400,74 @@ def _handle_task_command(command: str, name: str) -> bool | str | None:
         return True
 
     if sub == "recall":
+        # No args: list recent completed tasks
         if len(tokens) < 3:
-            emit_warning("Usage: /task recall <task_id>")
-            return True
-        task_id_to_recall = tokens[2].strip()
-        from code_muse.plugins.task_context.archival import recall_task_context
+            completed = manager.get_completed_tasks()
+            archived = manager.get_archived_tasks()
+            recent = (completed + archived)[-5:]
+            lines = [
+                "📋 Recent completed/archived tasks (use /task recall <id or label>):"
+            ]
+            for t in recent:
+                lines.append(
+                    f"  • {t.task_id[:8]} — {t.label or '(untitled)'}"
+                    f": {t.outcome_summary or 'no outcome'}"
+                )
+            if not recent:
+                lines.append("  (none yet)")
+            return "\n".join(lines)
 
-        messages = recall_task_context(task_id_to_recall)
-        if messages:
-            emit_success(
-                f"📂 Recalled {len(messages)} messages"
-                f" from task {task_id_to_recall[:8]}"
+        task_id_to_recall = tokens[2].strip()
+        task = _fuzzy_match_task(manager, task_id_to_recall)
+        if not task:
+            emit_warning(f"No task found matching '{task_id_to_recall}'")
+            return True
+
+        # Cost preview + dependency info
+        from code_muse.plugins.task_context.dependencies import get_task_files
+
+        # Try to get archive metadata for token count
+        archive_tokens = task.token_count
+        msg_count = task.message_count
+        from code_muse.plugins.task_context.archival import _archive_path
+
+        archive_path = _archive_path(task.task_id)
+        if archive_path.exists():
+            try:
+                import json
+
+                with open(archive_path) as f:
+                    archive_data = json.load(f)
+                msg_count = archive_data.get("message_count", msg_count)
+                archive_tokens = archive_data.get("token_count", archive_tokens)
+            except json.JSONDecodeError, OSError:
+                pass
+
+        # Build recall info with cost preview and cross-references
+        xrefs = manager.get_cross_referenced_tasks(task.task_id)
+        files_touched = get_task_files(task.task_id)
+
+        lines = [
+            f"📂 Recalled task: {task.label or task.task_id[:8]}",
+            f"  Status: {task.status.value}",
+            f"  Outcome: {task.outcome_summary or 'No outcome recorded'}",
+            f"  Messages: {msg_count}, Tokens: ~{archive_tokens:,}",
+        ]
+        if xrefs:
+            lines.append("  Related tasks:")
+            for xref in xrefs:
+                lines.append(
+                    f"    • {xref.label or xref.task_id[:8]}"
+                    f" — {xref.outcome_summary or ''}".rstrip(" —")
+                )
+        if files_touched:
+            file_list = sorted(files_touched)[:5]
+            suffix = (
+                f" (+{len(files_touched) - 5} more)" if len(files_touched) > 5 else ""
             )
-        else:
-            emit_warning(f"No archived context found for task {task_id_to_recall[:8]}")
+            lines.append(f"  Files touched: {', '.join(file_list)}{suffix}")
+
+        emit_info("\n".join(lines))
         return True
 
     if sub == "config":
@@ -403,6 +487,31 @@ def _handle_task_command(command: str, name: str) -> bool | str | None:
         "Usage: /task new|complete|status|list|prune-now|recall|forget|config|on|off"
     )
     return True
+
+
+def _fuzzy_match_task(manager: Any, partial_id: str) -> Any | None:
+    """Fuzzy match a task by partial ID prefix, label, or outcome.
+
+    Tries in order:
+    1. Exact prefix match on task_id
+    2. Substring match on label (case-insensitive)
+    3. Substring match on outcome_summary (case-insensitive)
+    """
+    all_tasks = manager.get_all_tasks()
+    # 1. Exact prefix match on task_id
+    for t in all_tasks:
+        if t.task_id.startswith(partial_id):
+            return t
+    # 2. Label substring match
+    lowered = partial_id.lower()
+    for t in all_tasks:
+        if t.label and lowered in t.label.lower():
+            return t
+    # 3. Outcome substring match (completed tasks only)
+    for t in all_tasks:
+        if t.outcome_summary and lowered in t.outcome_summary.lower():
+            return t
+    return None
 
 
 def _handle_experience_command(command: str, name: str) -> bool | str | None:
@@ -428,7 +537,7 @@ def _on_help() -> list[tuple[str, str]]:
         ("task status", "Show active task + completed task stats"),
         ("task list", "List all tasks in session"),
         ("task prune-now", "Force immediate pruning pass"),
-        ("task recall <id>", "Recall archived task context"),
+        ("task recall [id|label]", "Recall archived task context (fuzzy match)"),
         ("task forget <id>", "Delete archived context permanently"),
         ("task config", "Show task pruning configuration"),
         ("task on|off", "Enable/disable task-aware pruning"),

@@ -61,6 +61,7 @@ def score_message_relevance(
     total_messages: int,
     active_task_label: str,
     active_task_messages: list[Any] | None = None,
+    token_estimate: int = 0,
 ) -> float:
     """Compute relevance score for a message relative to the active task.
 
@@ -70,10 +71,11 @@ def score_message_relevance(
     - 0.0 = completely irrelevant
 
     The score is a weighted combination of:
-    1. Keyword overlap with task label (40% weight)
-    2. TF-IDF similarity with active task messages (35% weight)
+    1. Keyword overlap with task label (35% weight)
+    2. TF-IDF similarity with active task messages (30% weight)
     3. Recency bonus (15% weight)
     4. Tool call relevance (10% weight)
+    5. Token efficiency (10% weight) — cheaper messages score higher
 
     Args:
         message: The message to score (pydantic-ai ModelMessage or dict).
@@ -81,6 +83,7 @@ def score_message_relevance(
         total_messages: Total number of messages in history.
         active_task_label: Human-readable label of the active task.
         active_task_messages: Messages tagged with the active task for comparison.
+        token_estimate: Estimated token count for this message (0 = unknown).
 
     Returns:
         Relevance score between 0.0 and 1.0.
@@ -89,10 +92,10 @@ def score_message_relevance(
     if not text:
         return 0.0
 
-    # 1. Keyword overlap (40% weight)
+    # 1. Keyword overlap (35% weight)
     keyword_score = _compute_keyword_overlap(text, active_task_label)
 
-    # 2. TF-IDF similarity with active task context (35% weight)
+    # 2. TF-IDF similarity with active task context (30% weight)
     tfidf_score = _compute_tfidf_similarity(text, active_task_messages)
 
     # 3. Recency bonus (15% weight) — more recent = more relevant
@@ -101,12 +104,16 @@ def score_message_relevance(
     # 4. Tool call relevance (10% weight)
     tool_score = _compute_tool_relevance(message, active_task_label)
 
+    # 5. Token efficiency (10% weight) — cheaper messages score higher
+    token_eff_score = score_token_efficiency(token_estimate)
+
     # Weighted combination
     score = (
-        keyword_score * 0.40
-        + tfidf_score * 0.35
+        keyword_score * 0.35
+        + tfidf_score * 0.30
         + recency_score * 0.15
         + tool_score * 0.10
+        + token_eff_score * 0.10
     )
 
     # Clamp to [0.0, 1.0]
@@ -117,19 +124,57 @@ def score_batch_relevance(
     messages: list[Any],
     active_task_label: str,
     active_task_messages: list[Any] | None = None,
+    token_estimates: list[int] | None = None,
 ) -> list[float]:
     """Score multiple messages in batch.
 
     More efficient than calling score_message_relevance individually
     as it can cache TF-IDF computations.
+
+    Args:
+        messages: List of messages to score.
+        active_task_label: Human-readable label of the active task.
+        active_task_messages: Messages tagged with the active task for comparison.
+        token_estimates: Optional per-message token estimates (0 = unknown).
     """
     total = len(messages)
-    return [
-        score_message_relevance(
-            msg, idx, total, active_task_label, active_task_messages
+    results = []
+    for idx, msg in enumerate(messages):
+        tok = (
+            token_estimates[idx]
+            if token_estimates and idx < len(token_estimates)
+            else 0
         )
-        for idx, msg in enumerate(messages)
-    ]
+        results.append(
+            score_message_relevance(
+                msg, idx, total, active_task_label, active_task_messages, tok
+            )
+        )
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Token efficiency scoring
+# ---------------------------------------------------------------------------
+
+# Weight carved out from existing factors for the new token-efficiency component
+TOKEN_EFFICIENCY_WEIGHT = 0.10
+
+
+def score_token_efficiency(token_estimate: int, avg_token_size: int = 500) -> float:
+    """Score how token-efficient a message is.
+
+    Large messages (tool returns, big file reads) are penalized so the
+    scorer can factor in context cost, not just semantic relevance.
+
+    Returns 0.0–1.0 where 1.0 = very small/cheap, 0.0 = very large/expensive.
+    """
+    if token_estimate <= 0:
+        return 0.5  # Neutral for unknown size
+    # Sigmoid-style penalty: around avg_token_size, score ~0.5
+    # Very small (<100 tokens) → near 1.0; very large (>2000) → near 0.0
+    ratio = token_estimate / avg_token_size
+    return 1.0 / (1.0 + (ratio**1.5))
 
 
 # ---------------------------------------------------------------------------

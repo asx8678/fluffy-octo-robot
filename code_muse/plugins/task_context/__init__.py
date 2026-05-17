@@ -8,8 +8,10 @@ This plugin implements the v2.1 design document (DESIGN-TOKEN-CAPS-v2.md).
 
 from code_muse.plugins.task_context import (
     archival,
+    budget,
     completion,
     config,
+    dependencies,
     detector,
     experience_commands,
     experience_models,
@@ -24,8 +26,10 @@ from code_muse.plugins.task_context.register_callbacks import register_all_callb
 
 __all__ = [
     "archival",
+    "budget",
     "completion",
     "config",
+    "dependencies",
     "detector",
     "experience_commands",
     "experience_models",

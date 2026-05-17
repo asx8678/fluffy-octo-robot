@@ -19,6 +19,11 @@ _KEY_MAX_ARCHIVE = "task_max_archive_contexts"
 _KEY_PRUNE_AGGRESSIVENESS = "task_prune_aggressiveness"
 _KEY_EMBEDDING_ENABLED = "task_embedding_enabled"
 
+# Budget warning thresholds
+_KEY_BUDGET_WARN_AT = "task_budget_warn_at"
+_KEY_BUDGET_CRITICAL_AT = "task_budget_critical_at"
+_KEY_DEPENDENCY_FILE_OVERLAP = "task_dependency_file_overlap"
+
 # Experience store config keys
 _KEY_EXP_ENABLED = "experience_retrieval_enabled"
 _KEY_EXP_GLOBAL = "experience_global_enabled"
@@ -220,6 +225,59 @@ def get_experience_config_summary() -> str:
     return "\n".join(lines)
 
 
+# ---------------------------------------------------------------------------
+# Budget warning config
+# ---------------------------------------------------------------------------
+
+
+def get_task_budget_warn_at() -> float:
+    """Usage % that triggers an informational budget warning. Default: 0.65."""
+    val = get_value(_KEY_BUDGET_WARN_AT)
+    try:
+        threshold = float(val) if val else 0.65
+        return max(0.3, min(0.95, threshold))
+    except ValueError, TypeError:
+        return 0.65
+
+
+def set_task_budget_warn_at(val: float) -> None:
+    clamped = max(0.3, min(0.95, val))
+    set_config_value(_KEY_BUDGET_WARN_AT, str(clamped))
+    logger.info("Task budget warn threshold set to %.2f", clamped)
+
+
+def get_task_budget_critical_at() -> float:
+    """Usage % that triggers a critical budget warning. Default: 0.85."""
+    val = get_value(_KEY_BUDGET_CRITICAL_AT)
+    try:
+        threshold = float(val) if val else 0.85
+        return max(0.5, min(0.99, threshold))
+    except ValueError, TypeError:
+        return 0.85
+
+
+def set_task_budget_critical_at(val: float) -> None:
+    clamped = max(0.5, min(0.99, val))
+    set_config_value(_KEY_BUDGET_CRITICAL_AT, str(clamped))
+    logger.info("Task budget critical threshold set to %.2f", clamped)
+
+
+def get_task_dependency_file_overlap() -> int:
+    """Minimum shared files for an auto-detected task dependency. Default: 2."""
+    val = get_value(_KEY_DEPENDENCY_FILE_OVERLAP)
+    try:
+        n = int(val) if val else 2
+        return max(1, min(20, n))
+    except ValueError, TypeError:
+        return 2
+
+
+def set_task_dependency_file_overlap(val: int) -> None:
+    clamped = max(1, min(20, val))
+    set_config_value(_KEY_DEPENDENCY_FILE_OVERLAP, str(clamped))
+    logger.info("Task dependency file overlap threshold set to %d", clamped)
+
+
 def get_task_config_summary() -> str:
     """Return a human-readable summary of all task config values."""
     lines = [
@@ -231,5 +289,8 @@ def get_task_config_summary() -> str:
         f"  Auto-complete timeout: {get_task_auto_complete_timeout()}s",
         f"  Max archived contexts: {get_task_max_archive_contexts()}",
         f"  Embedding scoring: {get_task_embedding_enabled()}",
+        f"  Budget warn at: {get_task_budget_warn_at():.0%}",
+        f"  Budget critical at: {get_task_budget_critical_at():.0%}",
+        f"  Dependency file overlap: {get_task_dependency_file_overlap()}",
     ]
     return "\n".join(lines)
