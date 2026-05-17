@@ -166,7 +166,7 @@ def _parse_json_response(text: str) -> dict | None:
     if fence:
         try:
             return json.loads(fence.group(1))
-        except json.JSONDecodeError, ValueError:
+        except (json.JSONDecodeError, ValueError):  # fmt: skip
             pass
 
     # 2) Outermost braces
@@ -175,13 +175,13 @@ def _parse_json_response(text: str) -> dict | None:
     if start >= 0 and end > start:
         try:
             return json.loads(text[start:end])
-        except json.JSONDecodeError, ValueError:
+        except (json.JSONDecodeError, ValueError):  # fmt: skip
             pass
 
     # 3) Whole text
     try:
         return json.loads(text)
-    except json.JSONDecodeError, ValueError:
+    except (json.JSONDecodeError, ValueError):  # fmt: skip
         pass
 
     logger.warning("Reviewer returned unparseable response: %.200s", text)
@@ -219,7 +219,7 @@ def _json_to_verdict(data: dict) -> Verdict:
     try:
         confidence = float(data.get("confidence", 0.5))
         confidence = max(0.0, min(1.0, confidence))
-    except (ValueError, TypeError):
+    except (ValueError, TypeError):  # fmt: skip
         confidence = 0.5
 
     return Verdict(
