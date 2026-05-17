@@ -17,7 +17,7 @@ import orjson as json
 from pydantic import BaseModel
 
 # Import Agent from pydantic_ai to create temporary agents for invocation
-from pydantic_ai import Agent, RunContext
+from pydantic_ai import Agent, RunContext, UsageLimits
 from pydantic_ai.capabilities import ProcessHistory
 from pydantic_ai.messages import ModelMessage, ModelMessagesTypeAdapter
 
@@ -28,6 +28,7 @@ from code_muse.callbacks import (
 )
 from code_muse.config import (
     DATA_DIR,
+    get_message_limit,
 )
 from code_muse.messaging import (
     SubAgentInvocationMessage,
@@ -546,7 +547,7 @@ def register_invoke_agent(agent):
                             prompt,
                             message_history=message_history,
                             event_stream_handler=stream_handler,
-                            usage_limits=None,
+                            usage_limits=UsageLimits(request_limit=get_message_limit()),
                         )
                     )
                     try:

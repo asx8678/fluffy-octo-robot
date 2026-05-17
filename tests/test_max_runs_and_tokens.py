@@ -91,22 +91,25 @@ class TestUsageLimitsConstruction:
 
 
 class TestSubAgentUsageLimits:
-    """Sub-agent invocations pass usage_limits=None, bypassing all constraints."""
+    """Sub-agent invocations now use get_message_limit()
+    instead of silently defaulting to 50."""
 
     def test_sub_agent_passes_usage_limits_none(self):
-        """agent_tools.py passes usage_limits=None to temp_agent.run()."""
+        """agent_tools.py no longer passes usage_limits=None to temp_agent.run()."""
         source = agent_tools.__file__
         with open(source) as f:
             content = f.read()
-        # The sub-agent run should pass usage_limits=None
-        assert "usage_limits=None" in content
+        # The sub-agent run should NOT pass usage_limits=None
+        assert "usage_limits=None" not in content
+        assert "UsageLimits(request_limit=get_message_limit())" in content
 
     def test_sub_agent_does_not_read_message_limit(self):
-        """Sub-agents don't call get_message_limit() for their run."""
+        """Sub-agents now use get_message_limit() to honour
+        the user-configured request limit."""
         source = agent_tools.__file__
         with open(source) as f:
             content = f.read()
-        assert "get_message_limit" not in content
+        assert "get_message_limit" in content
 
 
 # ---------------------------------------------------------------------------

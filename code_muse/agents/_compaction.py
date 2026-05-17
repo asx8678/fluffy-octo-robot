@@ -587,12 +587,11 @@ def make_history_processor(agent: Any) -> Callable[..., list[ModelMessage]]:
         while cleaned and isinstance(cleaned[-1], ModelResponse):
             cleaned.pop()
 
-        # PERF-07: Only re-prune if we actually stripped thinking parts or
-        # popped trailing ModelResponse messages, since those operations can
-        # create orphaned tool_call/tool_return pairs.  If nothing was
-        # stripped or popped, the history is already clean from compact().
-        if filtered_count > 0 or len(cleaned) != len(agent._message_history):
-            cleaned = prune_interrupted_tool_calls(cleaned)
+        # Always prune orphaned tool_call/tool_return pairs that may have
+        # been created by truncate() during compaction. The model REQUIRES
+        # valid tool call pairs — missing returns or stray calls cause it
+        # to produce empty responses.
+        cleaned = prune_interrupted_tool_calls(cleaned)
 
         agent._message_history = cleaned
 
