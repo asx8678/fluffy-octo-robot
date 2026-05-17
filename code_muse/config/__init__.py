@@ -6,6 +6,10 @@ Re-exports every public name from submodules so that
 
 # --- Paths ---
 # --- Models ---
+# --- Parser ---
+from code_muse.config._dynamic_cap import (  # noqa: F401
+    compute_dynamic_message_cap,
+)
 from code_muse.config.models import (  # noqa: F401
     _SESSION_MODEL,
     _default_model_from_models_json,
@@ -20,8 +24,6 @@ from code_muse.config.models import (  # noqa: F401
     reset_session_model,
     set_model_name,
 )
-
-# --- Parser ---
 from code_muse.config.parser import (  # noqa: F401
     DEFAULT_SECTION,
     REQUIRED_KEYS,

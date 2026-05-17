@@ -394,7 +394,10 @@ def compact(
     # Hard cap on message count: prevent unbounded history even when
     # token proportion is below threshold. Short messages can accumulate
     # past the cap without triggering token-based compaction.
-    if len(messages) > get_max_messages_hard_cap():
+    # The cap scales dynamically with model_max so large-window models
+    # aren't forced to compact prematurely.
+    hard_cap = get_max_messages_hard_cap(model_max=model_max)
+    if len(messages) > hard_cap:
         strategy = get_compaction_strategy()
         protected_tokens = get_protected_token_count()
         filtered = filter_huge_messages(messages, model_name, cache=cache)
@@ -417,7 +420,7 @@ def compact(
             new_total = cache.sum_tokens(result_messages, model_name) + context_overhead
             new_proportion = new_total / model_max
         update_spinner_context(
-            "Count cap: "
+            f"Count cap ({hard_cap}): "
             + SpinnerBase.format_context_info(
                 cache.sum_tokens(result_messages, model_name) + context_overhead,
                 model_max,
