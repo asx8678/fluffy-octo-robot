@@ -23,7 +23,10 @@ def _estimate_tokens(text: str) -> int:
 
 
 def _format_section(sec, total_lines: int) -> str:
-    header = f"--- Section: {sec.name or sec.kind} (lines {sec.start_line}-{sec.end_line}) ---"
+    header = (
+        f"--- Section: {sec.name or sec.kind} "
+        f"(lines {sec.start_line}-{sec.end_line}) ---"
+    )
     body = ""
     for i, line in enumerate(sec.content.splitlines(), sec.start_line):
         body += f"[line {i:4d}] {line}\n"
